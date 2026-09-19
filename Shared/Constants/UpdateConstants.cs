@@ -4,14 +4,9 @@ namespace Shared.Constants
     /// Self-update configuration.
     ///
     /// <see cref="Repo"/> is the GitHub "owner/repo" the app checks for new
-    /// releases. It is intentionally EMPTY in this fork so the app NEVER
-    /// auto-updates to the upstream (corando98/GoTweaks) build: every update
-    /// check short-circuits to "up to date" and every self-install is refused
-    /// while it is empty.
-    ///
-    /// Once this project lives in your own repository, set <see cref="Repo"/>
-    /// to your own "owner/name" (e.g. "yourname/GoTweaks") to re-enable the
-    /// "Check for Update" button, the check-on-start probe, and self-install.
+    /// releases. Leave it EMPTY to disable auto-updates entirely: every update
+    /// check then short-circuits to "up to date" and every self-install is
+    /// refused.
     /// </summary>
     public static class UpdateConstants
     {
@@ -29,10 +24,10 @@ namespace Shared.Constants
         /// carry a friendly per-RELEASE number without breaking either. Mixing the two directly
         /// in the UI ("Your version: 0.3.2524.0, new version: 1.1") is what this constant fixes.
         /// </summary>
-        public const string FriendlyVersion = "1.5";
+        public const string FriendlyVersion = "1.0";
 
         /// <summary>GitHub "owner/repo" to query for releases. Empty = updates disabled.</summary>
-        public const string Repo = "Rayekkk/GoTweaks-Lite";
+        public const string Repo = "Rulob/GoTweaks-Lite";
 
         /// <summary>True when a release repo is configured (update checks/installs allowed).</summary>
         public static bool UpdatesEnabled => !string.IsNullOrWhiteSpace(Repo);

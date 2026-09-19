@@ -15,10 +15,9 @@ namespace XboxGamingBarHelper.Services
     /// so the child inherits admin, and AppX install requires it).
     ///
     /// The release repo is configured centrally in
-    /// <see cref="Shared.Constants.UpdateConstants.Repo"/>. It is EMPTY in this
-    /// fork, so every check short-circuits to "up to date" and self-install is
-    /// refused — the app will not auto-update to the upstream build. Set that
-    /// constant to your own repo to re-enable updates.
+    /// <see cref="Shared.Constants.UpdateConstants.Repo"/>. Leave that constant
+    /// empty to disable updates entirely — every check then short-circuits to
+    /// "up to date" and self-install is refused.
     ///
     /// Everything here is defensive — network issues, API rate limits, or
     /// asset-naming changes produce an empty/update-not-found result rather
