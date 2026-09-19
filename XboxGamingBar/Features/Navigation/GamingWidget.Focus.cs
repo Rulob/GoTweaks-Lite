@@ -86,6 +86,18 @@ namespace XboxGamingBar
             CustomTDPPeakSlider.GotFocus += Control_GotFocus;
             CustomTDPPeakSlider.LostFocus += Control_LostFocus;
 
+            // Performance tab - AutoTDP card
+            AutoTDPToggle.GotFocus += Control_GotFocus;
+            AutoTDPToggle.LostFocus += Control_LostFocus;
+            AutoTDPTargetFPSSlider.GotFocus += Control_GotFocus;
+            AutoTDPTargetFPSSlider.LostFocus += Control_LostFocus;
+            AutoTDPMinSlider.GotFocus += Control_GotFocus;
+            AutoTDPMinSlider.LostFocus += Control_LostFocus;
+            AutoTDPMaxSlider.GotFocus += Control_GotFocus;
+            AutoTDPMaxSlider.LostFocus += Control_LostFocus;
+            AutoTDPPauseWhenUnfocusedToggle.GotFocus += Control_GotFocus;
+            AutoTDPPauseWhenUnfocusedToggle.LostFocus += Control_LostFocus;
+
             // Performance tab - CPU Boost card
             CPUBoostToggle.GotFocus += Control_GotFocus;
             CPUBoostToggle.LostFocus += Control_LostFocus;

@@ -2055,6 +2055,12 @@ namespace XboxGamingBar
                 CustomTDPCard.Visibility = showCustom ? Visibility.Visible : Visibility.Collapsed;
                 if (showCustom) UpdateCustomTDPValueLabels();
             }
+
+            if (AutoTDPCard != null)
+            {
+                AutoTDPCard.Visibility = showCustom ? Visibility.Visible : Visibility.Collapsed;
+                UpdateCustomTDPSlidersEnabledForAutoTDP();
+            }
         }
 
         /// <summary>

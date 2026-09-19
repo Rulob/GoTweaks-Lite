@@ -163,12 +163,14 @@ namespace XboxGamingBarHelper
                 }
 
                 bool isLegionCustomMode = legionManager != null && legionManager.CurrentPerformanceMode == 255;
-                bool tdpGateAllowed = isLegionCustomMode;
+                bool tdpGateAllowed = isLegionCustomMode && !performanceManager.IsAutoTDPActive;
 
-                // 2a) TDP / TDPBoost — gated by Legion Custom mode.
+                // 2a) TDP / TDPBoost — gated by Legion Custom mode. Also skipped while AutoTDP is
+                // actively managing TDP: it overwrites TDP on its own cadence, so a stale
+                // profile-cached value here would just fight it.
                 if (!tdpGateAllowed)
                 {
-                    Logger.Debug("Helper-side AC/DC handler: skipping TDP/TDPBoost reapply — not in Legion Custom mode (extended fields below still apply)");
+                    Logger.Debug("Helper-side AC/DC handler: skipping TDP/TDPBoost reapply — not in Legion Custom mode or AutoTDP active (extended fields below still apply)");
                 }
                 else
                 {

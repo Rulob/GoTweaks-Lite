@@ -496,6 +496,8 @@
     <Compile Include="Performance\Sensors\NetworkUploadSensor.cs" />
     <Compile Include="Performance\TDPProperty.cs" />
     <Compile Include="Performance\CurrentTDPProperty.cs" />
+    <Compile Include="AutoTDP\AutoTDPManager.cs" />
+    <Compile Include="AutoTDP\AutoTDPProperties.cs" />
     <Compile Include="Performance\UpdateVisitor.cs" />
     <Compile Include="Power\CPUBoostProperty.cs" />
     <Compile Include="Power\MaxCPUStateProperty.cs" />
@@ -559,6 +561,7 @@
     <Compile Include="RTSS\OSDItems\OSDItemVRAM.cs" />
     <Compile Include="RTSS\OSDItems\OSDItemNetwork.cs" />
     <Compile Include="RTSS\OSDItems\OSDItemTDPLimits.cs" />
+    <Compile Include="RTSS\OSDItems\OSDItemAutoTDP.cs" />
     <Compile Include="RTSS\OSDItemValue.cs" />
     <Compile Include="OnScreenDisplay\OnScreenDisplayProperty.cs" />
     <Compile Include="RTSS\RTSSInstalledProperty.cs" />

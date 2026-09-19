@@ -70,6 +70,66 @@ namespace XboxGamingBarHelper.Profile
             }
         }
 
+        public bool AutoTDPEnabled
+        {
+            get { return value.AutoTDPEnabled; }
+            set
+            {
+                if (this.value.AutoTDPEnabled != value)
+                {
+                    this.value.AutoTDPEnabled = value;
+                }
+            }
+        }
+
+        public int AutoTDPTargetFPS
+        {
+            get { return value.AutoTDPTargetFPS; }
+            set
+            {
+                if (this.value.AutoTDPTargetFPS != value)
+                {
+                    this.value.AutoTDPTargetFPS = value;
+                }
+            }
+        }
+
+        public int AutoTDPMinTDP
+        {
+            get { return value.AutoTDPMinTDP; }
+            set
+            {
+                if (this.value.AutoTDPMinTDP != value)
+                {
+                    this.value.AutoTDPMinTDP = value;
+                }
+            }
+        }
+
+        public int AutoTDPMaxTDP
+        {
+            get { return value.AutoTDPMaxTDP; }
+            set
+            {
+                if (this.value.AutoTDPMaxTDP != value)
+                {
+                    this.value.AutoTDPMaxTDP = value;
+                }
+            }
+        }
+
+        public bool AutoTDPPauseWhenUnfocused
+        {
+            get { return value.AutoTDPPauseWhenUnfocused; }
+            set
+            {
+                if (this.value.AutoTDPPauseWhenUnfocused != value)
+                {
+                    this.value.AutoTDPPauseWhenUnfocused = value;
+                }
+            }
+        }
+
         public GameId GameId
         {
             get { return value.GameId; }

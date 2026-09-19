@@ -52,9 +52,9 @@ upstream, and why.
 
 ### 🧹 Removed for a leaner base
 
-- **AutoTDP** (the Q-learning / SARSA power controller), **Sticky TDP**, the **TDP Boost** toggle,
-  **Custom TDP Presets**, and the **Device Min/Max TDP** panel — the single _TDP Mode_ selector
-  replaces them all.
+- **Sticky TDP**, the **TDP Boost** toggle, **Custom TDP Presets**, and the **Device Min/Max TDP**
+  panel — the single _TDP Mode_ selector replaces them all. (**AutoTDP** was also removed here, then
+  brought back in PID-only form — see below.)
 - The beta **Sidebar overlay** — _Focus GoTweaks Lite_ now simply opens the Game Bar.
 - **Microsoft / bundled Default Game Profiles** — only your own per-game profiles remain.
 - The **Advanced panel** (core parking / affinity), the **AC/DC Power Plan** selector, the debug
@@ -66,6 +66,11 @@ upstream, and why.
 
 ### ➕ Added
 
+- **AutoTDP (PID mode)** — an automatic power controller for Custom TDP mode: pick a target FPS
+  and a min/max wattage range, and it continuously adjusts TDP live to hit that FPS, backing off
+  gracefully when the target is unreachable (CPU-bound games). Restored from upstream, trimmed to
+  the rule-based PID controller only (no Q-Learning/SARSA machine-learning modes or per-game
+  learned data — see the AutoTDP card in the Performance tab, visible in Custom mode).
 - **Auto SDR** — while HDR is on, automatically matches the SDR white level to screen brightness
   so SDR content (desktop, most games) doesn't look washed out, with a full **curve editor**
   (Legion Go 2 preset or a custom, import/export-compatible curve). _(Built on the sibling Go2HDR

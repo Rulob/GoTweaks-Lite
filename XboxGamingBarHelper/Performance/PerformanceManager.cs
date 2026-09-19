@@ -221,6 +221,13 @@ namespace XboxGamingBarHelper.Performance
             }
         }
 
+        /// <summary>
+        /// True while AutoTDP is actively managing TDP. Other TDP-reapply paths (AC/DC power
+        /// source change, profile switch) check this and skip their own reapply so they don't
+        /// fight AutoTDP's live adjustments.
+        /// </summary>
+        public bool IsAutoTDPActive { get; set; }
+
         // Quick Metrics push (bundled sensor data sent to widget when enabled).
         // Previously driven by a dedicated 1Hz timer which duplicated the main-loop
         // sensor refresh — now piggy-backs on the main loop's Update() tick so we only
@@ -1279,6 +1286,32 @@ namespace XboxGamingBarHelper.Performance
 
                 Logger.Debug($"SetTDP: Debouncing TDP change to {tdp}W (will apply in {TDPDebounceDelayMs}ms if no new changes)");
             }
+        }
+
+        /// <summary>
+        /// Applies a TDP value computed by AutoTDP. Bypasses the debounce (AutoTDP already
+        /// paces its own decisions) and, on Legion in Custom mode, bypasses the
+        /// ApplyTDPInternal/ReassertCustomTDP shortcut that re-pushes the cached triplet instead
+        /// of a new value (that shortcut exists to stop OTHER master-TDP callers — AC/DC switch,
+        /// profile apply — from flattening the independent SPL/SPPT/FPPT sliders; AutoTDP's whole
+        /// point is to drive a single live wattage, so it writes SPL=SPPT=FPPT=tdp directly).
+        /// </summary>
+        public void SetAutoTDP(int tdp)
+        {
+            lock (tdpLock)
+            {
+                bool legionDetected = legionManager?.LegionGoDetected?.Value ?? false;
+                if (legionDetected && legionManager != null && legionManager.IsInCustomMode)
+                {
+                    legionManager.SetCustomTDP(tdp, tdp, tdp);
+                    ScheduleVerificationRead();
+                    return;
+                }
+            }
+
+            // Non-Legion / not in Custom mode: the generic flat-value path already does the
+            // right thing (no reassert shortcut applies outside Legion Custom mode).
+            SetTDP(tdp);
         }
 
         /// <summary>

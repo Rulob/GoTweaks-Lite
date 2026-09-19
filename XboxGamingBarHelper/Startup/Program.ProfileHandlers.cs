@@ -350,6 +350,18 @@ namespace XboxGamingBarHelper
                 }
             }
 
+            // Restore AutoTDP settings before TDP so IsAutoTDPActive is cleared (or re-armed on
+            // the manager's next tick) before the profile's flat TDP value is applied below.
+            if (autoTDPManager != null)
+            {
+                performanceManager.IsAutoTDPActive = false;
+                autoTDPManager.Enabled.SetValue(profileManager.GlobalProfile.AutoTDPEnabled);
+                autoTDPManager.TargetFPS.SetValue(profileManager.GlobalProfile.AutoTDPTargetFPS);
+                autoTDPManager.MinTDP.SetValue(profileManager.GlobalProfile.AutoTDPMinTDP);
+                autoTDPManager.MaxTDP.SetValue(profileManager.GlobalProfile.AutoTDPMaxTDP);
+                autoTDPManager.PauseWhenUnfocused.SetValue(profileManager.GlobalProfile.AutoTDPPauseWhenUnfocused);
+            }
+
             performanceManager.TDP.SetProfileValue(profileManager.GlobalProfile.TDP);
             powerManager.CPUBoost.SetValue(profileManager.GlobalProfile.CPUBoost);
             powerManager.CPUEPP.SetValue(profileManager.GlobalProfile.CPUEPP);
@@ -413,6 +425,18 @@ namespace XboxGamingBarHelper
                                     Logger.Debug($"Per-game profile has no saved LegionPerformanceMode, already in Custom mode");
                                 }
                             }
+                        }
+
+                        // Restore AutoTDP settings before TDP so IsAutoTDPActive is cleared (or
+                        // re-armed on the manager's next tick) before the flat TDP value below.
+                        if (autoTDPManager != null)
+                        {
+                            performanceManager.IsAutoTDPActive = false;
+                            autoTDPManager.Enabled.SetValue(profileManager.CurrentProfile.AutoTDPEnabled);
+                            autoTDPManager.TargetFPS.SetValue(profileManager.CurrentProfile.AutoTDPTargetFPS);
+                            autoTDPManager.MinTDP.SetValue(profileManager.CurrentProfile.AutoTDPMinTDP);
+                            autoTDPManager.MaxTDP.SetValue(profileManager.CurrentProfile.AutoTDPMaxTDP);
+                            autoTDPManager.PauseWhenUnfocused.SetValue(profileManager.CurrentProfile.AutoTDPPauseWhenUnfocused);
                         }
 
                         // Use SetProfileValue to ensure profile TDP takes precedence over in-flight widget messages
@@ -585,6 +609,49 @@ namespace XboxGamingBarHelper
             RouteProfileSave(ProfileSaveFlagsState.TDP, "TDP",
                 cur => cur.TDP = performanceManager.TDP,
                 glo => glo.TDP = performanceManager.TDP);
+        }
+
+        /// <summary>
+        /// Saves AutoTDP setting changes to the active profile (per-game if one is in use, else
+        /// global) — same pattern as <see cref="LegionControllerSetting_PropertyChanged"/>. No
+        /// ProfileSaveFlags entry exists for AutoTDP; it always follows the active profile.
+        /// </summary>
+        private static void AutoTDPSetting_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (isApplyingProfile)
+            {
+                Logger.Debug("Skipping AutoTDPSetting_PropertyChanged - already applying profile");
+                return;
+            }
+
+            if (IsInProfileSwitchCooldown())
+            {
+                Logger.Debug("Skipping AutoTDPSetting_PropertyChanged - in profile switch cooldown");
+                return;
+            }
+
+            var profile = profileManager.CurrentProfile;
+
+            if (sender == autoTDPManager?.Enabled)
+            {
+                profile.AutoTDPEnabled = autoTDPManager.Enabled.Value;
+            }
+            else if (sender == autoTDPManager?.TargetFPS)
+            {
+                profile.AutoTDPTargetFPS = autoTDPManager.TargetFPS.Value;
+            }
+            else if (sender == autoTDPManager?.MinTDP)
+            {
+                profile.AutoTDPMinTDP = autoTDPManager.MinTDP.Value;
+            }
+            else if (sender == autoTDPManager?.MaxTDP)
+            {
+                profile.AutoTDPMaxTDP = autoTDPManager.MaxTDP.Value;
+            }
+            else if (sender == autoTDPManager?.PauseWhenUnfocused)
+            {
+                profile.AutoTDPPauseWhenUnfocused = autoTDPManager.PauseWhenUnfocused.Value;
+            }
         }
 
         private static void RunningGame_PropertyChanged(object sender, PropertyChangedEventArgs e)

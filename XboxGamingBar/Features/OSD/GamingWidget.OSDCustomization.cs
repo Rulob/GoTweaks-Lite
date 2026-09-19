@@ -75,9 +75,9 @@ namespace XboxGamingBar
         // Per-level item order (list of item IDs in display order)
         private Dictionary<int, List<string>> osdLevelOrder = new Dictionary<int, List<string>>
         {
-            { 1, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "FrametimeGraph" } },
-            { 2, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "FrametimeGraph" } },
-            { 3, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "FrametimeGraph" } }
+            { 1, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
+            { 2, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
+            { 3, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } }
         };
 
         // Per-level item label colors (DEFAULT = use global text color)
@@ -106,6 +106,7 @@ namespace XboxGamingBar
             { "FrameBudget", "Frame Budget (CPU/GPU bound %)" },
             { "Fan", "Fan Speed" },
             { "TDPLimits", "TDP Limits (SPL/SPPT/FPPT)" },
+            { "AutoTDP", "AutoTDP Status" },
             { "FrametimeGraph", "Frametime Graph" }
         };
 
@@ -514,7 +515,7 @@ namespace XboxGamingBar
             try
             {
                 var settings = ApplicationData.Current.LocalSettings;
-                var itemKeys = new[] { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "FrametimeGraph" };
+                var itemKeys = new[] { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" };
 
                 foreach (var level in new[] { 1, 2, 3 })
                 {

@@ -110,6 +110,7 @@ namespace XboxGamingBarHelper
         private static SettingsManager settingsManager;
         private static LegionManager legionManager;
         private static GPDManager gpdManager;
+        private static XboxGamingBarHelper.AutoTDP.AutoTDPManager autoTDPManager;
         private static ControllerEmulationManager controllerEmulationManager;
         private static XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager viiperEmulationManager;
         private static List<IManager> Managers;
@@ -1231,6 +1232,9 @@ namespace XboxGamingBarHelper
             // Initialize global hotkey manager (Ctrl+Shift+D to toggle Desktop Controls)
             InitializeHotkeyManager();
 
+            autoTDPManager = new XboxGamingBarHelper.AutoTDP.AutoTDPManager(performanceManager, systemManager);
+            rtssManager.SetAutoTDPManager(autoTDPManager);
+
             Managers = new List<IManager>
             {
                 performanceManager,
@@ -1243,7 +1247,8 @@ namespace XboxGamingBarHelper
                 settingsManager,
                 legionManager,
                 gpdManager,
-                controllerEmulationManager
+                controllerEmulationManager,
+                autoTDPManager
             };
 
             // Gate the per-tick LibreHardwareMonitor walk on whether anyone actually wants
@@ -1280,6 +1285,12 @@ namespace XboxGamingBarHelper
                 onScreenDisplay,
                 performanceManager.TDP,
                 performanceManager.CurrentTDP,
+                autoTDPManager.Enabled,
+                autoTDPManager.TargetFPS,
+                autoTDPManager.CurrentFPS,
+                autoTDPManager.MinTDP,
+                autoTDPManager.MaxTDP,
+                autoTDPManager.PauseWhenUnfocused,
                 profileManager.PerGameProfile,
                 profileManager.DeleteGameProfile,
                 powerManager.CPUBoost,
@@ -1632,6 +1643,13 @@ namespace XboxGamingBarHelper
                 legionManager.LegionLightSpeed.PropertyChanged += LegionControllerSetting_PropertyChanged;
                 legionManager.LegionPowerLight.PropertyChanged += LegionControllerSetting_PropertyChanged;
             }
+
+            // Subscribe to AutoTDP property changes to save to the active profile
+            autoTDPManager.Enabled.PropertyChanged += AutoTDPSetting_PropertyChanged;
+            autoTDPManager.TargetFPS.PropertyChanged += AutoTDPSetting_PropertyChanged;
+            autoTDPManager.MinTDP.PropertyChanged += AutoTDPSetting_PropertyChanged;
+            autoTDPManager.MaxTDP.PropertyChanged += AutoTDPSetting_PropertyChanged;
+            autoTDPManager.PauseWhenUnfocused.PropertyChanged += AutoTDPSetting_PropertyChanged;
 
 
             initTimer.Stop();

@@ -1298,6 +1298,89 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- AutoTDP Card (Legion only, shown in Custom mode). Continuously adjusts
+                             TDP to hit a target FPS instead of a fixed wattage. Takes over the
+                             Custom Power Limits sliders above while enabled. -->
+                        <Border x:Name="AutoTDPCard" Style="{StaticResource CardStyle}" Visibility="Collapsed">
+                            <StackPanel Spacing="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="AutoTDP" Style="{StaticResource CardTitleStyle}"/>
+                                        <TextBlock Text="Adjusts TDP live to hit a target FPS"
+                                                   Style="{StaticResource CardCaptionStyle}"/>
+                                    </StackPanel>
+                                    <ToggleSwitch x:Name="AutoTDPToggle"
+                                                  Grid.Column="1"
+                                                  Style="{StaticResource ModernToggleStyle}"
+                                                  Width="52"
+                                                  Toggled="AutoTDPToggle_Toggled"
+                                                  XYFocusUp="{x:Bind TDPModeComboBox}"/>
+                                </Grid>
+
+                                <StackPanel x:Name="AutoTDPSettingsPanel"
+                                            Spacing="10"
+                                            Visibility="{Binding ElementName=AutoTDPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <!-- Target FPS -->
+                                    <Grid>
+                                        <TextBlock Text="Target FPS" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="AutoTDPTargetFPSValue" Text="60 FPS" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <Slider x:Name="AutoTDPTargetFPSSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="30" Maximum="144"
+                                            StepFrequency="5" TickFrequency="15" TickPlacement="Outside" SnapsTo="StepValues"
+                                            Value="60"
+                                            ValueChanged="AutoTDPTargetFPSSlider_ValueChanged"
+                                            XYFocusUp="{x:Bind AutoTDPToggle}"/>
+
+                                    <!-- Live current FPS readout -->
+                                    <Grid>
+                                        <TextBlock Text="Current FPS" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="AutoTDPCurrentFPSValue" Text="-- FPS" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    </Grid>
+
+                                    <!-- Min TDP -->
+                                    <Grid>
+                                        <TextBlock Text="Min TDP" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="AutoTDPMinValue" Text="8W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <Slider x:Name="AutoTDPMinSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="4" Maximum="85" StepFrequency="1"
+                                            Value="8"
+                                            ValueChanged="AutoTDPMinSlider_ValueChanged"/>
+
+                                    <!-- Max TDP -->
+                                    <Grid>
+                                        <TextBlock Text="Max TDP" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="AutoTDPMaxValue" Text="30W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <Slider x:Name="AutoTDPMaxSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="4" Maximum="85" StepFrequency="1"
+                                            Value="30"
+                                            ValueChanged="AutoTDPMaxSlider_ValueChanged"/>
+
+                                    <!-- Pause when unfocused -->
+                                    <Grid>
+                                        <TextBlock Text="Pause when game not focused" FontSize="13" Foreground="#FFFFFF"
+                                                   VerticalAlignment="Center" TextWrapping="Wrap" Grid.Column="0"/>
+                                        <ToggleSwitch x:Name="AutoTDPPauseWhenUnfocusedToggle"
+                                                      Style="{StaticResource ModernToggleStyle}"
+                                                      Width="52"
+                                                      HorizontalAlignment="Right"
+                                                      IsOn="True"
+                                                      Toggled="AutoTDPPauseWhenUnfocusedToggle_Toggled"
+                                                      XYFocusDown="{x:Bind OSPowerModeComboBox}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- OS Power Mode Card -->
                         <Border Style="{StaticResource CardStyle}">
                             <StackPanel>

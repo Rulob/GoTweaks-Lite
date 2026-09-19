@@ -581,6 +581,12 @@ namespace XboxGamingBar
         private readonly OSDProperty osd;
         private readonly TDPProperty tdp;
         private readonly CurrentTDPProperty currentTdp;
+        private readonly XboxGamingBar.Data.AutoTDPEnabledProperty autoTDPEnabled;
+        private readonly XboxGamingBar.Data.AutoTDPTargetFPSProperty autoTDPTargetFPS;
+        private readonly XboxGamingBar.Data.AutoTDPCurrentFPSProperty autoTDPCurrentFPS;
+        private readonly XboxGamingBar.Data.AutoTDPMinTDPProperty autoTDPMinTDP;
+        private readonly XboxGamingBar.Data.AutoTDPMaxTDPProperty autoTDPMaxTDP;
+        private readonly XboxGamingBar.Data.AutoTDPPauseWhenUnfocusedProperty autoTDPPauseWhenUnfocused;
         private readonly RunningGameProperty runningGame;
         private readonly PerGameProfileProperty perGameProfile;
         private readonly DeleteGameProfileProperty deleteGameProfile;
@@ -1220,6 +1226,12 @@ namespace XboxGamingBar
             // drives a UI control. On Legion the Custom limits are owned by the boost sliders.
             tdp = new TDPProperty(4, null, this);
             currentTdp = new CurrentTDPProperty(CurrentTDPValueText, this);
+            autoTDPEnabled = new XboxGamingBar.Data.AutoTDPEnabledProperty(false);
+            autoTDPTargetFPS = new XboxGamingBar.Data.AutoTDPTargetFPSProperty(60);
+            autoTDPCurrentFPS = new XboxGamingBar.Data.AutoTDPCurrentFPSProperty(0);
+            autoTDPMinTDP = new XboxGamingBar.Data.AutoTDPMinTDPProperty(8);
+            autoTDPMaxTDP = new XboxGamingBar.Data.AutoTDPMaxTDPProperty(30);
+            autoTDPPauseWhenUnfocused = new XboxGamingBar.Data.AutoTDPPauseWhenUnfocusedProperty(true);
             osd = new OSDProperty(0, PerformanceOverlaySlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, DetectedGameText, this);
             // Callback fires after RunningGameProperty updates DetectedGameText.Text on the
@@ -1703,6 +1715,12 @@ namespace XboxGamingBar
                 losslessScalingResetProfile,
                 losslessScalingLS1Sharpness,
                 currentTdp,
+                autoTDPEnabled,
+                autoTDPTargetFPS,
+                autoTDPCurrentFPS,
+                autoTDPMinTDP,
+                autoTDPMaxTDP,
+                autoTDPPauseWhenUnfocused,
                 legionGoDetected,
                 legionTouchpadEnabled,
                 legionLightMode,
@@ -2024,6 +2042,12 @@ namespace XboxGamingBar
             {
                 resolution.PropertyChanged += QuickSettingsProperty_Changed;
                 resolution.PropertyChanged += Resolution_PropertyChanged_OSD;
+                autoTDPEnabled.PropertyChanged += AutoTDPEnabled_PropertyChanged;
+                autoTDPTargetFPS.PropertyChanged += AutoTDPTargetFPS_PropertyChanged;
+                autoTDPCurrentFPS.PropertyChanged += AutoTDPCurrentFPS_PropertyChanged;
+                autoTDPMinTDP.PropertyChanged += AutoTDPMinTDP_PropertyChanged;
+                autoTDPMaxTDP.PropertyChanged += AutoTDPMaxTDP_PropertyChanged;
+                autoTDPPauseWhenUnfocused.PropertyChanged += AutoTDPPauseWhenUnfocused_PropertyChanged;
             }
             if (hdrEnabled != null)
                 hdrEnabled.PropertyChanged += QuickSettingsProperty_Changed;

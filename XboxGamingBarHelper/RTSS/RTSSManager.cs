@@ -25,6 +25,7 @@ namespace XboxGamingBarHelper.RTSS
         private readonly OSDItem[] osdItems;
         private readonly OSDItemFan osdItemFan;
         private readonly OSDItemTDPLimits osdItemTDPLimits;
+        private readonly OSDItemAutoTDP osdItemAutoTDP;
         private readonly OSDItemCPU osdItemCPU;
         private readonly OSDItemGPU osdItemGPU;
         private readonly OSDItemVRAM osdItemVRAM;
@@ -126,9 +127,9 @@ namespace XboxGamingBarHelper.RTSS
         // Per-level item order
         private Dictionary<int, List<string>> osdLevelOrder = new Dictionary<int, List<string>>
         {
-            { 1, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "FrametimeGraph" } },
-            { 2, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "FrametimeGraph" } },
-            { 3, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "FrametimeGraph" } }
+            { 1, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
+            { 2, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
+            { 3, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } }
         };
 
         // Per-level, per-item label colors (e.g., osdItemLabelColors[1]["CPU"] = "FF0000")
@@ -149,6 +150,7 @@ namespace XboxGamingBarHelper.RTSS
             osdItemFan = new OSDItemFan();
             osdItemTDPLimits = new OSDItemTDPLimits();
             osdItemTDPLimits.SetPerformanceManager(performanceManager);
+            osdItemAutoTDP = new OSDItemAutoTDP();
             osdItemCPU = new OSDItemCPU(performanceManager.CPUUsage, performanceManager.CPUClock, performanceManager.CPUWattage, performanceManager.CPUTemperature);
             osdItemGPU = new OSDItemGPU(performanceManager.GPUUsage, performanceManager.GPUClock, performanceManager.GPUWattage, performanceManager.GPUTemperature);
             osdItemVRAM = new OSDItemVRAM(performanceManager.GPUMemoryUsed, performanceManager.GPUMemoryFree, performanceManager.GPUMemoryClock);
@@ -168,6 +170,7 @@ namespace XboxGamingBarHelper.RTSS
                 new OSDItemMemory(performanceManager.MemoryUsage, performanceManager.MemoryUsed, performanceManager.MemoryAvailable),
                 osdItemFan,
                 osdItemTDPLimits,
+                osdItemAutoTDP,
             };
 
             rtssState = RivatunerStatisticsServerState.NotInstalled;
@@ -422,6 +425,15 @@ namespace XboxGamingBarHelper.RTSS
             osdItemFan.SetLegionManager(legionManager);
             osdItemTDPLimits.SetLegionManager(legionManager);
             Logger.Info("LegionManager reference set for RTSS OSD fan speed and TDP limits");
+        }
+
+        /// <summary>
+        /// Sets the AutoTDP Manager reference so the AutoTDP OSD item can read live status.
+        /// Must be called after AutoTDPManager is initialized.
+        /// </summary>
+        public void SetAutoTDPManager(XboxGamingBarHelper.AutoTDP.AutoTDPManager autoTDPManager)
+        {
+            osdItemAutoTDP.SetAutoTDPManager(autoTDPManager);
         }
 
 

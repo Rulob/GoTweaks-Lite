@@ -165,6 +165,85 @@ namespace Shared.Data
             }
         }
 
+        // ========== AutoTDP ==========
+        // Automatic TDP controller: continuously adjusts TDP to hit a target FPS while in
+        // Custom TDP mode. See XboxGamingBarHelper.AutoTDP.AutoTDPManager.
+
+        [XmlElement("AutoTDPEnabled")]
+        private bool autoTDPEnabled;
+        public bool AutoTDPEnabled
+        {
+            get { return autoTDPEnabled; }
+            set
+            {
+                if (autoTDPEnabled != value)
+                {
+                    autoTDPEnabled = value;
+                    Save();
+                }
+            }
+        }
+
+        [XmlElement("AutoTDPTargetFPS")]
+        private int autoTDPTargetFPS;
+        public int AutoTDPTargetFPS
+        {
+            get { return autoTDPTargetFPS > 0 ? autoTDPTargetFPS : 60; }
+            set
+            {
+                if (autoTDPTargetFPS != value)
+                {
+                    autoTDPTargetFPS = value;
+                    Save();
+                }
+            }
+        }
+
+        [XmlElement("AutoTDPMinTDP")]
+        private int autoTDPMinTDP;
+        public int AutoTDPMinTDP
+        {
+            get { return autoTDPMinTDP > 0 ? autoTDPMinTDP : 8; }
+            set
+            {
+                if (autoTDPMinTDP != value)
+                {
+                    autoTDPMinTDP = value;
+                    Save();
+                }
+            }
+        }
+
+        [XmlElement("AutoTDPMaxTDP")]
+        private int autoTDPMaxTDP;
+        public int AutoTDPMaxTDP
+        {
+            get { return autoTDPMaxTDP > 0 ? autoTDPMaxTDP : 30; }
+            set
+            {
+                if (autoTDPMaxTDP != value)
+                {
+                    autoTDPMaxTDP = value;
+                    Save();
+                }
+            }
+        }
+
+        [XmlElement("AutoTDPPauseWhenUnfocused")]
+        private bool? autoTDPPauseWhenUnfocused;
+        public bool AutoTDPPauseWhenUnfocused
+        {
+            get { return autoTDPPauseWhenUnfocused ?? true; }
+            set
+            {
+                if (autoTDPPauseWhenUnfocused != value)
+                {
+                    autoTDPPauseWhenUnfocused = value;
+                    Save();
+                }
+            }
+        }
+
         // ========== DC (Battery) Overrides ==========
         // When null, the AC value (above) is used. When set, overrides for DC power.
 
@@ -1030,6 +1109,12 @@ namespace Shared.Data
             minCPUState = inMinCPUState;
             tdpFast = 0; // 0 = property getter falls back to TDP (SPL)
             tdpPeak = 0; // 0 = property getter falls back to TDP (SPL)
+            // AutoTDP (0 = property getter falls back to its default)
+            autoTDPEnabled = false;
+            autoTDPTargetFPS = 0;
+            autoTDPMinTDP = 0;
+            autoTDPMaxTDP = 0;
+            autoTDPPauseWhenUnfocused = null;
             // DC overrides (null = use AC value)
             tdpDC = null;
             cpuBoostDC = null;
