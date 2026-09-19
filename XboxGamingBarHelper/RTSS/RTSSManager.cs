@@ -75,24 +75,12 @@ namespace XboxGamingBarHelper.RTSS
         public float FrametimeMax => currentMaxFt;
         public float FrametimeVariance => currentMaxFt - currentMinFt;  // Max-Min variance in ms
 
-        // OSD configuration per level - stores which items are enabled
-        // Level 1 (Basic): Time, FPS, Battery - 3 columns
-        // Level 2 (Detailed): Time, FPS, Battery, CPU, GPU, Fan, FrametimeGraph - 1 column
-        // Level 3 (Full): All options - 1 column
-        private Dictionary<int, HashSet<string>> osdLevelConfig = new Dictionary<int, HashSet<string>>
-        {
-            { 1, new HashSet<string> { "Time", "FPS", "Battery" } },
-            { 2, new HashSet<string> { "Time", "FPS", "Battery", "CPU", "GPU", "FrameBudget", "Fan", "FrametimeGraph" } },
-            { 3, new HashSet<string> { "AppName", "Time", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "FrametimeGraph" } }
-        };
-        // Time12H (12-hour clock) defaults to off at every level - Time (24-hour) above
-        // stays the enabled default. Not added to the HashSets above for that reason.
-        private Dictionary<int, string> osdCustomTags = new Dictionary<int, string>
-        {
-            { 1, "" },
-            { 2, "" },
-            { 3, "" }
-        };
+        // OSD configuration for the single overlay layout - which items are enabled. This is
+        // just the fallback default before the widget connects and sends its actual config via
+        // ParseOSDConfig.
+        private HashSet<string> osdItemConfig = new HashSet<string> { "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time" };
+
+        private string osdCustomTags = "";
 
         // Layout settings
         private int osdTextSize = 100;        // Percentage: 50=Small, 100=Medium, 150=Large, 200=X-Large
@@ -116,29 +104,18 @@ namespace XboxGamingBarHelper.RTSS
         // Frametime graph pinned mode - always on its own row at the bottom, left-aligned
         private bool frametimeGraphPinned = false;
 
-        // Per-level columns (Basic=3, Detailed=1, Full=1)
-        private Dictionary<int, int> osdLevelColumns = new Dictionary<int, int>
+        // Overlay column count (items per row; 1 = vertical list)
+        private int osdColumns = 3;
+
+        // Overlay item order
+        private List<string> osdItemOrder = new List<string>
         {
-            { 1, 3 },  // Basic: 3 columns
-            { 2, 1 },  // Detailed: 1 column (vertical list)
-            { 3, 1 }   // Full: 1 column (vertical list)
+            "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time",
+            "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph"
         };
 
-        // Per-level item order
-        private Dictionary<int, List<string>> osdLevelOrder = new Dictionary<int, List<string>>
-        {
-            { 1, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
-            { 2, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
-            { 3, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } }
-        };
-
-        // Per-level, per-item label colors (e.g., osdItemLabelColors[1]["CPU"] = "FF0000")
-        private Dictionary<int, Dictionary<string, string>> osdItemLabelColors = new Dictionary<int, Dictionary<string, string>>
-        {
-            { 1, new Dictionary<string, string>() },
-            { 2, new Dictionary<string, string>() },
-            { 3, new Dictionary<string, string>() }
-        };
+        // Per-item label colors (e.g., osdItemLabelColors["CPU"] = "FF0000")
+        private Dictionary<string, string> osdItemLabelColors = new Dictionary<string, string>();
 
         public RTSSManager(PerformanceManager performanceManager) : base()
         {
@@ -240,81 +217,53 @@ namespace XboxGamingBarHelper.RTSS
                         frametimeGraphPinned = value == "1" || value.ToLower() == "true";
                         Logger.Debug($"OSD FrametimeGraphPinned: {frametimeGraphPinned}");
                     }
-                    else if (key.StartsWith("L") && key.EndsWith("_Columns"))
+                    else if (key == "Columns")
                     {
-                        // Per-level columns: L1_Columns, L2_Columns, L3_Columns
-                        var levelStr = key.Substring(1, key.Length - 9); // "L1_Columns" -> "1"
-                        if (int.TryParse(levelStr, out int level) && int.TryParse(value, out int cols))
+                        if (int.TryParse(value, out int cols))
                         {
-                            osdLevelColumns[level] = cols;
-                            Logger.Debug($"OSD Level {level} columns: {cols}");
+                            osdColumns = cols;
+                            Logger.Debug($"OSD columns: {cols}");
                         }
                     }
-                    else if (key.StartsWith("L") && key.EndsWith("_Custom"))
+                    else if (key == "Custom")
                     {
-                        // Custom tags: L1_Custom, L2_Custom, L3_Custom
-                        var levelStr = key.Substring(1, key.Length - 8);
-                        if (int.TryParse(levelStr, out int level))
+                        osdCustomTags = value;
+                        Logger.Debug($"OSD custom tags: {value}");
+                    }
+                    else if (key == "Order")
+                    {
+                        var orderList = value.Split(',').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+                        if (orderList.Count > 0)
                         {
-                            osdCustomTags[level] = value;
-                            Logger.Debug($"OSD Level {level} custom tags: {value}");
+                            osdItemOrder = orderList;
+                            Logger.Debug($"OSD order: {string.Join(", ", orderList)}");
                         }
                     }
-                    else if (key.StartsWith("L") && key.EndsWith("_Order"))
+                    else if (key.EndsWith("_Color"))
                     {
-                        // Order: L1_Order, L2_Order, L3_Order
-                        var levelStr = key.Substring(1, key.Length - 7); // "L1_Order" -> "1"
-                        if (int.TryParse(levelStr, out int level))
+                        // Item label color: CPU_Color, FPS_Color, etc.
+                        var itemId = key.Substring(0, key.Length - "_Color".Length);
+                        if (!string.IsNullOrEmpty(itemId))
                         {
-                            var orderList = value.Split(',').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-                            if (orderList.Count > 0)
+                            osdItemLabelColors[itemId] = value;
+                            Logger.Debug($"OSD item '{itemId}' label color: {value}");
+                        }
+                    }
+                    else if (key == "Items")
+                    {
+                        var items = new HashSet<string>();
+                        if (!string.IsNullOrEmpty(value))
+                        {
+                            foreach (var item in value.Split(','))
                             {
-                                osdLevelOrder[level] = orderList;
-                                Logger.Debug($"OSD Level {level} order: {string.Join(", ", orderList)}");
-                            }
-                        }
-                    }
-                    else if (key.StartsWith("L") && key.Contains("_") && key.EndsWith("_Color"))
-                    {
-                        // Item label color: L1_CPU_Color, L2_FPS_Color, etc.
-                        // Format: L{level}_{itemId}_Color
-                        var underscoreIdx = key.IndexOf('_');
-                        var lastUnderscoreIdx = key.LastIndexOf('_');
-                        if (underscoreIdx > 1 && lastUnderscoreIdx > underscoreIdx)
-                        {
-                            var levelStr = key.Substring(1, underscoreIdx - 1);
-                            var itemId = key.Substring(underscoreIdx + 1, lastUnderscoreIdx - underscoreIdx - 1);
-                            if (int.TryParse(levelStr, out int level) && !string.IsNullOrEmpty(itemId))
-                            {
-                                if (!osdItemLabelColors.ContainsKey(level))
+                                if (!string.IsNullOrWhiteSpace(item))
                                 {
-                                    osdItemLabelColors[level] = new Dictionary<string, string>();
-                                }
-                                osdItemLabelColors[level][itemId] = value;
-                                Logger.Debug($"OSD Level {level} item '{itemId}' label color: {value}");
-                            }
-                        }
-                    }
-                    else if (key.StartsWith("L"))
-                    {
-                        // Level config: L1, L2, L3
-                        var levelStr = key.Substring(1);
-                        if (int.TryParse(levelStr, out int level))
-                        {
-                            var items = new HashSet<string>();
-                            if (!string.IsNullOrEmpty(value))
-                            {
-                                foreach (var item in value.Split(','))
-                                {
-                                    if (!string.IsNullOrWhiteSpace(item))
-                                    {
-                                        items.Add(item.Trim());
-                                    }
+                                    items.Add(item.Trim());
                                 }
                             }
-                            osdLevelConfig[level] = items;
-                            Logger.Debug($"OSD Level {level} items: {string.Join(", ", items)}");
                         }
+                        osdItemConfig = items;
+                        Logger.Debug($"OSD items: {string.Join(", ", items)}");
                     }
                 }
 
@@ -405,15 +354,11 @@ namespace XboxGamingBarHelper.RTSS
         }
 
         /// <summary>
-        /// Checks if the given OSD item should be shown for the current level.
+        /// Checks if the given OSD item is enabled in the overlay layout.
         /// </summary>
         private bool IsItemEnabled(string itemId)
         {
-            if (osdLevelConfig.TryGetValue(onScreenDisplayLevel, out var enabledItems))
-            {
-                return enabledItems.Contains(itemId);
-            }
-            return false;
+            return osdItemConfig.Contains(itemId);
         }
 
         /// <summary>
@@ -660,12 +605,11 @@ namespace XboxGamingBarHelper.RTSS
             // Collect all enabled items in custom order
             var enabledItems = new List<string>();
 
-            // Get the order for current level (fall back to level 1 if not found)
-            var order = osdLevelOrder.TryGetValue(onScreenDisplayLevel, out var levelOrder) ? levelOrder : osdLevelOrder[1];
+            var order = osdItemOrder;
 
             foreach (var itemId in order)
             {
-                // Check if this item is enabled for the current level
+                // Check if this item is enabled
                 if (!IsItemEnabled(itemId))
                     continue;
 
@@ -705,18 +649,14 @@ namespace XboxGamingBarHelper.RTSS
                 enabledItems.Add(osdItemString);
             }
 
-            // Add custom tags if configured for this level
-            if (osdCustomTags.TryGetValue(onScreenDisplayLevel, out var customTags) && !string.IsNullOrWhiteSpace(customTags))
+            // Add custom tags if configured
+            if (!string.IsNullOrWhiteSpace(osdCustomTags))
             {
-                enabledItems.Add(customTags);
+                enabledItems.Add(osdCustomTags);
             }
 
-            // Build output with columns - use per-level setting
-            int itemsPerRow = 3; // Fallback default
-            if (osdLevelColumns.TryGetValue(onScreenDisplayLevel, out int levelColumns) && levelColumns > 0)
-            {
-                itemsPerRow = levelColumns;
-            }
+            // Build output with columns
+            int itemsPerRow = osdColumns > 0 ? osdColumns : 3; // Fallback default
             for (int i = 0; i < enabledItems.Count; i++)
             {
                 if (i > 0)

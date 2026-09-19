@@ -43,57 +43,37 @@ namespace XboxGamingBar
 {
     public sealed partial class GamingWidget
     {
-        // OSD configuration per level - stores which items are enabled
-        // Level 1 (Basic): FPS, Battery, Time - 3 columns
-        // Level 2 (Detailed): Time, FPS, Battery, CPU, GPU, Fan - 1 column
-        // Level 3 (Full): All options - 1 column
-        private Dictionary<int, Dictionary<string, bool>> osdLevelConfig = new Dictionary<int, Dictionary<string, bool>>
+        // OSD configuration for the single overlay layout - which items are enabled.
+        // Default: FPS, CPU, GPU, RAM, VRAM, Battery, Time (24h). Everything else stays
+        // available below but off until the user turns it on.
+        private Dictionary<string, bool> osdItemConfig = new Dictionary<string, bool>
         {
-            { 1, new Dictionary<string, bool> { { "AppName", false }, { "Time", true }, { "Time12H", false }, { "FPS", true }, { "Battery", true }, { "ControllerBattery", false }, { "Memory", false }, { "VRAM", false }, { "CPU", false }, { "CPUClock", false }, { "GPU", false }, { "GPUClock", false }, { "FrameBudget", false }, { "Fan", false }, { "FrametimeGraph", false } } },
-            { 2, new Dictionary<string, bool> { { "AppName", false }, { "Time", true }, { "Time12H", false }, { "FPS", true }, { "Battery", true }, { "ControllerBattery", false }, { "Memory", false }, { "VRAM", false }, { "CPU", true }, { "CPUClock", false }, { "GPU", true }, { "GPUClock", false }, { "FrameBudget", true }, { "Fan", true }, { "FrametimeGraph", true } } },
-            { 3, new Dictionary<string, bool> { { "AppName", true }, { "Time", true }, { "Time12H", false }, { "FPS", true }, { "Battery", true }, { "ControllerBattery", true }, { "Memory", true }, { "VRAM", true }, { "CPU", true }, { "CPUClock", true }, { "GPU", true }, { "GPUClock", true }, { "FrameBudget", true }, { "Fan", true }, { "FrametimeGraph", true } } }
+            { "FPS", true }, { "CPU", true }, { "GPU", true }, { "Memory", true }, { "VRAM", true },
+            { "Battery", true }, { "Time", true },
+            { "ControllerBattery", false }, { "CPUClock", false }, { "GPUClock", false },
+            { "FrameBudget", false }, { "Fan", false }, { "TDPLimits", false }, { "AutoTDP", false },
+            { "FrametimeGraph", false }
         };
 
-        private Dictionary<int, string> osdCustomTags = new Dictionary<int, string>
+        private string osdCustomTags = "";
+
+        // Overlay column count (items per row; 1 = vertical list)
+        private int osdColumns = 3;
+
+        // Overlay item order (list of item IDs in display order)
+        private List<string> osdItemOrder = new List<string>
         {
-            { 1, "" },
-            { 2, "" },
-            { 3, "" }
+            "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time",
+            "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph"
         };
 
-        // Per-level column settings (Basic=3, Detailed=1, Full=1)
-        private Dictionary<int, int> osdLevelColumns = new Dictionary<int, int>
-        {
-            { 1, 3 },  // Basic: 3 columns
-            { 2, 1 },  // Detailed: 1 column
-            { 3, 1 }   // Full: 1 column
-        };
-
-        // Current OSD customization level (1=Basic, 2=Detailed, 3=Full)
-        private int osdCustomizeLevel = 1;
-
-        // Per-level item order (list of item IDs in display order)
-        private Dictionary<int, List<string>> osdLevelOrder = new Dictionary<int, List<string>>
-        {
-            { 1, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
-            { 2, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } },
-            { 3, new List<string> { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" } }
-        };
-
-        // Per-level item label colors (DEFAULT = use global text color)
-        private Dictionary<int, Dictionary<string, string>> osdItemLabelColors = new Dictionary<int, Dictionary<string, string>>
-        {
-            { 1, new Dictionary<string, string>() },
-            { 2, new Dictionary<string, string>() },
-            { 3, new Dictionary<string, string>() }
-        };
+        // Per-item label colors (DEFAULT = use global text color)
+        private Dictionary<string, string> osdItemLabelColors = new Dictionary<string, string>();
 
         // Item display names for UI
         private static readonly Dictionary<string, string> osdItemDisplayNames = new Dictionary<string, string>
         {
-            { "AppName", "App Name (D3D11, Vulkan, etc.)" },
             { "Time", "Time (24-hour)" },
-            { "Time12H", "Time (12-hour)" },
             { "FPS", "FPS & Frametime" },
             { "Battery", "Battery" },
             { "ControllerBattery", "Controller Battery (L/R)" },
@@ -176,21 +156,6 @@ namespace XboxGamingBar
 
 
         private bool isLoadingOSDConfig = false;
-
-        private void OSDCustomizeLevelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Don't process during initialization - LoadOSDConfigFromStorage will handle it
-            if (isLoadingOSDConfig) return;
-
-            if (OSDCustomizeLevelComboBox?.SelectedItem is ComboBoxItem selected && selected.Tag is string tagStr)
-            {
-                if (int.TryParse(tagStr, out int level))
-                {
-                    LoadOSDOptionsForLevel(level);
-                    // Note: This is only for RTSS customization - AMD overlay doesn't have configurable levels
-                }
-            }
-        }
 
         private void OSDProviderComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -308,28 +273,21 @@ namespace XboxGamingBar
             }
         }
 
-        private void LoadOSDOptionsForLevel(int level)
+        private void LoadOSDOptions()
         {
-            if (!osdLevelConfig.ContainsKey(level)) return;
-
             isLoadingOSDConfig = true;
             try
             {
-                // Update the current level
-                osdCustomizeLevel = level;
-
-                // Refresh the OSD items control with current level's order and states
+                // Refresh the OSD items control with the current order and enabled states
                 RefreshOSDItemsControl();
 
-                if (OSDCustomTagsTextBox != null) OSDCustomTagsTextBox.Text = osdCustomTags.GetValueOrDefault(level, "");
+                if (OSDCustomTagsTextBox != null) OSDCustomTagsTextBox.Text = osdCustomTags;
 
-                // Load columns for this level
-                int columns = osdLevelColumns.GetValueOrDefault(level, 3);
                 if (OSDColumnsComboBox != null)
                 {
                     foreach (ComboBoxItem item in OSDColumnsComboBox.Items)
                     {
-                        if (item.Tag is string tag && int.TryParse(tag, out int val) && val == columns)
+                        if (item.Tag is string tag && int.TryParse(tag, out int val) && val == osdColumns)
                         {
                             OSDColumnsComboBox.SelectedItem = item;
                             break;
@@ -344,24 +302,17 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Refreshes the OSD items control with the current level's order and enabled states
+        /// Refreshes the OSD items control with the current order and enabled states
         /// </summary>
         private void RefreshOSDItemsControl()
         {
             if (OSDItemsControl == null) return;
 
-            int currentLevel = osdCustomizeLevel;
-            if (!osdLevelOrder.ContainsKey(currentLevel)) return;
-
-            var order = osdLevelOrder[currentLevel];
-            if (!osdLevelConfig.ContainsKey(currentLevel))
-            {
-                osdLevelConfig[currentLevel] = new Dictionary<string, bool>();
-            }
-            var config = osdLevelConfig[currentLevel];
+            var order = osdItemOrder;
+            var config = osdItemConfig;
 
             osdItemViewModels.Clear();
-            var labelColors = osdItemLabelColors.ContainsKey(currentLevel) ? osdItemLabelColors[currentLevel] : new Dictionary<string, string>();
+            var labelColors = osdItemLabelColors;
             for (int i = 0; i < order.Count; i++)
             {
                 var id = order[i];
@@ -385,12 +336,7 @@ namespace XboxGamingBar
 
             if (sender is CheckBox cb && cb.Tag is string itemId)
             {
-                int currentLevel = osdCustomizeLevel;
-                if (!osdLevelConfig.ContainsKey(currentLevel))
-                {
-                    osdLevelConfig[currentLevel] = new Dictionary<string, bool>();
-                }
-                osdLevelConfig[currentLevel][itemId] = cb.IsChecked == true;
+                osdItemConfig[itemId] = cb.IsChecked == true;
 
                 SaveOSDConfigToStorage();
                 SendOSDConfigToHelper();
@@ -401,8 +347,7 @@ namespace XboxGamingBar
         {
             if (sender is Button btn && btn.Tag is string itemId)
             {
-                int currentLevel = osdCustomizeLevel;
-                var order = osdLevelOrder[currentLevel];
+                var order = osdItemOrder;
                 int index = order.IndexOf(itemId);
                 if (index > 0)
                 {
@@ -419,8 +364,7 @@ namespace XboxGamingBar
         {
             if (sender is Button btn && btn.Tag is string itemId)
             {
-                int currentLevel = osdCustomizeLevel;
-                var order = osdLevelOrder[currentLevel];
+                var order = osdItemOrder;
                 int index = order.IndexOf(itemId);
                 if (index >= 0 && index < order.Count - 1)
                 {
@@ -442,19 +386,16 @@ namespace XboxGamingBar
 
         private void SaveCurrentOSDConfig()
         {
-            int level = osdCustomizeLevel;
-
-            // Item enabled states are already in osdLevelConfig (updated by OSDItemCheckBox_Changed)
+            // Item enabled states are already in osdItemConfig (updated by OSDItemCheckBox_Changed)
             // Just save custom tags and columns here
 
-            osdCustomTags[level] = OSDCustomTagsTextBox?.Text ?? "";
+            osdCustomTags = OSDCustomTagsTextBox?.Text ?? "";
 
-            // Save columns for this level
             if (OSDColumnsComboBox?.SelectedItem is ComboBoxItem colItem && colItem.Tag is string colTag)
             {
                 if (int.TryParse(colTag, out int cols))
                 {
-                    osdLevelColumns[level] = cols;
+                    osdColumns = cols;
                 }
             }
 
@@ -468,30 +409,17 @@ namespace XboxGamingBar
             {
                 var settings = ApplicationData.Current.LocalSettings;
 
-                foreach (var level in osdLevelConfig.Keys)
+                foreach (var item in osdItemConfig)
                 {
-                    var config = osdLevelConfig[level];
-                    foreach (var item in config)
-                    {
-                        settings.Values[$"OSD_L{level}_{item.Key}"] = item.Value;
-                    }
-                    settings.Values[$"OSD_L{level}_CustomTags"] = osdCustomTags.GetValueOrDefault(level, "");
-                    settings.Values[$"OSD_L{level}_Columns"] = osdLevelColumns.GetValueOrDefault(level, 3);
+                    settings.Values[$"OSD_{item.Key}"] = item.Value;
+                }
+                settings.Values["OSD_CustomTags"] = osdCustomTags;
+                settings.Values["OSD_Columns"] = osdColumns;
+                settings.Values["OSD_Order"] = string.Join(",", osdItemOrder);
 
-                    // Save item order
-                    if (osdLevelOrder.ContainsKey(level))
-                    {
-                        settings.Values[$"OSD_L{level}_Order"] = string.Join(",", osdLevelOrder[level]);
-                    }
-
-                    // Save item label colors
-                    if (osdItemLabelColors.ContainsKey(level))
-                    {
-                        foreach (var colorItem in osdItemLabelColors[level])
-                        {
-                            settings.Values[$"OSD_L{level}_{colorItem.Key}_Color"] = colorItem.Value;
-                        }
-                    }
+                foreach (var colorItem in osdItemLabelColors)
+                {
+                    settings.Values[$"OSD_{colorItem.Key}_Color"] = colorItem.Value;
                 }
 
                 // Save global layout settings (text size is per-resolution)
@@ -515,60 +443,44 @@ namespace XboxGamingBar
             try
             {
                 var settings = ApplicationData.Current.LocalSettings;
-                var itemKeys = new[] { "AppName", "Time", "Time12H", "FPS", "Battery", "ControllerBattery", "Memory", "VRAM", "CPU", "CPUClock", "GPU", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" };
+                var itemKeys = new[] { "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time", "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" };
 
-                foreach (var level in new[] { 1, 2, 3 })
+                foreach (var key in itemKeys)
                 {
-                    if (!osdLevelConfig.ContainsKey(level))
+                    string settingKey = $"OSD_{key}";
+                    if (settings.Values.TryGetValue(settingKey, out object val) && val is bool enabled)
                     {
-                        osdLevelConfig[level] = new Dictionary<string, bool>();
+                        osdItemConfig[key] = enabled;
                     }
+                }
 
-                    foreach (var key in itemKeys)
-                    {
-                        string settingKey = $"OSD_L{level}_{key}";
-                        if (settings.Values.TryGetValue(settingKey, out object val) && val is bool enabled)
-                        {
-                            osdLevelConfig[level][key] = enabled;
-                        }
-                    }
+                if (settings.Values.TryGetValue("OSD_CustomTags", out object tagsVal) && tagsVal is string tags)
+                {
+                    osdCustomTags = tags;
+                }
 
-                    string customTagsKey = $"OSD_L{level}_CustomTags";
-                    if (settings.Values.TryGetValue(customTagsKey, out object tagsVal) && tagsVal is string tags)
-                    {
-                        osdCustomTags[level] = tags;
-                    }
+                if (settings.Values.TryGetValue("OSD_Columns", out object colsVal) && colsVal is int cols)
+                {
+                    osdColumns = cols;
+                }
 
-                    // Load per-level columns
-                    string columnsKey = $"OSD_L{level}_Columns";
-                    if (settings.Values.TryGetValue(columnsKey, out object colsVal) && colsVal is int levelCols)
+                if (settings.Values.TryGetValue("OSD_Order", out object orderVal) && orderVal is string orderStr)
+                {
+                    var orderList = orderStr.Split(',').Where(s => !string.IsNullOrWhiteSpace(s) && itemKeys.Contains(s)).ToList();
+                    // Only trust a saved order if it accounts for every current item - an order
+                    // saved before an item was added/removed would silently drop it otherwise.
+                    if (orderList.Count == itemKeys.Length)
                     {
-                        osdLevelColumns[level] = levelCols;
+                        osdItemOrder = orderList;
                     }
+                }
 
-                    // Load per-level order
-                    string orderKey = $"OSD_L{level}_Order";
-                    if (settings.Values.TryGetValue(orderKey, out object orderVal) && orderVal is string orderStr)
+                foreach (var key in itemKeys)
+                {
+                    string colorKey = $"OSD_{key}_Color";
+                    if (settings.Values.TryGetValue(colorKey, out object colorVal) && colorVal is string color)
                     {
-                        var orderList = orderStr.Split(',').Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
-                        if (orderList.Count == itemKeys.Length)
-                        {
-                            osdLevelOrder[level] = orderList;
-                        }
-                    }
-
-                    // Load per-level item label colors
-                    if (!osdItemLabelColors.ContainsKey(level))
-                    {
-                        osdItemLabelColors[level] = new Dictionary<string, string>();
-                    }
-                    foreach (var key in itemKeys)
-                    {
-                        string colorKey = $"OSD_L{level}_{key}_Color";
-                        if (settings.Values.TryGetValue(colorKey, out object colorVal) && colorVal is string color)
-                        {
-                            osdItemLabelColors[level][key] = color;
-                        }
+                        osdItemLabelColors[key] = color;
                     }
                 }
 
@@ -615,6 +527,7 @@ namespace XboxGamingBar
 
                 // Update layout UI
                 UpdateOSDLayoutUI();
+                LoadOSDOptions();
 
                 Logger.Info("OSD configuration loaded from storage");
             }
@@ -640,45 +553,30 @@ namespace XboxGamingBar
                 configParts.Add($"Opacity:{osdOpacity}");
                 configParts.Add($"FrametimeGraphPinned:{(frametimeGraphPinned ? "1" : "0")}");
 
-                // Add per-level item configuration
-                foreach (var level in osdLevelConfig.Keys)
+                // Add item configuration
+                var enabledItems = new List<string>();
+                foreach (var item in osdItemConfig)
                 {
-                    var config = osdLevelConfig[level];
-                    var enabledItems = new List<string>();
-                    foreach (var item in config)
+                    if (item.Value)
                     {
-                        if (item.Value)
-                        {
-                            enabledItems.Add(item.Key);
-                        }
+                        enabledItems.Add(item.Key);
                     }
-                    configParts.Add($"L{level}:{string.Join(",", enabledItems)}");
+                }
+                configParts.Add($"Items:{string.Join(",", enabledItems)}");
 
-                    if (!string.IsNullOrWhiteSpace(osdCustomTags.GetValueOrDefault(level, "")))
+                if (!string.IsNullOrWhiteSpace(osdCustomTags))
+                {
+                    configParts.Add($"Custom:{osdCustomTags}");
+                }
+
+                configParts.Add($"Columns:{osdColumns}");
+                configParts.Add($"Order:{string.Join(",", osdItemOrder)}");
+
+                foreach (var colorItem in osdItemLabelColors)
+                {
+                    if (!string.IsNullOrEmpty(colorItem.Value) && colorItem.Value != "DEFAULT")
                     {
-                        configParts.Add($"L{level}_Custom:{osdCustomTags[level]}");
-                    }
-
-                    // Add per-level columns
-                    configParts.Add($"L{level}_Columns:{osdLevelColumns.GetValueOrDefault(level, 3)}");
-
-                    // Add per-level order
-                    if (osdLevelOrder.ContainsKey(level))
-                    {
-                        configParts.Add($"L{level}_Order:{string.Join(",", osdLevelOrder[level])}");
-                    }
-
-                    // Add per-level item label colors
-                    if (osdItemLabelColors.ContainsKey(level))
-                    {
-                        var colors = osdItemLabelColors[level];
-                        foreach (var colorItem in colors)
-                        {
-                            if (!string.IsNullOrEmpty(colorItem.Value) && colorItem.Value != "DEFAULT")
-                            {
-                                configParts.Add($"L{level}_{colorItem.Key}_Color:{colorItem.Value}");
-                            }
-                        }
+                        configParts.Add($"{colorItem.Key}_Color:{colorItem.Value}");
                     }
                 }
 
@@ -1054,7 +952,7 @@ namespace XboxGamingBar
                 }
             }
 
-            // Columns are per-level, handled by SaveCurrentOSDConfig
+            // Columns are handled by SaveCurrentOSDConfig
             SaveCurrentOSDConfig();
         }
 
@@ -1290,7 +1188,7 @@ namespace XboxGamingBar
                 // Update provider-specific UI visibility
                 UpdateOSDProviderUI();
 
-                // Columns are per-level, loaded in LoadOSDOptionsForLevel
+                // Columns are loaded in LoadOSDOptions
 
                 // Set text size combobox
                 if (OSDTextSizeComboBox != null)

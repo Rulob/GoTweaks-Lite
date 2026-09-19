@@ -488,19 +488,11 @@ namespace XboxGamingBar
                     else // RTSS
                     {
                         int level = (int)(osd?.Value ?? 0);
-                        string levelText;
-                        switch (level)
-                        {
-                            case 0: levelText = "Off"; break;
-                            case 1: levelText = "Basic"; break;
-                            case 2: levelText = "Detailed"; break;
-                            case 3: levelText = "Full"; break;
-                            default: levelText = "Off"; break;
-                        }
-                        overlayTile.StateText.Text = levelText;
-                        overlayTile.StateText.Foreground = level > 0 ? accentForeground : offForeground;
-                        SetTileAccentBar(overlayTile, level > 0);
-                        overlayTile.TileButton.Background = level > 0 ? tileOnBrush : tileOffBrush;
+                        bool isOn = level > 0;
+                        overlayTile.StateText.Text = isOn ? "On" : "Off";
+                        overlayTile.StateText.Foreground = isOn ? accentForeground : offForeground;
+                        SetTileAccentBar(overlayTile, isOn);
+                        overlayTile.TileButton.Background = isOn ? tileOnBrush : tileOffBrush;
                     }
                 }
 

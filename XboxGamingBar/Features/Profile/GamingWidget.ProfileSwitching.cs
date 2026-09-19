@@ -271,9 +271,9 @@ namespace XboxGamingBar
                 profile.RefreshRate = refreshRate?.Value;
             }
             // Overlay Level
-            if (SaveOverlayLevel && PerformanceOverlayComboBox != null)
+            if (SaveOverlayLevel && PerformanceOverlayToggle != null)
             {
-                profile.OverlayLevel = PerformanceOverlayComboBox.SelectedIndex;
+                profile.OverlayLevel = PerformanceOverlayToggle.IsOn ? 1 : 0;
             }
 
             // Persist to storage
@@ -769,14 +769,21 @@ namespace XboxGamingBar
                 }
 
                 // Overlay Level
-                if (SaveOverlayLevel && PerformanceOverlayComboBox != null)
+                if (SaveOverlayLevel && PerformanceOverlayToggle != null)
                 {
-                    int level = profile.OverlayLevel;
-                    if (level >= 0 && level < PerformanceOverlayComboBox.Items.Count)
+                    bool isOn = profile.OverlayLevel > 0;
+                    isApplyingHelperUpdate = true;
+                    try
                     {
-                        PerformanceOverlayComboBox.SelectedIndex = level;
-                        // The SelectionChanged handler will update PerformanceOverlaySlider and send to system
+                        PerformanceOverlayToggle.IsOn = isOn;
                     }
+                    finally
+                    {
+                        isApplyingHelperUpdate = false;
+                    }
+                    // Toggled is suppressed above (this is a profile-driven value, not a user
+                    // click) - push it to the helper directly instead, same as PerformanceOverlayToggle_Toggled would.
+                    osd?.SetValue(isOn ? 1 : 0);
                 }
 
                 // Update profile display to show correct TDP mode in Profiles tab

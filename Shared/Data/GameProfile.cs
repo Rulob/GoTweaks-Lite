@@ -468,7 +468,8 @@ namespace Shared.Data
         }
 
         /// <summary>
-        /// Performance overlay level (0=Off, 1=Basic, 2=Detailed, 3=Full for RTSS; 1-4 for AMD)
+        /// Performance overlay state: 0=Off, 1=On for RTSS (a single configurable layout, no more
+        /// levels); AMD's separate overlay still uses 0=Off, 1-4=its own level 1-4.
         /// </summary>
         [XmlElement("OverlayLevel")]
         private int? overlayLevel;

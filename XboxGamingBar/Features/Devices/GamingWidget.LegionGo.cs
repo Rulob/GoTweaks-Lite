@@ -1103,10 +1103,10 @@ namespace XboxGamingBar
         {
             // Master TDP slider removed: PerformanceOverlay -> TDPMode dropdown. From the dropdown the
             // focus continues to the Custom sliders (when visible) or OSPowerMode, wired in XAML.
-            if (PerformanceOverlayComboBox != null && TDPModeComboBox != null)
+            if (PerformanceOverlayToggle != null && TDPModeComboBox != null)
             {
-                PerformanceOverlayComboBox.XYFocusDown = TDPModeComboBox;
-                TDPModeComboBox.XYFocusUp = PerformanceOverlayComboBox;
+                PerformanceOverlayToggle.XYFocusDown = TDPModeComboBox;
+                TDPModeComboBox.XYFocusUp = PerformanceOverlayToggle;
             }
         }
 
@@ -1117,7 +1117,7 @@ namespace XboxGamingBar
         private void UpdatePerformanceTabXYNavigation()
         {
             // Early exit if UI elements aren't ready
-            if (PerformanceNavItem == null || PerformanceOverlayComboBox == null) return;
+            if (PerformanceNavItem == null || PerformanceOverlayToggle == null) return;
 
             bool gameDetected = runningGame?.Value.IsValid() == true;
 
@@ -1128,14 +1128,14 @@ namespace XboxGamingBar
                 // Game detected: Nav -> PerGameProfile Toggle -> Overlay
                 PerformanceNavItem.XYFocusDown = PerGameProfileToggle;
                 PerGameProfileToggle.XYFocusUp = PerformanceNavItem;
-                PerGameProfileToggle.XYFocusDown = PerformanceOverlayComboBox;
-                PerformanceOverlayComboBox.XYFocusUp = PerGameProfileToggle;
+                PerGameProfileToggle.XYFocusDown = PerformanceOverlayToggle;
+                PerformanceOverlayToggle.XYFocusUp = PerGameProfileToggle;
             }
             else
             {
                 // No game: Nav -> Overlay (skip disabled PerGameProfile)
-                PerformanceNavItem.XYFocusDown = PerformanceOverlayComboBox;
-                PerformanceOverlayComboBox.XYFocusUp = PerformanceNavItem;
+                PerformanceNavItem.XYFocusDown = PerformanceOverlayToggle;
+                PerformanceOverlayToggle.XYFocusUp = PerformanceNavItem;
             }
         }
 

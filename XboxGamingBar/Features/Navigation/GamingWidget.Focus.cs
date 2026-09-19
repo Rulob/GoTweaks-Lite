@@ -71,8 +71,8 @@ namespace XboxGamingBar
             PerGameProfileToggle.LostFocus += Control_LostFocus;
 
             // Performance tab - Performance Overlay card
-            PerformanceOverlayComboBox.GotFocus += Control_GotFocus;
-            PerformanceOverlayComboBox.LostFocus += Control_LostFocus;
+            PerformanceOverlayToggle.GotFocus += Control_GotFocus;
+            PerformanceOverlayToggle.LostFocus += Control_LostFocus;
 
             // Performance tab - TDP Mode card (Legion only)
             TDPModeComboBox.GotFocus += Control_GotFocus;

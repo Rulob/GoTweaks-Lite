@@ -2003,9 +2003,8 @@ namespace XboxGamingBar
             // Initialize Quick Settings tiles (loads custom shortcuts into qsTileMap)
             InitializeQuickSettings();
 
-            // Load OSD customization settings
+            // Load OSD customization settings (also populates the single overlay layout's checklist)
             LoadOSDConfigFromStorage();
-            LoadOSDOptionsForLevel(1); // Load Basic level options by default
 
             // Load Display and OSD settings
             LoadDisplayOSDSettingsFromStorage();

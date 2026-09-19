@@ -34,6 +34,7 @@ namespace XboxGamingBarHelper.PresentMon
         private long _appSampleCount;
 
         private long _lastUpdateTicksUtc;
+        private long _lastFlushTicksUtc;
 
         // Last computed 1 s rates / averages exposed to consumers.
         private volatile int _appFps;
@@ -91,9 +92,21 @@ namespace XboxGamingBarHelper.PresentMon
         /// Drain the per-second counters into the public fields and reset. Called by the
         /// runner at ~1 Hz from its own timer so the public values are stable for that
         /// window (OSD reads see a steady number for the second).
+        ///
+        /// The timer's nominal period is 1000ms, but .NET thread-pool timers don't fire at an
+        /// exact interval — under CPU load (i.e. during actual gameplay, exactly when this
+        /// matters) a tick can land meaningfully early or late. Treating the raw frame count as
+        /// already being "per second" turns that timing jitter directly into FPS jitter, so we
+        /// divide by the actual elapsed time instead of assuming a perfect 1.0s window.
         /// </summary>
         public void FlushPerSecond()
         {
+            long nowTicks = DateTime.UtcNow.Ticks;
+            long prevFlushTicks = Interlocked.Exchange(ref _lastFlushTicksUtc, nowTicks);
+            double elapsedSeconds = prevFlushTicks > 0
+                ? (nowTicks - prevFlushTicks) / (double)TimeSpan.TicksPerSecond
+                : 1.0; // first flush after start/reset: nothing to measure against yet
+
             int app = (int)Interlocked.Exchange(ref _appFrameCount, 0);
             int afmf = (int)Interlocked.Exchange(ref _afmfFrameCount, 0);
             int disp = (int)Interlocked.Exchange(ref _displayedFrameCount, 0);
@@ -102,9 +115,9 @@ namespace XboxGamingBarHelper.PresentMon
             double sumGpu = Interlocked.Exchange(ref _sumGpuBusyMs, 0);
             double sumPresentApp = Interlocked.Exchange(ref _sumMsBetweenPresentsApp, 0);
 
-            _appFps = app;
-            _afmfFps = afmf;
-            _displayedFps = disp;
+            _appFps = elapsedSeconds > 0 ? (int)Math.Round(app / elapsedSeconds) : app;
+            _afmfFps = elapsedSeconds > 0 ? (int)Math.Round(afmf / elapsedSeconds) : afmf;
+            _displayedFps = elapsedSeconds > 0 ? (int)Math.Round(disp / elapsedSeconds) : disp;
             if (appSamples > 0)
             {
                 double cpuAvg = sumCpu / appSamples;
@@ -142,6 +155,7 @@ namespace XboxGamingBarHelper.PresentMon
             Interlocked.Exchange(ref _sumGpuBusyMs, 0);
             Interlocked.Exchange(ref _sumMsBetweenPresentsApp, 0);
             Interlocked.Exchange(ref _lastUpdateTicksUtc, 0);
+            Interlocked.Exchange(ref _lastFlushTicksUtc, 0);
             _appFps = 0;
             _afmfFps = 0;
             _displayedFps = 0;

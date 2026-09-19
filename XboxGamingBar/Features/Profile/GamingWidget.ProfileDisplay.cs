@@ -372,14 +372,7 @@ namespace XboxGamingBar
 
         private static string GetOverlayLevelShortName(int level)
         {
-            switch (level)
-            {
-                case 0: return "Off";
-                case 1: return "Basic";
-                case 2: return "Detailed";
-                case 3: return "Full";
-                default: return "Off";
-            }
+            return level > 0 ? "On" : "Off";
         }
 
         private static string GetLegionModeShortName(int mode)

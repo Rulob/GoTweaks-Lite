@@ -1114,7 +1114,7 @@
                                                       Grid.Column="1"
                                                       Style="{StaticResource ModernToggleStyle}" Width="47"
                                                       XYFocusUp="{x:Bind PerGameProfileToggle}"
-                                                      XYFocusDown="{x:Bind PerformanceOverlayComboBox}"/>
+                                                      XYFocusDown="{x:Bind PerformanceOverlayToggle}"/>
                                     </Grid>
                                     <TextBlock x:Name="PowerSourceProfileScopeText"
                                                Margin="0,8,0,0"
@@ -1128,38 +1128,32 @@
 
                         <!-- Performance Overlay Card -->
                         <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Performance Overlay"
-                                               Style="{StaticResource CardTitleStyle}"
-                                               VerticalAlignment="Center"
-                                               Grid.Column="0"/>
-                                    <ComboBox x:Name="PerformanceOverlayComboBox"
-                                              Style="{StaticResource ModernComboBoxStyle}"
-                                              Width="120"
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Performance Overlay" Style="{StaticResource CardTitleStyle}"/>
+                                    <TextBlock Text="FPS, CPU/GPU, RAM/VRAM, battery, time — customize below"
+                                               Style="{StaticResource CardCaptionStyle}"/>
+                                </StackPanel>
+                                <ToggleSwitch x:Name="PerformanceOverlayToggle"
                                               Grid.Column="1"
-                                              SelectionChanged="PerformanceOverlayComboBox_SelectionChanged"
+                                              Style="{StaticResource ModernToggleStyle}"
+                                              Width="52"
+                                              Toggled="PerformanceOverlayToggle_Toggled"
                                               XYFocusUp="{x:Bind PowerSourceProfileToggle}"
                                               XYFocusDown="{x:Bind FPSLimitToggle}"
-                                              XYFocusLeft="{x:Bind PerformanceNavItem}">
-                                        <ComboBoxItem Content="Off" Tag="0" IsSelected="True"/>
-                                        <ComboBoxItem Content="Basic" Tag="1"/>
-                                        <ComboBoxItem Content="Detailed" Tag="2"/>
-                                        <ComboBoxItem Content="Full" Tag="3"/>
-                                    </ComboBox>
-                                </Grid>
+                                              XYFocusLeft="{x:Bind PerformanceNavItem}"/>
 
-                                <!-- Hidden slider for property system compatibility -->
+                                <!-- Hidden slider for property system compatibility (OSDProperty binds to a Slider) -->
                                 <Slider x:Name="PerformanceOverlaySlider"
                                         Visibility="Collapsed"
-                                        Minimum="0" Maximum="3"
+                                        Minimum="0" Maximum="1"
                                         Value="0"
                                         ValueChanged="PerformanceOverlaySlider_ValueChanged"/>
-                            </StackPanel>
+                            </Grid>
                         </Border>
 
                         <!-- FPS Limit Card -->
@@ -1191,7 +1185,7 @@
                                                   Grid.Column="2"
                                                   Style="{StaticResource ModernToggleStyle}"
                                                   IsEnabled="False" Width="52"
-                                                  XYFocusUp="{x:Bind PerformanceOverlayComboBox}"
+                                                  XYFocusUp="{x:Bind PerformanceOverlayToggle}"
                                                   XYFocusDown="{x:Bind TDPModeComboBox}"/>
                                 </Grid>
                                 <Slider x:Name="FPSLimitSlider"
@@ -3379,30 +3373,6 @@
 
                                     <!-- RTSS-specific options (hidden when AMD provider is selected) -->
                                     <StackPanel x:Name="RTSSOptionsPanel">
-                                        <!-- Overlay Level Selection -->
-                                        <Grid Margin="0,0,0,12">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Overlay Level"
-                                                       Foreground="#B9C0CC"
-                                                       VerticalAlignment="Center"
-                                                       FontSize="13"/>
-                                            <ComboBox x:Name="OSDCustomizeLevelComboBox"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      Width="120"
-                                                      Grid.Column="1"
-                                                      SelectionChanged="OSDCustomizeLevelComboBox_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White"
-                                                      FocusVisualSecondaryBrush="Transparent">
-                                                <ComboBoxItem Content="Basic" Tag="1" IsSelected="True"/>
-                                                <ComboBoxItem Content="Detailed" Tag="2"/>
-                                                <ComboBoxItem Content="Full" Tag="3"/>
-                                            </ComboBox>
-                                        </Grid>
-
                                         <!-- Layout Settings Section -->
                                     <Border Height="1" Background="#33FFFFFF" Margin="0,4,0,12"/>
                                     <TextBlock Text="Layout"

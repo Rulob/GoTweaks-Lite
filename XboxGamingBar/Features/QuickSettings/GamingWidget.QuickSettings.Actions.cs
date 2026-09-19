@@ -760,9 +760,9 @@ namespace XboxGamingBar
                 if (osd != null)
                 {
                     int currentLevel = (int)osd.Value;
-                    int nextLevel = (currentLevel + 1) % 4;
+                    int nextLevel = currentLevel > 0 ? 0 : 1;
                     osd.SetValue(nextLevel);
-                    Logger.Info($"RTSS Performance Overlay cycled from {currentLevel} to {nextLevel}");
+                    Logger.Info($"RTSS Performance Overlay toggled from {currentLevel} to {nextLevel}");
                 }
             }
         }
