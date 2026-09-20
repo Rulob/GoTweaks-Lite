@@ -91,6 +91,9 @@ namespace XboxGamingBar
                             case "TDPMode":
                                 CycleTDPMode();
                                 break;
+                            case "AutoTDP":
+                                ToggleAutoTDPTile();
+                                break;
                             case "Profile":
                                 TogglePerGameProfile();
                                 break;
@@ -209,6 +212,11 @@ namespace XboxGamingBar
 
         private void CycleTDPMode()
         {
+            // The TDP Mode selector is locked while AutoTDP is managing TDP (see
+            // GamingWidget.AutoTDP.cs) - this tile sets TDPModeComboBox.SelectedIndex directly,
+            // which bypasses the ComboBox's own IsEnabled=false, so it needs its own guard.
+            if (AutoTDPToggle?.IsOn == true) return;
+
             bool isLegion = legionGoDetected?.Value == true;
             int currentIndex = TDPModeComboBox?.SelectedIndex ?? 0;
 
@@ -259,6 +267,14 @@ namespace XboxGamingBar
 
                 Logger.Info($"TDP Mode cycled from {currentMode} to {nextMode} (isLegion={isLegion})");
             }
+        }
+
+        private void ToggleAutoTDPTile()
+        {
+            if (AutoTDPToggle == null) return;
+            bool newState = !AutoTDPToggle.IsOn;
+            AutoTDPToggle.IsOn = newState; // fires AutoTDPToggle_Toggled, which calls ApplyAutoTDPToggle
+            Logger.Info($"AutoTDP tile toggled to: {newState}");
         }
 
         private void ScheduleQsTdpReapply()

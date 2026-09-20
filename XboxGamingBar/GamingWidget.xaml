@@ -1135,7 +1135,7 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock Text="Performance Overlay" Style="{StaticResource CardTitleStyle}"/>
-                                    <TextBlock Text="FPS, CPU/GPU, RAM/VRAM, battery, time — customize below"
+                                    <TextBlock Text="FPS, CPU/GPU, RAM/VRAM, Battery, Time"
                                                Style="{StaticResource CardCaptionStyle}"/>
                                 </StackPanel>
                                 <ToggleSwitch x:Name="PerformanceOverlayToggle"
@@ -1292,9 +1292,9 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- AutoTDP Card (Legion only, shown in Custom mode). Continuously adjusts
-                             TDP to hit a target FPS instead of a fixed wattage. Takes over the
-                             Custom Power Limits sliders above while enabled. -->
+                        <!-- AutoTDP Card (Legion only; visible regardless of TDP Mode). Continuously
+                             adjusts TDP to hit a target FPS instead of a fixed wattage. Enabling it
+                             forces TDP Mode to Custom and locks the mode selector until disabled. -->
                         <Border x:Name="AutoTDPCard" Style="{StaticResource CardStyle}" Visibility="Collapsed">
                             <StackPanel Spacing="10">
                                 <Grid>

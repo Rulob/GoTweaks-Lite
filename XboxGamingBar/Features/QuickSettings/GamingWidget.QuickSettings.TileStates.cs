@@ -455,6 +455,16 @@ namespace XboxGamingBar
                     tdpTile.TileButton.Background = tileOffBrush;
                 }
 
+                // AutoTDP tile
+                if (qsTileMap.TryGetValue("AutoTDP", out var autoTdpTile) && autoTdpTile.TileButton != null)
+                {
+                    bool autoTdpOn = AutoTDPToggle?.IsOn == true;
+                    autoTdpTile.StateText.Text = autoTdpOn ? "On" : "Off";
+                    autoTdpTile.StateText.Foreground = autoTdpOn ? accentForeground : offForeground;
+                    SetTileAccentBar(autoTdpTile, autoTdpOn);
+                    autoTdpTile.TileButton.Background = autoTdpOn ? tileOnBrush : tileOffBrush;
+                }
+
                 // Profile tile
                 if (qsTileMap.TryGetValue("Profile", out var profileTile) && profileTile.TileButton != null)
                 {

@@ -2058,7 +2058,11 @@ namespace XboxGamingBar
 
             if (AutoTDPCard != null)
             {
-                AutoTDPCard.Visibility = showCustom ? Visibility.Visible : Visibility.Collapsed;
+                // Independent of the current TDP Mode (unlike the Custom card above) - AutoTDP can
+                // be turned on from any mode; doing so forces Custom mode itself (see
+                // GamingWidget.AutoTDP.cs ApplyAutoTDPToggle). Still Legion-only, since it drives
+                // the mode selector's Legion-specific behavior.
+                AutoTDPCard.Visibility = isLegion ? Visibility.Visible : Visibility.Collapsed;
                 UpdateCustomTDPSlidersEnabledForAutoTDP();
             }
         }
