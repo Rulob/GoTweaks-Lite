@@ -66,11 +66,12 @@ upstream, and why.
 
 ### ➕ Added
 
-- **AutoTDP (PID mode)** — an automatic power controller for Custom TDP mode: pick a target FPS
-  and a min/max wattage range, and it continuously adjusts TDP live to hit that FPS, backing off
-  gracefully when the target is unreachable (CPU-bound games). Restored from upstream, trimmed to
-  the rule-based PID controller only (no Q-Learning/SARSA machine-learning modes or per-game
-  learned data — see the AutoTDP card in the Performance tab, visible in Custom mode).
+- **AutoTDP (PID mode)** — an automatic power controller: pick a target FPS and a min/max wattage
+  range, and it continuously adjusts TDP live to hit that FPS, backing off gracefully when the
+  target is unreachable (CPU-bound games). Works from any TDP Mode — enabling it (from its card or
+  the matching Quick Settings tile) automatically switches to and locks Custom mode, and restores
+  your previous mode when turned off. Restored from upstream, trimmed to the rule-based PID
+  controller only (no Q-Learning/SARSA machine-learning modes or per-game learned data).
 - **Auto SDR** — while HDR is on, automatically matches the SDR white level to screen brightness
   so SDR content (desktop, most games) doesn't look washed out, with a full **curve editor**
   (Legion Go 2 preset or a custom, import/export-compatible curve). _(Built on the sibling Go2HDR
@@ -106,6 +107,9 @@ upstream, and why.
   opened as a standalone window (Start menu / taskbar) alongside the Game Bar overlay; closing that
   window used to silently kill the widget's connection — it's now minimized instead, and the widget
   keeps running.
+- **Stable FPS counter.** The overlay's FPS is now derived from PresentMon's own per-frame
+  timestamps instead of counting samples per refresh window, fixing brief spikes (e.g. a real 75
+  FPS momentarily reading 130) caused by uneven delivery timing rather than an actual rate change.
 
 ---
 
