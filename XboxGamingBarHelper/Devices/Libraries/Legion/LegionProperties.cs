@@ -378,6 +378,16 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 return base.SetValue(newValue, updatedTime);
             }
 
+            // base.SetValue(int, long) below binds to the typed overload, which skips the object
+            // overload's "0 means now" coercion; the timestamp arbiter then rejects a zero-stamped
+            // update once the property has any prior timestamp. Helper-internal calls (profile
+            // apply on game start/exit pass no timestamp) were silently dropped, so the saved
+            // mode never reached the hardware.
+            if (updatedTime == 0)
+            {
+                updatedTime = DateTime.Now.Ticks;
+            }
+
             bool isSame = incoming == value;
             var result = base.SetValue(incoming, updatedTime);
 

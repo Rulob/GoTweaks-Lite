@@ -75,12 +75,105 @@ namespace XboxGamingBar
 
                     // Load settings from new profile (explicit switch - apply HDR/Resolution)
                     LoadProfileSettings(currentProfileName, isExplicitSwitch: true);
+
+                    if (currentProfileName.StartsWith("Game_") && !isInitialSync)
+                    {
+                        ScheduleGameProfileReconcile(currentProfileName);
+                    }
                 }
                 finally
                 {
                     // Always clear the flag
                     isSwitchingProfile = false;
                 }
+            }
+        }
+
+        // Longer than the helper's 500 ms post-switch cooldown and the 1 s stale-TDP-message
+        // window it opens, so the values pushed below are accepted and saved into the helper's
+        // copy of the profile rather than being dropped as stale.
+        private const int GameProfileReconcileDelayMs = 1500;
+
+        /// <summary>
+        /// Switching to a game profile loads the widget's saved values into the UI but, because the
+        /// switch is normally triggered by the helper detecting the game, deliberately sends nothing:
+        /// the helper applies its OWN saved copy of the profile. That copy only learns about changes
+        /// made while the profile was active, so it can lag behind what the Profiles tab shows, and
+        /// on Legion in Custom mode it can't apply SPL/SPPT/FPPT at all (it re-asserts the cached
+        /// limits and doesn't store SPPT/FPPT). The UI then shows the game's values while the
+        /// hardware keeps the previous ones. Once the helper has settled, push the widget's copy so
+        /// the hardware matches what the UI shows (this also refreshes the helper's copy).
+        /// </summary>
+        private async void ScheduleGameProfileReconcile(string profileName)
+        {
+            int epoch = profileSwitchEpoch;
+            try
+            {
+                await Task.Delay(GameProfileReconcileDelayMs);
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => ReconcileGameProfileWithHelper(profileName, epoch));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Game profile reconcile failed for '{profileName}': {ex.Message}");
+            }
+        }
+
+        private async Task SendGameProfileSyncAsync(string payload)
+        {
+            try
+            {
+                var request = new Windows.Foundation.Collections.ValueSet();
+                request.Add("SyncGameProfile", payload);
+                await App.SendMessageAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"SyncGameProfile send failed: {ex.Message}");
+            }
+        }
+
+        private void ReconcileGameProfileWithHelper(string profileName, int epoch)
+        {
+            // A newer profile switch (game closed, AC/DC change, other game) supersedes this one.
+            if (epoch != profileSwitchEpoch || currentProfileName != profileName || isLoadingProfile)
+            {
+                Logger.Debug($"Game profile reconcile for '{profileName}' skipped - superseded");
+                return;
+            }
+            if (!App.IsConnected)
+            {
+                Logger.Debug($"Game profile reconcile for '{profileName}' skipped - helper not connected");
+                return;
+            }
+
+            var profile = GetProfile(profileName);
+            Logger.Info($"Reconciling helper with game profile '{profileName}': CPUBoost={profile.CPUBoost}, EPP={profile.CPUEPP}, MaxState={profile.MaxCPUState}, MinState={profile.MinCPUState}, TDP={profile.TDP}/{profile.TDPFast}/{profile.TDPPeak}W");
+
+            // One-shot message rather than property pushes: a push whose value already matches the
+            // helper's live value is a no-op there, which would leave the helper's own copy of the
+            // profile stale (and re-applied on its next game re-detection).
+            var parts = new List<string>();
+            if (SaveCPUBoost) parts.Add($"boost={(profile.CPUBoost ? 1 : 0)}");
+            if (SaveCPUEPP) parts.Add($"epp={(int)profile.CPUEPP}");
+            if (SaveCPUState)
+            {
+                parts.Add($"max={profile.MaxCPUState}");
+                parts.Add($"min={profile.MinCPUState}");
+            }
+            if (parts.Count > 0)
+            {
+                _ = SendGameProfileSyncAsync(string.Join(";", parts));
+            }
+
+            // Custom power limits only apply in Custom mode (the helper picks the mode from its own
+            // copy and the dropdown follows it), and AutoTDP owns the limits while it's running.
+            if (SaveTDP
+                && legionGoDetected?.Value == true
+                && IsCustomTdpModeSelected()
+                && AutoTDPToggle?.IsOn != true)
+            {
+                SetCustomTDPSlidersSilent(profile.TDP, profile.TDPFast, profile.TDPPeak);
+                ApplyCustomTDPSlidersToHelper(force: true);
             }
         }
 

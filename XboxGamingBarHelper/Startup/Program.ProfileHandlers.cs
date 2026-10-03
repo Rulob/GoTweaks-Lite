@@ -317,6 +317,24 @@ namespace XboxGamingBarHelper
 
 
         /// <summary>
+        /// Applies a profile's AutoTDP settings. Clears IsAutoTDPActive first so the flat TDP
+        /// value the caller applies right after isn't suppressed while AutoTDP is being turned off.
+        /// Must be called within isApplyingProfile = true context (keeps the setter callbacks from
+        /// writing these values back into whichever profile is current).
+        /// </summary>
+        private static void ApplyAutoTDPSettings(bool enabled, int targetFps, int minTdp, int maxTdp, bool pauseWhenUnfocused)
+        {
+            if (autoTDPManager == null) return;
+
+            performanceManager.IsAutoTDPActive = false;
+            autoTDPManager.Enabled.SetValue(enabled);
+            autoTDPManager.TargetFPS.SetValue(targetFps);
+            autoTDPManager.MinTDP.SetValue(minTdp);
+            autoTDPManager.MaxTDP.SetValue(maxTdp);
+            autoTDPManager.PauseWhenUnfocused.SetValue(pauseWhenUnfocused);
+        }
+
+        /// <summary>
         /// Restores global profile settings (TDP, AutoTDP, Legion mode, etc.)
         /// Called when transitioning away from a per-game profile:
         /// - Game stops (RunningGame becomes invalid)
@@ -352,15 +370,12 @@ namespace XboxGamingBarHelper
 
             // Restore AutoTDP settings before TDP so IsAutoTDPActive is cleared (or re-armed on
             // the manager's next tick) before the profile's flat TDP value is applied below.
-            if (autoTDPManager != null)
-            {
-                performanceManager.IsAutoTDPActive = false;
-                autoTDPManager.Enabled.SetValue(profileManager.GlobalProfile.AutoTDPEnabled);
-                autoTDPManager.TargetFPS.SetValue(profileManager.GlobalProfile.AutoTDPTargetFPS);
-                autoTDPManager.MinTDP.SetValue(profileManager.GlobalProfile.AutoTDPMinTDP);
-                autoTDPManager.MaxTDP.SetValue(profileManager.GlobalProfile.AutoTDPMaxTDP);
-                autoTDPManager.PauseWhenUnfocused.SetValue(profileManager.GlobalProfile.AutoTDPPauseWhenUnfocused);
-            }
+            ApplyAutoTDPSettings(
+                profileManager.GlobalProfile.AutoTDPEnabled,
+                profileManager.GlobalProfile.AutoTDPTargetFPS,
+                profileManager.GlobalProfile.AutoTDPMinTDP,
+                profileManager.GlobalProfile.AutoTDPMaxTDP,
+                profileManager.GlobalProfile.AutoTDPPauseWhenUnfocused);
 
             performanceManager.TDP.SetProfileValue(profileManager.GlobalProfile.TDP);
             powerManager.CPUBoost.SetValue(profileManager.GlobalProfile.CPUBoost);
@@ -429,15 +444,12 @@ namespace XboxGamingBarHelper
 
                         // Restore AutoTDP settings before TDP so IsAutoTDPActive is cleared (or
                         // re-armed on the manager's next tick) before the flat TDP value below.
-                        if (autoTDPManager != null)
-                        {
-                            performanceManager.IsAutoTDPActive = false;
-                            autoTDPManager.Enabled.SetValue(profileManager.CurrentProfile.AutoTDPEnabled);
-                            autoTDPManager.TargetFPS.SetValue(profileManager.CurrentProfile.AutoTDPTargetFPS);
-                            autoTDPManager.MinTDP.SetValue(profileManager.CurrentProfile.AutoTDPMinTDP);
-                            autoTDPManager.MaxTDP.SetValue(profileManager.CurrentProfile.AutoTDPMaxTDP);
-                            autoTDPManager.PauseWhenUnfocused.SetValue(profileManager.CurrentProfile.AutoTDPPauseWhenUnfocused);
-                        }
+                        ApplyAutoTDPSettings(
+                            profileManager.CurrentProfile.AutoTDPEnabled,
+                            profileManager.CurrentProfile.AutoTDPTargetFPS,
+                            profileManager.CurrentProfile.AutoTDPMinTDP,
+                            profileManager.CurrentProfile.AutoTDPMaxTDP,
+                            profileManager.CurrentProfile.AutoTDPPauseWhenUnfocused);
 
                         // Use SetProfileValue to ensure profile TDP takes precedence over in-flight widget messages
                         // All settings applied atomically under lock to prevent cross-contamination
@@ -525,6 +537,13 @@ namespace XboxGamingBarHelper
                     // CurrentProfile_PropertyChanged is blocked by isApplyingProfile, so we
                     // must apply settings explicitly here (same pattern as RestoreGlobalProfileSettings).
                     profileManager.CurrentProfile.SetValue(gameProfile);
+
+                    ApplyAutoTDPSettings(
+                        gameProfile.AutoTDPEnabled,
+                        gameProfile.AutoTDPTargetFPS,
+                        gameProfile.AutoTDPMinTDP,
+                        gameProfile.AutoTDPMaxTDP,
+                        gameProfile.AutoTDPPauseWhenUnfocused);
 
                     performanceManager.TDP.SetProfileValue(gameProfile.TDP);
                     powerManager.CPUBoost.SetValue(gameProfile.CPUBoost);
@@ -705,6 +724,13 @@ namespace XboxGamingBarHelper
                                     legionManager.LegionPerformanceMode.SetValue(255);
                                 }
                             }
+
+                            ApplyAutoTDPSettings(
+                                runningGameProfile.AutoTDPEnabled,
+                                runningGameProfile.AutoTDPTargetFPS,
+                                runningGameProfile.AutoTDPMinTDP,
+                                runningGameProfile.AutoTDPMaxTDP,
+                                runningGameProfile.AutoTDPPauseWhenUnfocused);
 
                             performanceManager.TDP.SetProfileValue(runningGameProfile.TDP);
                             powerManager.CPUBoost.SetValue(runningGameProfile.CPUBoost);
