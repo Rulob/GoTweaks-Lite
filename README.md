@@ -107,6 +107,11 @@ upstream, and why.
   opened as a standalone window (Start menu / taskbar) alongside the Game Bar overlay; closing that
   window used to silently kill the widget's connection — it's now minimized instead, and the widget
   keeps running.
+- **Per-game profiles now actually apply.** The TDP Mode saved in a game profile (e.g. Performance)
+  was silently never switched to on game start, and CPU Boost / EPP / CPU state could be re-applied
+  from a stale copy of the profile kept by the background helper. Both are fixed: the saved mode is
+  applied, and the widget now syncs its saved values into the helper's copy after each game-profile
+  switch (including Custom power limits and the profile's AutoTDP settings).
 - **Stable FPS counter.** The overlay's FPS is now derived from PresentMon's own per-frame
   timestamps instead of counting samples per refresh window, fixing brief spikes (e.g. a real 75
   FPS momentarily reading 130) caused by uneven delivery timing rather than an actual rate change.
