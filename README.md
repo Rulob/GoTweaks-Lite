@@ -115,6 +115,13 @@ upstream, and why.
 - **Stable FPS counter.** The overlay's FPS is now derived from PresentMon's own per-frame
   timestamps instead of counting samples per refresh window, fixing brief spikes (e.g. a real 75
   FPS momentarily reading 130) caused by uneven delivery timing rather than an actual rate change.
+- **Widget no longer goes deaf after sleep.** Sometimes, after the handheld woke from a long sleep,
+  Game Bar would open the widget but nothing inside it responded: the old window was still drawing
+  but had lost its link to Game Bar. The helper now tells the widget when the PC wakes, and the
+  widget asks Game Bar to close that stale window so the next open is a clean launch. Closed widget
+  windows are also cleaned up properly now (they used to stay registered and swallow helper
+  updates), the controller battery section repaints on every open, and the widget log records
+  whether input reaches the widget so any future report is easier to diagnose.
 
 ---
 
