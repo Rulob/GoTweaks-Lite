@@ -86,6 +86,16 @@ namespace XboxGamingBar
                     return;
                 }
 
+                // PC woke from sleep: recycle a possibly stale Game Bar window (see
+                // HandleSystemResumedAsync). Runs off the UI thread; it dispatches itself.
+                if (message.TryGetValue("SystemResumedUtcTicks", out object resumedTicksObj))
+                {
+                    long resumedTicks = 0;
+                    try { resumedTicks = Convert.ToInt64(resumedTicksObj); } catch { }
+                    _ = HandleSystemResumedAsync(resumedTicks);
+                    return;
+                }
+
                 // Check for focus widget request from helper
                 if (message.TryGetValue("Function", out object funcObj) &&
                     Convert.ToInt32(funcObj) == (int)Shared.Enums.Function.Labs_FocusWidget)

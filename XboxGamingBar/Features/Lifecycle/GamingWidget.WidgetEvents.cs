@@ -46,6 +46,7 @@ namespace XboxGamingBar
 
         private async void GamingWidget_RequestedThemeChanged(XboxGameBarWidget sender, object args)
         {
+            Logger.Info("Game Bar event: RequestedThemeChanged");
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
                 SetBackgroundColor();
@@ -54,8 +55,26 @@ namespace XboxGamingBar
 
         private async void GamingWidget_SettingsClicked(XboxGameBarWidget sender, object args)
         {
+            Logger.Info("Game Bar event: SettingsClicked");
             await widget.ActivateSettingsAsync();
         }
+
+        // Diagnostics for the "widget opens but nothing responds" report: logs the FIRST pointer or
+        // key input that reaches the widget after each Game Bar visibility change. A window that is
+        // open but cut off from Game Bar shows VisibleChanged lines (or none at all) and then never
+        // this line however much is tapped; a healthy one logs it on the first tap or button press.
+        private bool firstInputLoggedSinceVisibleChange = false;
+
+        private void GamingWidget_InputProbe(string kind)
+        {
+            if (firstInputLoggedSinceVisibleChange) return;
+            firstInputLoggedSinceVisibleChange = true;
+            Logger.Info($"Input reached the widget: first {kind} since Game Bar visibility last changed.");
+        }
+
+        private void GamingWidget_PointerProbe(object sender, PointerRoutedEventArgs e) => GamingWidget_InputProbe("pointer press");
+
+        private void GamingWidget_KeyProbe(object sender, KeyRoutedEventArgs e) => GamingWidget_InputProbe("key/gamepad press");
 
         private bool hasAppliedInitialSize = false;
 
@@ -65,6 +84,7 @@ namespace XboxGamingBar
             {
                 bool isVisible = sender?.Visible ?? false;
                 Logger.Info($"GamingWidget_VisibleChanged: Visible={isVisible}, DisplayMode={sender?.GameBarDisplayMode.ToString() ?? "Unknown"}");
+                firstInputLoggedSinceVisibleChange = false; // re-arm the input probe (see GamingWidget_InputProbe)
                 UpdateGameBarForegroundSignal("VisibleChanged");
 
                 // Re-read the built-in panel brightness on every open so the optional brightness
@@ -83,8 +103,15 @@ namespace XboxGamingBar
                     // silently swallows - leaving the UI stuck on stale/blank values even though the
                     // data itself is fine. This gives the paint a guaranteed second chance on the
                     // next open instead of requiring the user to notice and manually reopen.
-                    UpdateLegionControllerBatteryDisplay();
-                    UpdateLegionControllerVidPidDisplay();
+                    //
+                    // VisibleChanged is raised by Game Bar OFF the XAML UI thread, so the repaint has
+                    // to be marshalled onto it: called directly it failed with RPC_E_WRONG_THREAD
+                    // (0x8001010E) on every single open and the repaint never actually happened.
+                    var ignoreRepaint = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        UpdateLegionControllerBatteryDisplay();
+                        UpdateLegionControllerVidPidDisplay();
+                    });
 
                     // Put gamepad focus on the active tab so the pad can navigate immediately on
                     // open — but only if nothing in the widget is focused yet (don't steal focus

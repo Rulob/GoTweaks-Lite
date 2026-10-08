@@ -2362,6 +2362,34 @@ namespace XboxGamingBarHelper
             }
         }
 
+        /// <summary>
+        /// Tell the widget the PC just woke from sleep/hibernate. After a long sleep Game Bar can
+        /// drop its connection to an already-open widget window: the window still draws and still
+        /// receives helper pushes, but never hears Game Bar events or input again (the user sees a
+        /// widget that opens but ignores every tap). The widget reacts by asking Game Bar to close
+        /// that stale window, so the next open is a clean launch. The UTC timestamp lets the widget
+        /// ignore a resume signal that sat in the pipe while its process was suspended and only got
+        /// delivered later, after it had already been relaunched fresh. Best-effort.
+        /// </summary>
+        private static void NotifyWidgetSystemResumed()
+        {
+            try
+            {
+                if (pipeServer != null && pipeServer.IsConnected)
+                {
+                    var msg = new global::Windows.Foundation.Collections.ValueSet();
+                    msg.Add("SystemResumedUtcTicks", DateTime.UtcNow.Ticks);
+                    var pm = Shared.IPC.PipeMessage.FromValueSet(msg);
+                    pipeServer.SendMessage(pm.ToJson());
+                    Logger.Info("Notified widget that the system resumed from sleep.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"NotifyWidgetSystemResumed failed: {ex.Message}");
+            }
+        }
+
         private struct AxisStats
         {
             public double TrimmedMean;

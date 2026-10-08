@@ -1209,6 +1209,11 @@ namespace XboxGamingBar
             this.Unloaded += GamingWidget_Unloaded;
             Logger.Info("Registered Loaded and Unloaded event handlers.");
 
+            // Input probe (diagnostics only). handledEventsToo=true so it still sees events the
+            // controls inside the widget mark as handled.
+            this.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(GamingWidget_PointerProbe), true);
+            this.AddHandler(UIElement.KeyDownEvent, new KeyEventHandler(GamingWidget_KeyProbe), true);
+
             // Register for LT/RT tab navigation (PreviewKeyDown to intercept before scrolling).
             // PreviewKeyUp is used to clear the press-edge state so the next press advances
             // exactly one tab — without it, holding a trigger would cycle tabs continuously.

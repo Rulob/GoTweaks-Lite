@@ -397,6 +397,11 @@ namespace XboxGamingBar
         private void GamingWidgetWindow_Closed(object sender, Windows.UI.Core.CoreWindowEventArgs e)
         {
             Logger.Info("App gaming widget closed");
+            // Closing the window doesn't raise the page's Unloaded event, so run its cleanup here:
+            // otherwise this dead instance stays registered as the active widget and keeps
+            // receiving helper pushes it can no longer show (see GamingWidget.OnWindowClosed).
+            try { gamingWidget?.OnWindowClosed(); }
+            catch (Exception ex) { Logger.Warn($"Widget cleanup on window close threw: {ex.Message}"); }
             gamingXboxGameBarWidget = null;
             gamingWidget = null;
             Window.Current.Closed -= GamingWidgetWindow_Closed;

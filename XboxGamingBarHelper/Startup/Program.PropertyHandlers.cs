@@ -66,6 +66,11 @@ namespace XboxGamingBarHelper
         {
             Logger.Info("System resumed from sleep/hibernation, refreshing hardware sensors and re-applying profile.");
 
+            // Let the widget recycle its Game Bar window - after a long sleep the old window can
+            // be left open but deaf to Game Bar events and input. Sent first so a failure further
+            // down this handler can't skip it.
+            NotifyWidgetSystemResumed();
+
             // Reset RTSS OSD connection (can become stale after hibernation, causing frozen OSD values)
             rtssManager?.ResetRTSSConnection();
 
