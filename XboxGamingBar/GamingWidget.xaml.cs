@@ -49,8 +49,8 @@ namespace XboxGamingBar
     public class PerformanceProfile
     {
         public double TDP { get; set; } = 15;          // Absolute SPL (base TDP) in Custom mode
-        public double TDPFast { get; set; } = 25;       // Absolute SPPT (= TDP + SPPT Boost) in Custom mode
-        public double TDPPeak { get; set; } = 30;       // Absolute FPPT (= TDP + FPPT Boost) in Custom mode
+        public double TDPFast { get; set; } = 17;       // Absolute SPPT (= TDP + SPPT Boost) in Custom mode; default +2 W
+        public double TDPPeak { get; set; } = 20;       // Absolute FPPT (= TDP + FPPT Boost) in Custom mode; default +5 W
         public bool CPUBoost { get; set; } = false;
         public double CPUEPP { get; set; } = 0;
         public int MaxCPUState { get; set; } = 100;

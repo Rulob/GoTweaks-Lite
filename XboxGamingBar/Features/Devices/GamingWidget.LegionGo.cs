@@ -1878,6 +1878,17 @@ namespace XboxGamingBar
 
             bool isLegion = legionGoDetected?.Value == true;
 
+            // Switching INTO Custom by hand (dropdown, Quick tile, AutoTDP): bring back the SPPT /
+            // FPPT boosts the user last chose (or +2 / +5 if none yet) BEFORE the Custom limits are
+            // pushed to the hardware below. Not for profile loads or helper-driven changes - those
+            // carry their own saved values.
+            bool userDrivenModeChange = !isInitialSync && !isLoadingProfile
+                                        && (!isApplyingHelperUpdate || isUserInitiatedTDPModeChange);
+            if (isLegion && isCustomMode && !wasCustomMode && userDrivenModeChange)
+            {
+                RestoreRememberedCustomTDPBoosts();
+            }
+
             if (isLegion)
             {
                 // Legion device: use hardware presets via WMI
@@ -2204,6 +2215,82 @@ namespace XboxGamingBar
             slider.Value = value;
         }
 
+        // ----- Remembered SPPT / FPPT boosts -----
+        //
+        // The boost sliders used to start at their maximum (+10 / +15) and were only remembered
+        // inside each profile, and only as absolute watts saved while Custom was active - so any
+        // profile that had never been saved in Custom (a new game profile, one made in a native
+        // mode) loaded the maxed-out defaults, and switching to Custom showed +10 / +15 again.
+        // The last boosts the user actually chose are now kept in their own setting and put back
+        // whenever Custom is entered by hand. With nothing stored yet the defaults are +2 / +5.
+        private const string SpptBoostSettingKey = "CustomTDP_SpptBoost";
+        private const string FpptBoostSettingKey = "CustomTDP_FpptBoost";
+        private const int DefaultSpptBoostW = 2;
+        private const int DefaultFpptBoostW = 5;
+
+        private (int sppt, int fppt) LoadRememberedCustomTDPBoosts()
+        {
+            int sppt = DefaultSpptBoostW;
+            int fppt = DefaultFpptBoostW;
+            try
+            {
+                var values = Windows.Storage.ApplicationData.Current.LocalSettings.Values;
+                if (values.TryGetValue(SpptBoostSettingKey, out var s) && s is int si) sppt = si;
+                if (values.TryGetValue(FpptBoostSettingKey, out var f) && f is int fi) fppt = fi;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Reading remembered Custom TDP boosts failed: {ex.Message}");
+            }
+            sppt = Math.Max(0, Math.Min(10, sppt));
+            fppt = Math.Max(0, Math.Min(15, fppt));
+            if (sppt > fppt) sppt = fppt; // SPPT can never exceed FPPT
+            return (sppt, fppt);
+        }
+
+        /// <summary>Stores the boost sliders' current values as the user's last chosen boosts.</summary>
+        private void RememberCustomTDPBoosts()
+        {
+            if (CustomTDPFastSlider == null || CustomTDPPeakSlider == null) return;
+            try
+            {
+                var values = Windows.Storage.ApplicationData.Current.LocalSettings.Values;
+                values[SpptBoostSettingKey] = (int)CustomTDPFastSlider.Value;
+                values[FpptBoostSettingKey] = (int)CustomTDPPeakSlider.Value;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Saving remembered Custom TDP boosts failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Puts the remembered boosts back on the sliders (silently - the caller pushes them to the
+        /// hardware). Capped by the headroom under the 50 W ceiling like any other slider move.
+        /// </summary>
+        private void RestoreRememberedCustomTDPBoosts()
+        {
+            if (CustomTDPFastSlider == null || CustomTDPPeakSlider == null) return;
+            var (sppt, fppt) = LoadRememberedCustomTDPBoosts();
+
+            bool prev = isUpdatingCustomTDPSliders;
+            isUpdatingCustomTDPSliders = true;
+            try
+            {
+                UpdateCustomTDPBoostRanges();
+                SetOneSliderClamped(CustomTDPPeakSlider, fppt); // FPPT first so SPPT clamps against it
+                SetOneSliderClamped(CustomTDPFastSlider, sppt);
+                if (CustomTDPFastSlider.Value > CustomTDPPeakSlider.Value)
+                    CustomTDPFastSlider.Value = CustomTDPPeakSlider.Value;
+            }
+            finally
+            {
+                isUpdatingCustomTDPSliders = prev;
+            }
+            UpdateCustomTDPValueLabels();
+            Logger.Info($"Custom TDP: restored remembered boosts SPPT +{(int)CustomTDPFastSlider.Value}W / FPPT +{(int)CustomTDPPeakSlider.Value}W");
+        }
+
         /// <summary>
         /// Refreshes the three value labels to show the base TDP and the effective (absolute)
         /// SPPT/FPPT next to their boosts.
@@ -2283,7 +2370,7 @@ namespace XboxGamingBar
                 finally { isUpdatingCustomTDPSliders = false; }
             }
             UpdateCustomTDPValueLabels();
-            OnCustomTDPSliderChanged();
+            OnCustomTDPSliderChanged(boostChanged: true);
         }
 
         private void CustomTDPPeakSlider_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
@@ -2297,7 +2384,7 @@ namespace XboxGamingBar
                 finally { isUpdatingCustomTDPSliders = false; }
             }
             UpdateCustomTDPValueLabels();
-            OnCustomTDPSliderChanged();
+            OnCustomTDPSliderChanged(boostChanged: true);
         }
 
         /// <summary>
@@ -2305,10 +2392,14 @@ namespace XboxGamingBar
         /// current profile after a user-driven slider change. Skipped during helper sync / profile
         /// loads (which set the sliders themselves).
         /// </summary>
-        private void OnCustomTDPSliderChanged()
+        /// <param name="boostChanged">True when the user moved a boost slider (not the base TDP):
+        /// the new boosts are then remembered for the next time Custom is entered.</param>
+        private void OnCustomTDPSliderChanged(bool boostChanged = false)
         {
             if (isApplyingHelperUpdate || isLoadingProfile || isInitialSync) return;
             if (WidgetSliderProperty.HelperSyncCount > 0) return;
+
+            if (boostChanged) RememberCustomTDPBoosts();
 
             // Live hardware apply (only meaningful on a Legion in Custom mode; the helper ignores
             // these writes outside Custom mode anyway). Throttled so a fast drag doesn't flood the

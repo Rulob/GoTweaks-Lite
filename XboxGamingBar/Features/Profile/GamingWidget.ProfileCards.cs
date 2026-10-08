@@ -270,6 +270,16 @@ namespace XboxGamingBar
                         && settings.Containers[key].Values.TryGetValue("TDP", out var tdpObj))
                     {
                         int v = Convert.ToInt32(tdpObj);
+                        // Sort by the wattage the card actually shows: native Legion modes use the
+                        // mode's own wattage, not the stored last-Custom value (GetProfileTDPText).
+                        if (legionGoDetected?.Value == true)
+                        {
+                            int mode = settings.Containers[key].Values.TryGetValue("LegionPerformanceMode", out var modeObj)
+                                ? Convert.ToInt32(modeObj) : 2;
+                            int modeIndex = Array.IndexOf(DefaultLegionModes, mode);
+                            if (modeIndex < 0) modeIndex = 1;
+                            if (modeIndex < DefaultModeTdpValues.Length) v = DefaultModeTdpValues[modeIndex];
+                        }
                         if (v > max) max = v;
                     }
                 }
@@ -734,8 +744,8 @@ namespace XboxGamingBar
                     if (SaveTDP)
                     {
                         AddTextBlock(acDcGrid, rowIndex, 0, "TDP", 10, "#AAAAAA", margin: new Thickness(0, 3, 8, 0));
-                        AddTextBlock(acDcGrid, rowIndex, 1, $"{gameAC.TDP}W", 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
-                        AddTextBlock(acDcGrid, rowIndex, 2, $"{gameDC.TDP}W", 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
+                        AddTextBlock(acDcGrid, rowIndex, 1, GetProfileTDPText(gameAC), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
+                        AddTextBlock(acDcGrid, rowIndex, 2, GetProfileTDPText(gameDC), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
                         rowIndex++;
                     }
 
@@ -865,7 +875,7 @@ namespace XboxGamingBar
                     if (SaveTDP)
                     {
                         AddTextBlock(singleGrid, rowIndex, 0, "TDP", 10, "#AAAAAA", margin: new Thickness(0, 3, 0, 0));
-                        AddTextBlock(singleGrid, rowIndex, 1, $"{game.TDP}W", 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
+                        AddTextBlock(singleGrid, rowIndex, 1, GetProfileTDPText(game), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
                         rowIndex++;
                     }
 

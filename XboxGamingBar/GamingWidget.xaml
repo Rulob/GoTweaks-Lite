@@ -1260,7 +1260,7 @@
                                         Minimum="0" Maximum="10"
                                         TickFrequency="1"
                                         SnapsTo="Ticks"
-                                        Value="10"
+                                        Value="2"
                                         ValueChanged="CustomTDPFastSlider_ValueChanged"/>
 
                                 <!-- FPPT Boost (effective FPPT = TDP + boost; must be >= SPPT boost) -->
@@ -1273,7 +1273,7 @@
                                         Minimum="0" Maximum="15"
                                         TickFrequency="1"
                                         SnapsTo="Ticks"
-                                        Value="15"
+                                        Value="5"
                                         ValueChanged="CustomTDPPeakSlider_ValueChanged"
                                         XYFocusDown="{x:Bind OSPowerModeComboBox}"/>
 

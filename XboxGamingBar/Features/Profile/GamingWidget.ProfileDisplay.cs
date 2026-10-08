@@ -67,7 +67,7 @@ namespace XboxGamingBar
             GlobalProfileTDPModeText.Text = GetProfileTDPModeName(globalProfile);
 
             GlobalProfileTDPRow.Visibility = tdpVisibility;
-            GlobalProfileTDPText.Text = $"{globalProfile.TDP}W";
+            GlobalProfileTDPText.Text = GetProfileTDPText(globalProfile);
 
             GlobalProfileCPUBoostRow.Visibility = cpuBoostVisibility;
             GlobalProfileCPUBoostText.Text = globalProfile.CPUBoost ? "On" : "Off";
@@ -120,8 +120,8 @@ namespace XboxGamingBar
             DCProfileTDPModeText.Text = GetProfileTDPModeName(dcProfile);
 
             ACDCProfileTDPRow.Visibility = tdpVisibility;
-            ACProfileTDPText.Text = $"{acProfile.TDP}W";
-            DCProfileTDPText.Text = $"{dcProfile.TDP}W";
+            ACProfileTDPText.Text = GetProfileTDPText(acProfile);
+            DCProfileTDPText.Text = GetProfileTDPText(dcProfile);
 
             ACDCProfileCPUBoostRow.Visibility = cpuBoostVisibility;
             ACProfileCPUBoostText.Text = acProfile.CPUBoost ? "On" : "Off";
@@ -191,8 +191,8 @@ namespace XboxGamingBar
 
                     // TDP
                     GameACDCProfileTDPRow.Visibility = tdpVisibility;
-                    GameACProfileTDPText.Text = $"{gameACProfile.TDP}W";
-                    GameDCProfileTDPText.Text = $"{gameDCProfile.TDP}W";
+                    GameACProfileTDPText.Text = GetProfileTDPText(gameACProfile);
+                    GameDCProfileTDPText.Text = GetProfileTDPText(gameDCProfile);
 
                     // CPU Boost
                     GameACDCProfileCPUBoostRow.Visibility = cpuBoostVisibility;
@@ -268,7 +268,7 @@ namespace XboxGamingBar
 
                     // TDP
                     GameProfileTDPRow.Visibility = tdpVisibility;
-                    GameProfileTDPText.Text = $"{gameProfile.TDP}W";
+                    GameProfileTDPText.Text = GetProfileTDPText(gameProfile);
 
                     // CPU Boost
                     GameProfileCPUBoostRow.Visibility = cpuBoostVisibility;
@@ -393,6 +393,25 @@ namespace XboxGamingBar
         private string GetProfileTDPModeName(PerformanceProfile profile)
         {
             return GetLegionModeShortName(profile.LegionPerformanceMode);
+        }
+
+        /// <summary>
+        /// The wattage text for a profile's "TDP" line. On a Legion, Quiet / Balanced / Performance
+        /// are firmware modes with their own fixed wattage; the TDP value stored in the profile is
+        /// only the last Custom SPL (kept so Custom can be restored), so showing it next to a native
+        /// mode is misleading (e.g. "Performance" with "35W"). Show the mode's own wattage instead,
+        /// and the stored value only for Custom or on non-Legion devices.
+        /// </summary>
+        private string GetProfileTDPText(PerformanceProfile profile)
+        {
+            if (legionGoDetected?.Value == true)
+            {
+                int modeIndex = Array.IndexOf(DefaultLegionModes, profile.LegionPerformanceMode);
+                if (modeIndex < 0) modeIndex = 1; // unknown mode reads as Balanced, same as the mode name
+                if (modeIndex < DefaultModeTdpValues.Length)
+                    return $"{DefaultModeTdpValues[modeIndex]}W";
+            }
+            return $"{profile.TDP}W";
         }
 
         /// <summary>
