@@ -122,6 +122,11 @@ upstream, and why.
   windows are also cleaned up properly now (they used to stay registered and swallow helper
   updates), the controller battery section repaints on every open, and the widget log records
   whether input reaches the widget so any future report is easier to diagnose.
+- **Modern performance overlay.** A cleaner, calmer take on the RTSS overlay: small labels and
+  units, soft colors that only change at real warning thresholds, whole-millisecond frametime,
+  percentages for RAM/VRAM, one SoC temperature, and a new default order (FPS, CPU, GPU, RAM, VRAM,
+  TEMP, TDP, BAT, clock). The classic look is one switch away. When PresentMon isn't attached the
+  FPS line now falls back to RTSS's own frame stats instead of showing RTSS's decimal frametime.
 - **Profiles list shows the right TDP for native modes.** A profile set to Quiet, Balanced or
   Performance used to list the last Custom wattage (e.g. "Performance — 35W"). It now shows the
   mode's own wattage (8 / 15 / 25W); the saved Custom value is still kept and only shown for
@@ -269,6 +274,12 @@ A real-time on-screen display powered by RivaTuner Statistics Server.
 - **Metrics** — FPS (rendered + displayed via PresentMon) with a `[FG]` badge, frametime graph and
   frame-budget readout, CPU/GPU usage & temperatures, power draw, memory & VRAM, battery, fan speed,
   and TDP limits (SPL/SPPT/FPPT) or the current performance mode
+- **Modern style** (on by default, switch in the overlay's Layout options; off = the classic look) —
+  small labels and units on the number's baseline, soft accent colors with values staying neutral
+  until a real warning threshold, steady number widths, and a clean one-row bar:
+  `FPS 138 7ms · CPU 12% · GPU 34% · RAM 42% · VRAM 18% · TEMP 53°C · TDP Balanced · BAT 78% -12.8W 4h 29m · 23:18`.
+  CPU/GPU show usage only, RAM/VRAM show percentages, and a single **SoC temperature** replaces the
+  separate CPU and GPU temperatures.
 
 ### 🎮 Controller Navigation
 
