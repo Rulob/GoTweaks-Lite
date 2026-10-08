@@ -24,7 +24,7 @@ namespace Shared.Constants
         /// carry a friendly per-RELEASE number without breaking either. Mixing the two directly
         /// in the UI ("Your version: 0.3.2524.0, new version: 1.1") is what this constant fixes.
         /// </summary>
-        public const string FriendlyVersion = "1.3";
+        public const string FriendlyVersion = "1.4";
 
         /// <summary>GitHub "owner/repo" to query for releases. Empty = updates disabled.</summary>
         public const string Repo = "Rulob/GoTweaks-Lite";

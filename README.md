@@ -122,6 +122,13 @@ upstream, and why.
   windows are also cleaned up properly now (they used to stay registered and swallow helper
   updates), the controller battery section repaints on every open, and the widget log records
   whether input reaches the widget so any future report is easier to diagnose.
+- **Profiles list shows the right TDP for native modes.** A profile set to Quiet, Balanced or
+  Performance used to list the last Custom wattage (e.g. "Performance — 35W"). It now shows the
+  mode's own wattage (8 / 15 / 25W); the saved Custom value is still kept and only shown for
+  Custom. The "TDP (high → low)" sort follows the same numbers.
+- **Custom TDP remembers your SPPT / FPPT boosts.** The two boost sliders used to start at their
+  maximum (+10 / +15) every time Custom was selected. The widget now remembers the last boosts you
+  chose and restores them when you switch to Custom; with nothing stored yet they start at +2 / +5.
 
 ---
 
