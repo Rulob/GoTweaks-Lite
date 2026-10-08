@@ -3379,6 +3379,24 @@
                                                FontSize="13" FontWeight="SemiBold" Foreground="#B9C0CC"
                                                Margin="0,0,0,8"/>
 
+                                    <!-- Style: Modern (calmer type, soft colors, fixed-width numbers) or Classic -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="Modern style" Foreground="#B9C0CC" FontSize="13"/>
+                                            <TextBlock Text="Small labels and units, soft colors, steady numbers. Off = classic look."
+                                                       Foreground="#888888" FontSize="11" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <ToggleSwitch x:Name="OSDModernStyleToggle"
+                                                      Grid.Column="1"
+                                                      Style="{StaticResource ModernToggleStyle}"
+                                                      IsOn="True"
+                                                      Toggled="OSDModernStyleToggle_Toggled"/>
+                                    </Grid>
+
                                     <!-- Columns -->
                                     <Grid Margin="0,0,0,8">
                                         <Grid.ColumnDefinitions>

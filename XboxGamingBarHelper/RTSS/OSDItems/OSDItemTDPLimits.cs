@@ -35,6 +35,41 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             legionManager = manager;
         }
 
+        protected override string GetModernOSDString(int osdLevel)
+        {
+            if (performanceManager == null)
+            {
+                return string.Empty;
+            }
+
+            // "TDP Balanced" in a preset mode, "TDP 25/26/28W" in Custom (SPL/SPPT/FPPT).
+            string value = MValueColor();
+            string text = MLabel("TDP", "FCD34D");
+
+            if (legionManager != null && legionManager.LegionGoDetected?.Value == true)
+            {
+                int mode = legionManager.CurrentPerformanceMode;
+                if (mode != 255)
+                {
+                    // "Balanced Mode" -> a smaller "Balanced" (the word at full size looked bigger than
+                    // the numbers around it). 75% like the labels and units: measured on screenshots,
+                    // 75% and 100% sit exactly on the baseline, whereas 88% landed one pixel high.
+                    string modeName = LegionManager.GetPerformanceModeName(mode).Replace(" Mode", "");
+                    return text + $"<C={value}>" + MSmall(modeName, 75);
+                }
+            }
+
+            int spl = performanceManager.CurrentSPL;
+            int sppt = performanceManager.CurrentSPPT;
+            int fppt = performanceManager.CurrentFPPT;
+            if (spl == 0 && sppt == 0 && fppt == 0)
+            {
+                return string.Empty;
+            }
+
+            return text + $"<C={value}>{spl}/{sppt}/{fppt}" + MUnit("W");
+        }
+
         public override string GetOSDString(int osdLevel)
         {
             if (performanceManager == null)

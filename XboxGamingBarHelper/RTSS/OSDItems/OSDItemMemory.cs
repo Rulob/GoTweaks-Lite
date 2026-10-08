@@ -17,6 +17,15 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             this.memoryAvailableSensor = memoryAvailableSensor;
         }
 
+        protected override string GetModernOSDString(int osdLevel)
+        {
+            // "RAM 42%" - percentage only; amber from 85%, soft red from 95%.
+            float percent = memoryUsageSensor.Value;
+            string text = MLabel("RAM", "F9A8D4");
+            if (percent < 0) return text + $"<C={MValueColor()}>--";
+            return text + MNum(percent, 2, MHighIsBad(percent, 85, 95)) + MUnit("%");
+        }
+
         protected override List<OSDItemValue> GetValues(int osdLevel)
         {
             var osdItems = base.GetValues(osdLevel);

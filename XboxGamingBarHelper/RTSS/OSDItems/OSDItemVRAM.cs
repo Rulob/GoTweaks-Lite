@@ -17,6 +17,17 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             this.gpuMemoryClockSensor = gpuMemoryClockSensor;
         }
 
+        protected override string GetModernOSDString(int osdLevel)
+        {
+            // "VRAM 35%" - percentage only (no sizes, no memory clock).
+            string text = MLabel("VRAM", "67E8F9");
+            float used = gpuMemoryUsedSensor.Value;
+            float total = used + gpuMemoryFreeSensor.Value;
+            if (used < 0 || total <= 0) return text + $"<C={MValueColor()}>--";
+            double percent = used / total * 100.0;
+            return text + MNum(percent, 2, MHighIsBad(percent, 85, 95)) + MUnit("%");
+        }
+
         protected override List<OSDItemValue> GetValues(int osdLevel)
         {
             var osdItems = base.GetValues(osdLevel);

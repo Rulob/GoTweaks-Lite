@@ -12,6 +12,12 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
         {
         }
 
+        protected override string GetModernOSDString(int osdLevel)
+        {
+            // No label; same color as the other values.
+            return $"<C={MValueColor()}>{DateTime.Now.ToString("HH:mm")}";
+        }
+
         public override string GetOSDString(int osdLevel)
         {
             var now = DateTime.Now;

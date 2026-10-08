@@ -26,6 +26,22 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             showClock = show;
         }
 
+        protected override string GetModernOSDString(int osdLevel)
+        {
+            // "GPU 61%" - usage only (see OSDItemCPU).
+            string value = MValueColor();
+            string text = MLabel("GPU", "C4B5FD");
+
+            float usage = gpuUsageSensor.Value;
+            text += usage < 0 ? $"<C={value}>--" : MNum(usage, 2, value) + MUnit("%");
+
+            if (showClock && gpuClockSensor.Value > 0)
+            {
+                text += $"<C={value}>  " + MNum(gpuClockSensor.Value / 1000.0, 1, value, oneDecimal: true) + MUnit("GHz");
+            }
+            return text;
+        }
+
         protected override List<OSDItemValue> GetValues(int osdLevel)
         {
             var osdItems = base.GetValues(osdLevel);

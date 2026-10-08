@@ -78,7 +78,10 @@ namespace XboxGamingBarHelper.RTSS
         // OSD configuration for the single overlay layout - which items are enabled. This is
         // just the fallback default before the widget connects and sends its actual config via
         // ParseOSDConfig.
-        private HashSet<string> osdItemConfig = new HashSet<string> { "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time" };
+        private HashSet<string> osdItemConfig = new HashSet<string> { "FPS", "CPU", "GPU", "Memory", "VRAM", "SoCTemp", "TDPLimits", "Battery", "Time" };
+
+        // Modern style (calmer type, softer palette, fixed-width numbers) vs the classic look.
+        private bool osdModernStyle = true;
 
         private string osdCustomTags = "";
 
@@ -110,8 +113,8 @@ namespace XboxGamingBarHelper.RTSS
         // Overlay item order
         private List<string> osdItemOrder = new List<string>
         {
-            "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time",
-            "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph"
+            "FPS", "CPU", "GPU", "Memory", "VRAM", "SoCTemp", "TDPLimits", "Battery", "Time",
+            "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "AutoTDP", "FrametimeGraph"
         };
 
         // Per-item label colors (e.g., osdItemLabelColors["CPU"] = "FF0000")
@@ -138,6 +141,7 @@ namespace XboxGamingBarHelper.RTSS
                 new OSDItemTime12H(),
                 new OSDItemAppName(),
                 new OSDItemFPS(),
+                new OSDItemSoCTemp(performanceManager.CPUTemperature, performanceManager.GPUTemperature),
                 new OSDItemBattery(performanceManager.BatteryLevel, performanceManager.BatteryDischargeRate, performanceManager.BatteryChargeRate, performanceManager.BatteryRemainingTime, () => performanceManager.BatteryTimeToFull),
                 osdItemControllerBattery,
                 osdItemCPU,
@@ -211,6 +215,11 @@ namespace XboxGamingBarHelper.RTSS
                             osdOpacity = Math.Max(10, Math.Min(100, opacity));
                             Logger.Debug($"OSD Opacity: {osdOpacity}");
                         }
+                    }
+                    else if (key == "Style")
+                    {
+                        osdModernStyle = !string.Equals(value, "Classic", StringComparison.OrdinalIgnoreCase);
+                        Logger.Debug($"OSD style: {(osdModernStyle ? "Modern" : "Classic")}");
                     }
                     else if (key == "FrametimeGraphPinned")
                     {
@@ -548,6 +557,8 @@ namespace XboxGamingBarHelper.RTSS
             {
                 item.SetTextColor(textColorWithOpacity);
                 item.SetOpacity(osdOpacity);
+                item.SetModernStyle(osdModernStyle);
+                item.SetBaseTextSize(osdTextSize);
             }
 
             // Pre-build frametime graph string if enabled (so it can be placed in order)
@@ -642,7 +653,7 @@ namespace XboxGamingBarHelper.RTSS
                     item.SetLabelColor(null);  // Reset to item's default color
                 }
 
-                var osdItemString = item.GetOSDString(onScreenDisplayLevel);
+                var osdItemString = item.Render(onScreenDisplayLevel);
                 if (string.IsNullOrEmpty(osdItemString))
                     continue;
 
@@ -654,6 +665,11 @@ namespace XboxGamingBarHelper.RTSS
             {
                 enabledItems.Add(osdCustomTags);
             }
+
+            // Modern style: a dim middle dot with breathing room instead of the colored bar.
+            string separator = osdModernStyle
+                ? $"  <C={ApplyOpacityToColor("64748B")}>·<C>  "
+                : OSDSeparator;
 
             // Build output with columns
             int itemsPerRow = osdColumns > 0 ? osdColumns : 3; // Fallback default
@@ -668,7 +684,7 @@ namespace XboxGamingBarHelper.RTSS
                     }
                     else
                     {
-                        osdString += OSDSeparator;
+                        osdString += separator;
                     }
                 }
                 osdString += enabledItems[i];

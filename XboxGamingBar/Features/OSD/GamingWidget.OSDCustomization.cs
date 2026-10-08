@@ -44,16 +44,19 @@ namespace XboxGamingBar
     public sealed partial class GamingWidget
     {
         // OSD configuration for the single overlay layout - which items are enabled.
-        // Default: FPS, CPU, GPU, RAM, VRAM, Battery, Time (24h). Everything else stays
-        // available below but off until the user turns it on.
+        // Default: FPS, CPU, GPU, RAM, VRAM, SoC temperature, TDP, Battery, Time (24h). Everything
+        // else stays available below but off until the user turns it on.
         private Dictionary<string, bool> osdItemConfig = new Dictionary<string, bool>
         {
             { "FPS", true }, { "CPU", true }, { "GPU", true }, { "Memory", true }, { "VRAM", true },
-            { "Battery", true }, { "Time", true },
+            { "SoCTemp", true }, { "TDPLimits", true }, { "Battery", true }, { "Time", true },
             { "ControllerBattery", false }, { "CPUClock", false }, { "GPUClock", false },
-            { "FrameBudget", false }, { "Fan", false }, { "TDPLimits", false }, { "AutoTDP", false },
+            { "FrameBudget", false }, { "Fan", false }, { "AutoTDP", false },
             { "FrametimeGraph", false }
         };
+
+        // Modern style (calmer type, softer colors, fixed-width numbers) vs the classic look.
+        private bool osdModernStyle = true;
 
         private string osdCustomTags = "";
 
@@ -63,8 +66,8 @@ namespace XboxGamingBar
         // Overlay item order (list of item IDs in display order)
         private List<string> osdItemOrder = new List<string>
         {
-            "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time",
-            "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph"
+            "FPS", "CPU", "GPU", "Memory", "VRAM", "SoCTemp", "TDPLimits", "Battery", "Time",
+            "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "AutoTDP", "FrametimeGraph"
         };
 
         // Per-item label colors (DEFAULT = use global text color)
@@ -79,9 +82,10 @@ namespace XboxGamingBar
             { "ControllerBattery", "Controller Battery (L/R)" },
             { "Memory", "Memory (RAM)" },
             { "VRAM", "VRAM (GPU Memory)" },
-            { "CPU", "CPU (Usage, Wattage, Temp)" },
+            { "SoCTemp", "SoC Temperature" },
+            { "CPU", "CPU" },
             { "CPUClock", "CPU Clock Speed" },
-            { "GPU", "GPU (Usage, Wattage, Temp)" },
+            { "GPU", "GPU" },
             { "GPUClock", "GPU Clock Speed" },
             { "FrameBudget", "Frame Budget (CPU/GPU bound %)" },
             { "Fan", "Fan Speed" },
@@ -330,6 +334,22 @@ namespace XboxGamingBar
             OSDItemsControl.ItemsSource = osdItemViewModels;
         }
 
+        private bool isLoadingOSDStyle = false;
+
+        private void OSDModernStyleToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            // The switch is declared On in the XAML, so it raises Toggled while the widget is still
+            // being built (isLoadingOSDConfig is set for exactly that window). Without this guard
+            // the handler saved the built-in defaults over the user's stored overlay settings
+            // (columns, brightness, items, order) on every widget start.
+            if (isLoadingOSDConfig || isLoadingOSDStyle || OSDModernStyleToggle == null) return;
+
+            osdModernStyle = OSDModernStyleToggle.IsOn;
+            Logger.Info($"Overlay style: {(osdModernStyle ? "Modern" : "Classic")}");
+            SaveOSDConfigToStorage();
+            SendOSDConfigToHelper();
+        }
+
         private void OSDItemCheckBox_Changed(object sender, RoutedEventArgs e)
         {
             if (isLoadingOSDConfig) return;
@@ -403,8 +423,19 @@ namespace XboxGamingBar
             SendOSDConfigToHelper();
         }
 
+        // True once LoadOSDConfigFromStorage has read the saved overlay settings. Nothing may be
+        // written before that: a control event that fires while the widget is being built would
+        // otherwise overwrite the user's stored settings with the built-in defaults.
+        private bool osdConfigLoaded = false;
+
         private void SaveOSDConfigToStorage()
         {
+            if (!osdConfigLoaded)
+            {
+                Logger.Debug("OSD config save skipped: saved settings haven't been loaded yet.");
+                return;
+            }
+
             try
             {
                 var settings = ApplicationData.Current.LocalSettings;
@@ -429,6 +460,7 @@ namespace XboxGamingBar
                 settings.Values["OSD_LabelColor"] = osdLabelColor;
                 settings.Values["OSD_Opacity"] = osdOpacity;
                 settings.Values["OSD_FrametimeGraphPinned"] = frametimeGraphPinned;
+                settings.Values["OSD_ModernStyle"] = osdModernStyle;
 
                 Logger.Info($"OSD configuration saved to storage (resolution: {currentRes}, text size: {osdTextSize}, opacity: {osdOpacity})");
             }
@@ -443,7 +475,7 @@ namespace XboxGamingBar
             try
             {
                 var settings = ApplicationData.Current.LocalSettings;
-                var itemKeys = new[] { "FPS", "CPU", "GPU", "Memory", "VRAM", "Battery", "Time", "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" };
+                var itemKeys = new[] { "FPS", "CPU", "GPU", "Memory", "VRAM", "SoCTemp", "Battery", "Time", "ControllerBattery", "CPUClock", "GPUClock", "FrameBudget", "Fan", "TDPLimits", "AutoTDP", "FrametimeGraph" };
 
                 foreach (var key in itemKeys)
                 {
@@ -516,6 +548,17 @@ namespace XboxGamingBar
                     if (FrametimeGraphPinnedToggle != null)
                         FrametimeGraphPinnedToggle.IsOn = frametimeGraphPinned;
                 }
+                if (settings.Values.TryGetValue("OSD_ModernStyle", out object modernVal) && modernVal is bool modern)
+                {
+                    osdModernStyle = modern;
+                }
+                if (OSDModernStyleToggle != null)
+                {
+                    isLoadingOSDStyle = true;
+                    try { OSDModernStyleToggle.IsOn = osdModernStyle; }
+                    finally { isLoadingOSDStyle = false; }
+                }
+
                 if (settings.Values.TryGetValue("OSD_Provider", out object providerVal) && providerVal is int provider)
                 {
                     osdProvider = provider;
@@ -535,6 +578,11 @@ namespace XboxGamingBar
             {
                 Logger.Error($"Error loading OSD config: {ex.Message}");
             }
+            finally
+            {
+                // From here on the in-memory settings reflect what was stored, so saving is safe.
+                osdConfigLoaded = true;
+            }
         }
 
         private async void SendOSDConfigToHelper()
@@ -552,6 +600,7 @@ namespace XboxGamingBar
                 configParts.Add($"LabelColor:{osdLabelColor}");
                 configParts.Add($"Opacity:{osdOpacity}");
                 configParts.Add($"FrametimeGraphPinned:{(frametimeGraphPinned ? "1" : "0")}");
+                configParts.Add($"Style:{(osdModernStyle ? "Modern" : "Classic")}");
 
                 // Add item configuration
                 var enabledItems = new List<string>();

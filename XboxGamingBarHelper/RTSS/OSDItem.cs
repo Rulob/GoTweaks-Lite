@@ -101,6 +101,130 @@ namespace XboxGamingBarHelper.RTSS
             this.defaultColorCode = this.colorCode;  // Store the default
         }
 
+        // ===== Modern style =====
+        //
+        // A calmer, more readable layout than the classic one:
+        //  - small, baseline-aligned labels and units, full-size numbers (RTSS "<S=-75>" style
+        //    sizes, the same tag RTSS's own horizontal layout uses for its units);
+        //  - soft accent colours for labels and a neutral value colour that only changes when a
+        //    value crosses a real warning threshold (instead of a rainbow of every reading);
+        //  - roughly fixed-width number fields (padding spaces) so the bar doesn't jitter as
+        //    digit counts change.
+        // Items that don't implement GetModernOSDString simply keep their classic output.
+        protected bool modernStyle = false;
+        protected int baseTextSize = 100;   // percent, the global OSD text size
+
+        private const string ModernNeutralColor = "F1F5F9";
+        private const string ModernDimColor = "94A3B8";
+        private const string ModernWarnColor = "FCD34D";
+        private const string ModernHotColor = "FCA5A5";
+
+        public void SetModernStyle(bool enabled)
+        {
+            modernStyle = enabled;
+        }
+
+        public void SetBaseTextSize(int size)
+        {
+            baseTextSize = Math.Max(10, size);
+        }
+
+        /// <summary>What the manager calls: Modern output when it's on and the item has one.</summary>
+        public string Render(int osdLevel)
+        {
+            if (modernStyle)
+            {
+                var modern = GetModernOSDString(osdLevel);
+                if (modern != null) return modern;
+            }
+            return GetOSDString(osdLevel);
+        }
+
+        /// <summary>Modern-style text for this item, or null to use the classic output.</summary>
+        protected virtual string GetModernOSDString(int osdLevel)
+        {
+            return null;
+        }
+
+        /// <summary>Value colour: a calm off-white, or the user's fixed text colour if they set one.</summary>
+        protected string MValueColor()
+        {
+            return useDynamicColor ? ApplyOpacity(ModernNeutralColor) : textColor;
+        }
+
+        protected string MDimColor()
+        {
+            return ApplyOpacity(ModernDimColor);
+        }
+
+        /// <summary>Label colour: the item's modern accent unless the user picked a label colour.</summary>
+        protected string MLabelColor(string accentHex)
+        {
+            return ApplyOpacity(colorCode != defaultColorCode ? colorCode : accentHex);
+        }
+
+        /// <summary>Neutral until <paramref name="warn"/>, amber from there, soft red from <paramref name="hot"/>.</summary>
+        protected string MHighIsBad(double value, double warn, double hot)
+        {
+            if (!useDynamicColor) return textColor;
+            if (value >= hot) return ApplyOpacity(ModernHotColor);
+            if (value >= warn) return ApplyOpacity(ModernWarnColor);
+            return MValueColor();
+        }
+
+        /// <summary>Same idea for values where LOW is the problem (battery).</summary>
+        protected string MLowIsBad(double value, double warn, double hot)
+        {
+            if (!useDynamicColor) return textColor;
+            if (value <= hot) return ApplyOpacity(ModernHotColor);
+            if (value <= warn) return ApplyOpacity(ModernWarnColor);
+            return MValueColor();
+        }
+
+        /// <summary>Returns the text size to the user's chosen size (RTSS "&lt;S&gt;" alone means 100%).</summary>
+        protected string SizeReset()
+        {
+            return baseTextSize != 100 ? $"<S={baseTextSize}>" : "<S>";
+        }
+
+        /// <summary>Smaller text sitting on the same baseline as the numbers.</summary>
+        protected string MSmall(string text, int percent = 75)
+        {
+            return $"<S=-{percent}>{text}{SizeReset()}";
+        }
+
+        /// <summary>Small accent label followed by a space, e.g. "CPU ".</summary>
+        protected string MLabel(string text, string accentHex)
+        {
+            // 75%, not 72%: RTSS places small text on the baseline by rounding the scaled font
+            // size, and at 72% the labels landed one pixel LOWER than the numbers (measured on a
+            // screenshot), while 75% (the unit size) and 88% sit exactly on the baseline.
+            return $"<C={MLabelColor(accentHex)}>{MSmall(text, 75)}<C={MValueColor()}> ";
+        }
+
+        /// <summary>Small dim unit, e.g. "%" or "W". Leaves the colour on the value colour.</summary>
+        protected string MUnit(string text)
+        {
+            return $"<C={MDimColor()}>{MSmall(text)}<C={MValueColor()}>";
+        }
+
+        /// <summary>
+        /// A number in a roughly fixed-width field: padded on the left with plain spaces up to
+        /// <paramref name="minDigits"/> integer digits, so "9" and "45" take about the same room.
+        /// Two spaces are about one digit wide in Segoe UI. (An earlier version padded with
+        /// fully transparent digits, but RTSS draws those visibly, giving "09%" and "07.3".)
+        /// </summary>
+        protected string MNum(double value, int minDigits, string colorHex, bool oneDecimal = false)
+        {
+            double rounded = oneDecimal ? Math.Round(value, 1, MidpointRounding.AwayFromZero)
+                                        : Math.Round(value, MidpointRounding.AwayFromZero);
+            double abs = Math.Abs(Math.Floor(rounded));
+            int digits = abs < 10 ? 1 : (abs < 100 ? 2 : (abs < 1000 ? 3 : 4));
+            string pad = digits < minDigits ? new string(' ', 2 * (minDigits - digits)) : "";
+            string text = rounded.ToString(oneDecimal ? "0.0" : "0", System.Globalization.CultureInfo.InvariantCulture);
+            return $"<C={colorHex}>{pad}{text}";
+        }
+
         public virtual string GetOSDString(int osdLevel)
         {
             var osdValues = GetValues(osdLevel);
