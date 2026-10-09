@@ -30,7 +30,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             // red at 15%). The rate and time left/to full use the same neutral color as every
             // other number; only their small units are dim.
             string value = MValueColor();
-            string text = MLabel("BAT", "BEF264");
+            string text = MLabel("BAT", "C8FF69");
 
             float level = batteryPercentSensor.Value;
             text += level < 0 ? $"<C={value}>--" : MNum(level, 2, MLowIsBad(level, 30, 15)) + MUnit("%");

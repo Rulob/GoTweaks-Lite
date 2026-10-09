@@ -12,7 +12,7 @@ namespace XboxGamingBarHelper.RTSS
         protected string defaultColorCode;  // Store the original color
         protected string textColor = "FFFFFF";
         protected bool useDynamicColor = false;
-        protected int opacity = 100;  // OLED protection opacity (10-100)
+        protected int opacity = 50;   // OLED protection opacity (10-100)
 
         public string Id => id;
 
@@ -114,10 +114,14 @@ namespace XboxGamingBarHelper.RTSS
         protected bool modernStyle = false;
         protected int baseTextSize = 100;   // percent, the global OSD text size
 
-        private const string ModernNeutralColor = "F1F5F9";
-        private const string ModernDimColor = "94A3B8";
-        private const string ModernWarnColor = "FCD34D";
-        private const string ModernHotColor = "FCA5A5";
+        // These are the colors at 100% brightness, so they are full-intensity: pure white for the
+        // numbers (an off-white made 100% look faintly transparent) and the accents at full value.
+        // Everything is then scaled down by the brightness slider (ApplyOpacity), so the slider
+        // genuinely spans from dim to fully bright.
+        private const string ModernNeutralColor = "FFFFFF";
+        private const string ModernDimColor = "B8C3D4";
+        private const string ModernWarnColor = "FFD740";
+        private const string ModernHotColor = "FF9494";
 
         public void SetModernStyle(bool enabled)
         {

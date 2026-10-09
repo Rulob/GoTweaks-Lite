@@ -32,7 +32,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
         protected override string GetModernOSDString(int osdLevel)
         {
             // "TEMP 62°C": neutral, amber from 80°C, soft red from 90°C.
-            string text = MLabel("TEMP", "FDBA74");
+            string text = MLabel("TEMP", "FFBB75");
             float temp = ReadTemperature();
             if (temp < 0) return text + $"<C={MValueColor()}>--";
             return text + MNum(temp, 2, MHighIsBad(temp, 80, 90)) + MUnit("°C");

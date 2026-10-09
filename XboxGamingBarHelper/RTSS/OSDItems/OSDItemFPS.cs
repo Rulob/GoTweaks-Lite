@@ -16,7 +16,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             // "FPS 60 / 120 FG". Numbers sit in fixed-width fields so the bar doesn't jitter.
             string value = MValueColor();
             string dim = MDimColor();
-            string text = MLabel("FPS", "6EE7B7");
+            string text = MLabel("FPS", "7AFFCA");
 
             var pm = Program.PresentMonMetrics;
             if (pm != null && pm.IsLive() && pm.RenderedFps > 0)

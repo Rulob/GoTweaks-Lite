@@ -21,7 +21,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
         {
             // "RAM 42%" - percentage only; amber from 85%, soft red from 95%.
             float percent = memoryUsageSensor.Value;
-            string text = MLabel("RAM", "F9A8D4");
+            string text = MLabel("RAM", "FFACD9");
             if (percent < 0) return text + $"<C={MValueColor()}>--";
             return text + MNum(percent, 2, MHighIsBad(percent, 85, 95)) + MUnit("%");
         }

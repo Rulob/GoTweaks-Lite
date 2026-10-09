@@ -90,7 +90,7 @@ namespace XboxGamingBarHelper.RTSS
         private string osdTextColor = "FFFFFF";
         private string osdLabelColor = "DEFAULT";  // DEFAULT = use item-specific colors, or hex color code
         private string osdBackgroundColor = "80000000";
-        private int osdOpacity = 100;         // Percentage: 10-100, darkens OSD colors for OLED protection
+        private int osdOpacity = 50;          // Percentage: 10-100, darkens OSD colors for OLED protection (50% until the widget sends its setting)
 
         // OSD position offset for OLED burn-in protection
         private int osdPositionOffsetX = 0;
@@ -668,7 +668,7 @@ namespace XboxGamingBarHelper.RTSS
 
             // Modern style: a dim middle dot with breathing room instead of the colored bar.
             string separator = osdModernStyle
-                ? $"  <C={ApplyOpacityToColor("64748B")}>·<C>  "
+                ? $"  <C={ApplyOpacityToColor("7D8CA5")}>·<C>  "
                 : OSDSeparator;
 
             // Build output with columns

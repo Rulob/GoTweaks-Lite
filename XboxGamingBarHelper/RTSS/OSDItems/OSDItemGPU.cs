@@ -30,7 +30,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
         {
             // "GPU 61%" - usage only (see OSDItemCPU).
             string value = MValueColor();
-            string text = MLabel("GPU", "C4B5FD");
+            string text = MLabel("GPU", "C6B6FF");
 
             float usage = gpuUsageSensor.Value;
             text += usage < 0 ? $"<C={value}>--" : MNum(usage, 2, value) + MUnit("%");

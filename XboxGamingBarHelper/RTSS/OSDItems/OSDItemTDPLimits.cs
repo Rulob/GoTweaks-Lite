@@ -44,18 +44,18 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
 
             // "TDP Balanced" in a preset mode, "TDP 25/26/28W" in Custom (SPL/SPPT/FPPT).
             string value = MValueColor();
-            string text = MLabel("TDP", "FCD34D");
+            string text = MLabel("TDP", "FFD54E");
 
             if (legionManager != null && legionManager.LegionGoDetected?.Value == true)
             {
                 int mode = legionManager.CurrentPerformanceMode;
                 if (mode != 255)
                 {
-                    // "Balanced Mode" -> a smaller "Balanced" (the word at full size looked bigger than
-                    // the numbers around it). 75% like the labels and units: measured on screenshots,
-                    // 75% and 100% sit exactly on the baseline, whereas 88% landed one pixel high.
+                    // "Balanced Mode" -> "Balanced", at the same size as the other values (it is a
+                    // value, not a tag). Full size sits exactly on the baseline; the reduced sizes
+                    // tried before (75% / 88%) looked too small or landed a pixel off.
                     string modeName = LegionManager.GetPerformanceModeName(mode).Replace(" Mode", "");
-                    return text + $"<C={value}>" + MSmall(modeName, 75);
+                    return text + $"<C={value}>{modeName}";
                 }
             }
 

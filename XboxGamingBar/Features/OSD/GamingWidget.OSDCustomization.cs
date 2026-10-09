@@ -124,7 +124,7 @@ namespace XboxGamingBar
         private bool adaptiveBrightnessEnabled = false;
         private bool osdPositionShiftEnabled = false;
         private bool frametimeGraphPinned = false;
-        private int osdOpacity = 100; // percentage 10-100
+        private int osdOpacity = 50;  // percentage 10-100; 50% by default to protect OLED panels
         private bool isLoadingOLEDSettings = false;
         private bool isLoadingPerformanceOverlaySetting = false;
         private readonly Windows.UI.Xaml.Shapes.Ellipse[] fanCurvePoints = new Windows.UI.Xaml.Shapes.Ellipse[10];

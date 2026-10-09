@@ -3573,7 +3573,7 @@
                                             <TextBlock Grid.Column="0" Text="OSD Opacity" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
                                             <TextBlock x:Name="OSDOpacityValue"
                                                        Grid.Column="1"
-                                                       Text="100%" FontSize="13" Foreground="{StaticResource SystemAccentBrush}"
+                                                       Text="50%" FontSize="13" Foreground="{StaticResource SystemAccentBrush}"
                                                        FontWeight="SemiBold" VerticalAlignment="Center"/>
                                         </Grid>
                                         <TextBlock Text="Reduce OSD brightness to protect OLED pixels" Foreground="#888888" FontSize="11" Margin="0,2,0,4"/>
@@ -3582,7 +3582,7 @@
                                                 Minimum="10" Maximum="100"
                                                 TickFrequency="5"
                                                 SnapsTo="Ticks"
-                                                Value="100"
+                                                Value="50"
                                                 ValueChanged="OSDOpacitySlider_ValueChanged"/>
                                     </StackPanel>
 

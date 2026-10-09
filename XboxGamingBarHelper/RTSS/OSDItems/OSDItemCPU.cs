@@ -31,7 +31,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             // "CPU 45%" - usage only. Wattage and temperature are no longer shown (the SoC
             // temperature has its own item); the clock still appears if that item is enabled.
             string value = MValueColor();
-            string text = MLabel("CPU", "7DD3FC");
+            string text = MLabel("CPU", "7ED5FF");
 
             float usage = cpuUsageSensor.Value;
             text += usage < 0 ? $"<C={value}>--" : MNum(usage, 2, value) + MUnit("%");
