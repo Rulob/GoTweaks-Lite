@@ -1045,46 +1045,24 @@ namespace XboxGamingBar
             }
         }
         /// <summary>
-        /// Updates XY focus bindings in Performance tab based on Legion detection
+        /// Refreshes the Performance tab's D-pad focus order (see GamingWidget.PerformanceFocus.cs).
         /// </summary>
         private void UpdatePerformanceTabXYFocus(bool isLegion)
         {
-            // Master TDP slider removed: PerformanceOverlay -> TDPMode dropdown. From the dropdown the
-            // focus continues to the Custom sliders (when visible) or OSPowerMode, wired in XAML.
-            if (PerformanceOverlayToggle != null && TDPModeComboBox != null)
-            {
-                PerformanceOverlayToggle.XYFocusDown = TDPModeComboBox;
-                TDPModeComboBox.XYFocusUp = PerformanceOverlayToggle;
-            }
+            RebuildPerformanceTabFocusChain();
         }
 
         /// <summary>
-        /// Updates XY focus navigation for the Performance tab based on current state.
-        /// Flow: Nav -> PerGameProfile Toggle (if game detected) -> Performance Overlay -> ...
+        /// Refreshes the Performance tab's D-pad focus order when game detection changes: the
+        /// per-game profile toggle is only enabled (and so only a focus stop) while a game is running.
         /// </summary>
         private void UpdatePerformanceTabXYNavigation()
         {
             // Early exit if UI elements aren't ready
             if (PerformanceNavItem == null || PerformanceOverlayToggle == null) return;
 
-            bool gameDetected = runningGame?.Value.IsValid() == true;
-
-            Logger.Debug($"UpdatePerformanceTabXYNavigation: gameDetected={gameDetected}");
-
-            if (gameDetected && PerGameProfileToggle != null)
-            {
-                // Game detected: Nav -> PerGameProfile Toggle -> Overlay
-                PerformanceNavItem.XYFocusDown = PerGameProfileToggle;
-                PerGameProfileToggle.XYFocusUp = PerformanceNavItem;
-                PerGameProfileToggle.XYFocusDown = PerformanceOverlayToggle;
-                PerformanceOverlayToggle.XYFocusUp = PerGameProfileToggle;
-            }
-            else
-            {
-                // No game: Nav -> Overlay (skip disabled PerGameProfile)
-                PerformanceNavItem.XYFocusDown = PerformanceOverlayToggle;
-                PerformanceOverlayToggle.XYFocusUp = PerformanceNavItem;
-            }
+            Logger.Debug($"UpdatePerformanceTabXYNavigation: gameDetected={runningGame?.Value.IsValid() == true}");
+            RebuildPerformanceTabFocusChain();
         }
 
         /// <summary>
@@ -1418,17 +1396,12 @@ namespace XboxGamingBar
             if (!isCustomMode)
             {
                 // Preset mode: the Custom card is hidden. Keep the readout sane (shown only if the
-                // card becomes visible again) and route focus straight past the hidden sliders.
+                // card becomes visible again).
                 int modeIndex = TDPModeComboBox?.SelectedIndex ?? 1;
                 string[] defaultModeNames = { "Quiet", "Balanced", "Performance" };
                 string modeName = (modeIndex >= 0 && modeIndex < defaultModeNames.Length) ? defaultModeNames[modeIndex] : "Balanced";
                 if (CurrentTDPValueText != null) CurrentTDPValueText.Text = $"{modeName} mode";
 
-                if (TDPModeComboBox != null && OSPowerModeComboBox != null)
-                {
-                    TDPModeComboBox.XYFocusDown = OSPowerModeComboBox;
-                    OSPowerModeComboBox.XYFocusUp = TDPModeComboBox;
-                }
                 Logger.Debug($"Custom card hidden - using {modeName} mode");
             }
             else
@@ -1454,16 +1427,10 @@ namespace XboxGamingBar
                         ApplyCustomTDPSlidersToHelper(force: true);
                     }
                 }
-
-                // Focus chain in Custom mode: TDPMode -> Custom sliders -> OSPowerMode (the slider-to-
-                // slider links are wired in XAML).
-                if (TDPModeComboBox != null && OSPowerModeComboBox != null
-                    && CustomTDPSlowSlider != null && CustomTDPPeakSlider != null)
-                {
-                    TDPModeComboBox.XYFocusDown = CustomTDPSlowSlider;
-                    OSPowerModeComboBox.XYFocusUp = CustomTDPPeakSlider;
-                }
             }
+
+            // The Custom sliders just appeared/disappeared - refresh the D-pad focus order.
+            RebuildPerformanceTabFocusChain();
         }
 
         // ===== Custom Power Limits (Performance tab, Legion-only, Custom mode) =====
@@ -1514,6 +1481,9 @@ namespace XboxGamingBar
                 AutoTDPCard.Visibility = isLegion ? Visibility.Visible : Visibility.Collapsed;
                 UpdateCustomTDPSlidersEnabledForAutoTDP();
             }
+
+            // Cards were shown/hidden - refresh the D-pad focus order.
+            RebuildPerformanceTabFocusChain();
         }
 
         /// <summary>

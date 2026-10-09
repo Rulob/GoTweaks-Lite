@@ -212,6 +212,7 @@ namespace XboxGamingBar
                     case "Performance":
                         PerformanceScrollViewer.Visibility = Visibility.Visible;
                         PerformanceScrollViewer.ChangeView(null, 0, null, true);
+                        SchedulePerformanceFocusChainRebuild();
                         break;
                     case "Game":
                         GameScrollViewer.Visibility = Visibility.Visible;

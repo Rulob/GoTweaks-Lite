@@ -1183,6 +1183,9 @@ namespace XboxGamingBar
             // thinks the trigger is still down. Refreshing on focus is a clean escape.
             this.GotFocus += (s, args) => ResetTriggerTabNavState();
 
+            InitPerformanceTabFocusChain();
+            this.Loaded += (s, args) => SchedulePerformanceFocusChainRebuild();
+
             var propertiesTimer = Stopwatch.StartNew();
             // Headless: the master TDP slider was removed (Legion-only build). The property stays
             // as the Function.TDP wire channel + the helper's master-TDP value cache, but no longer

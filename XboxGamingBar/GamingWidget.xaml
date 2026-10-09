@@ -1088,9 +1088,7 @@
                                     <ToggleSwitch x:Name="PerGameProfileToggle"
                                                   Grid.Column="1"
                                                   Style="{StaticResource ModernToggleStyle}"
-                                                  IsEnabled="False"
-                                                  XYFocusUp="{x:Bind PerformanceNavItem}"
-                                                  XYFocusDown="{x:Bind PowerSourceProfileToggle}"/>
+                                                  IsEnabled="False"/>
                                 </Grid>
 
                                 <!-- Power Source Profile Toggle -->
@@ -1112,9 +1110,7 @@
                                         </StackPanel>
                                         <ToggleSwitch x:Name="PowerSourceProfileToggle"
                                                       Grid.Column="1"
-                                                      Style="{StaticResource ModernToggleStyle}" Width="47"
-                                                      XYFocusUp="{x:Bind PerGameProfileToggle}"
-                                                      XYFocusDown="{x:Bind PerformanceOverlayToggle}"/>
+                                                      Style="{StaticResource ModernToggleStyle}" Width="47"/>
                                     </Grid>
                                     <TextBlock x:Name="PowerSourceProfileScopeText"
                                                Margin="0,8,0,0"
@@ -1143,8 +1139,6 @@
                                               Style="{StaticResource ModernToggleStyle}"
                                               Width="52"
                                               Toggled="PerformanceOverlayToggle_Toggled"
-                                              XYFocusUp="{x:Bind PowerSourceProfileToggle}"
-                                              XYFocusDown="{x:Bind FPSLimitToggle}"
                                               XYFocusLeft="{x:Bind PerformanceNavItem}"/>
 
                                 <!-- Hidden slider for property system compatibility (OSDProperty binds to a Slider) -->
@@ -1184,9 +1178,7 @@
                                     <ToggleSwitch x:Name="FPSLimitToggle"
                                                   Grid.Column="2"
                                                   Style="{StaticResource ModernToggleStyle}"
-                                                  IsEnabled="False" Width="52"
-                                                  XYFocusUp="{x:Bind PerformanceOverlayToggle}"
-                                                  XYFocusDown="{x:Bind TDPModeComboBox}"/>
+                                                  IsEnabled="False" Width="52"/>
                                 </Grid>
                                 <Slider x:Name="FPSLimitSlider"
                                         Style="{StaticResource ModernSliderStyle}"
@@ -1216,9 +1208,7 @@
                                           Grid.Column="1"
                                           Style="{StaticResource ModernComboBoxStyle}"
                                           SelectedIndex="1"
-                                          SelectionChanged="TDPModeComboBox_SelectionChanged"
-                                          XYFocusUp="{x:Bind FPSLimitToggle}"
-                                          XYFocusDown="{x:Bind OSPowerModeComboBox}">
+                                          SelectionChanged="TDPModeComboBox_SelectionChanged">
                                     <ComboBoxItem Content="Quiet" Tag="1"/>
                                     <ComboBoxItem Content="Balanced" Tag="2"/>
                                     <ComboBoxItem Content="Performance" Tag="3"/>
@@ -1247,8 +1237,7 @@
                                         TickFrequency="1"
                                         SnapsTo="Ticks"
                                         Value="15"
-                                        ValueChanged="CustomTDPSlowSlider_ValueChanged"
-                                        XYFocusUp="{x:Bind TDPModeComboBox}"/>
+                                        ValueChanged="CustomTDPSlowSlider_ValueChanged"/>
 
                                 <!-- SPPT Boost (effective SPPT = TDP + boost) -->
                                 <Grid>
@@ -1274,8 +1263,7 @@
                                         TickFrequency="1"
                                         SnapsTo="Ticks"
                                         Value="5"
-                                        ValueChanged="CustomTDPPeakSlider_ValueChanged"
-                                        XYFocusDown="{x:Bind OSPowerModeComboBox}"/>
+                                        ValueChanged="CustomTDPPeakSlider_ValueChanged"/>
 
                                 <!-- Live hardware readout (helper pushes the actual SPL/SPPT/FPPT) -->
                                 <Grid Margin="0,4,0,0">
@@ -1311,8 +1299,7 @@
                                                   Grid.Column="1"
                                                   Style="{StaticResource ModernToggleStyle}"
                                                   Width="52"
-                                                  Toggled="AutoTDPToggle_Toggled"
-                                                  XYFocusUp="{x:Bind TDPModeComboBox}"/>
+                                                  Toggled="AutoTDPToggle_Toggled"/>
                                 </Grid>
 
                                 <StackPanel x:Name="AutoTDPSettingsPanel"
@@ -1328,8 +1315,7 @@
                                             Minimum="30" Maximum="144"
                                             StepFrequency="5" TickFrequency="15" TickPlacement="Outside" SnapsTo="StepValues"
                                             Value="60"
-                                            ValueChanged="AutoTDPTargetFPSSlider_ValueChanged"
-                                            XYFocusUp="{x:Bind AutoTDPToggle}"/>
+                                            ValueChanged="AutoTDPTargetFPSSlider_ValueChanged"/>
 
                                     <!-- Live current FPS readout -->
                                     <Grid>
@@ -1368,8 +1354,7 @@
                                                       Width="52"
                                                       HorizontalAlignment="Right"
                                                       IsOn="True"
-                                                      Toggled="AutoTDPPauseWhenUnfocusedToggle_Toggled"
-                                                      XYFocusDown="{x:Bind OSPowerModeComboBox}"/>
+                                                      Toggled="AutoTDPPauseWhenUnfocusedToggle_Toggled"/>
                                     </Grid>
                                 </StackPanel>
                             </StackPanel>
@@ -1403,9 +1388,7 @@
                                           Margin="0,12,0,0"
                                           Style="{StaticResource ModernComboBoxStyle}"
                                           SelectedIndex="1"
-                                          SelectionChanged="OSPowerModeComboBox_SelectionChanged"
-                                          XYFocusUp="{x:Bind TDPModeComboBox}"
-                                          XYFocusDown="{x:Bind CPUExtrasExpandToggle}">
+                                          SelectionChanged="OSPowerModeComboBox_SelectionChanged">
                                     <ComboBoxItem Content="Best Power Efficiency"/>
                                     <ComboBoxItem Content="Balanced"/>
                                     <ComboBoxItem Content="Best Performance"/>
@@ -1434,7 +1417,6 @@
                                                   BorderThickness="0"
                                                   Padding="8,4"
                                                   Click="CPUExtrasExpandToggle_Click"
-                                                  XYFocusUp="{x:Bind OSPowerModeComboBox}"
                                                   UseSystemFocusVisuals="True">
                                         <FontIcon x:Name="CPUExtrasExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
                                     </ToggleButton>
@@ -3180,7 +3162,6 @@
                                                   Padding="8,4"
                                                   Click="OSDCustomizeExpandButton_Click"
                                                   XYFocusUp="{x:Bind SystemNavItem}"
-                                                  XYFocusDown="{x:Bind HotkeysExpandButton}"
                                                   UseSystemFocusVisuals="True">
                                         <FontIcon x:Name="OSDCustomizeExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
                                     </ToggleButton>
@@ -3574,8 +3555,6 @@
                                                   BorderThickness="0"
                                                   Padding="8,4"
                                                   Click="HotkeysExpandButton_Click"
-                                                  XYFocusUp="{x:Bind OSDCustomizeExpandButton}"
-                                                  XYFocusDown="{x:Bind PowerAndSleepExpandButton}"
                                                   UseSystemFocusVisuals="True">
                                         <FontIcon x:Name="HotkeysExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
                                     </ToggleButton>
@@ -6463,7 +6442,7 @@
                                                   Grid.Column="1"
                                                   Style="{StaticResource ModernComboBoxStyle}">
                                             <ComboBoxItem Content="Disabled" IsSelected="True"/>
-                                            <ComboBoxItem Content="Guide"/>
+                                            <ComboBoxItem Content="Open Game Bar"/>
                                             <ComboBoxItem Content="Keyboard Shortcut"/>
                                             <ComboBoxItem Content="Run Command"/>
                                             <ComboBoxItem Content="Focus GoTweaks Lite"/>
@@ -6517,7 +6496,7 @@
                                                   Grid.Column="1"
                                                   Style="{StaticResource ModernComboBoxStyle}">
                                             <ComboBoxItem Content="Disabled" IsSelected="True"/>
-                                            <ComboBoxItem Content="Open Xbox Game Bar (Win+G)"/>
+                                            <ComboBoxItem Content="Open Game Bar"/>
                                             <ComboBoxItem Content="Keyboard Shortcut"/>
                                             <ComboBoxItem Content="Run Command"/>
                                             <ComboBoxItem Content="Focus GoTweaks Lite"/>
@@ -6587,7 +6566,7 @@
                                                   Style="{StaticResource ModernComboBoxStyle}"
                                                   SelectionChanged="ScrollActionComboBox_SelectionChanged">
                                             <ComboBoxItem Content="Disabled" IsSelected="True"/>
-                                            <ComboBoxItem Content="Open Xbox Game Bar (Win+G)"/>
+                                            <ComboBoxItem Content="Open Game Bar"/>
                                             <ComboBoxItem Content="Keyboard Shortcut"/>
                                             <ComboBoxItem Content="Run Command"/>
                                             <ComboBoxItem Content="Focus GoTweaks Lite"/>
@@ -6642,7 +6621,7 @@
                                                   Style="{StaticResource ModernComboBoxStyle}"
                                                   SelectionChanged="ScrollClickActionComboBox_SelectionChanged">
                                             <ComboBoxItem Content="Disabled" IsSelected="True"/>
-                                            <ComboBoxItem Content="Open Xbox Game Bar (Win+G)"/>
+                                            <ComboBoxItem Content="Open Game Bar"/>
                                             <ComboBoxItem Content="Keyboard Shortcut"/>
                                             <ComboBoxItem Content="Run Command"/>
                                             <ComboBoxItem Content="Focus GoTweaks Lite"/>
