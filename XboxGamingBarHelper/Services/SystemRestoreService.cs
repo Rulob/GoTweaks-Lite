@@ -358,14 +358,12 @@ namespace XboxGamingBarHelper.Services
         /// <summary>
         /// Prepares the system for uninstall by reverting all changes.
         /// </summary>
-        /// <param name="legionManager">Optional - releases the EC fan override if a custom fan curve is active.</param>
+        /// <param name="legionManager">Optional - reserved for Legion-specific restoration.</param>
         /// <param name="systemManager">Optional - re-enables the touchscreen if GoTweaks disabled it.</param>
-        /// <param name="viiperManager">Optional - stops any live VIIPER emulation session (usbip detach, HidHide, virtual pad teardown).</param>
         /// <returns>A summary of actions taken</returns>
         public static string PrepareForUninstall(
             LegionManager legionManager = null,
-            SystemManager systemManager = null,
-            XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager viiperManager = null)
+            SystemManager systemManager = null)
         {
             Initialize();
 
@@ -582,73 +580,7 @@ namespace XboxGamingBarHelper.Services
                 }
             }
 
-            // 9. Release the EC fan override (register 0xC6C8) if a custom fan curve is
-            // active, handing fan control back to Lenovo firmware. Otherwise a stuck RPM
-            // survives helper shutdown - the crash-safety hooks only cover process exit,
-            // not this in-app "prepare for uninstall" flow.
-            if (legionManager != null)
-            {
-                try
-                {
-                    Logger.Info("Uninstall: Releasing EC fan override...");
-                    legionManager.StopEcFanCurveLoop();
-                    results.AppendLine("✓ EC fan override released (firmware fan control restored)");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Uninstall: Failed to release EC fan override: {ex.Message}");
-                    results.AppendLine($"✗ Failed to release EC fan override: {ex.Message}");
-                }
-            }
-
-            // 10. Stop any live VIIPER emulation session (usbip detach, HidHide suppression,
-            // virtual pad teardown) before the controller-related cleanup below.
-            if (viiperManager != null)
-            {
-                try
-                {
-                    Logger.Info("Uninstall: Stopping VIIPER emulation...");
-                    viiperManager.Stop();
-                    results.AppendLine("✓ VIIPER emulation stopped");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Uninstall: Failed to stop VIIPER emulation: {ex.Message}");
-                    results.AppendLine($"✗ Failed to stop VIIPER emulation: {ex.Message}");
-                }
-            }
-
-            // 11. Clear our HidHide cloaking rules (blocked device IDs + registered app
-            // paths) so no controller stays hidden from other apps after uninstall.
-            try
-            {
-                Logger.Info("Uninstall: Restoring HidHide state...");
-                UninstallService.RestoreHidHide();
-                results.AppendLine("✓ HidHide cloaking rules cleared");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Uninstall: Failed to restore HidHide state: {ex.Message}");
-                results.AppendLine($"✗ Failed to restore HidHide state: {ex.Message}");
-            }
-
-            // 12. Sweep any orphaned VIIPER/ViGEm phantom virtual pads left behind by a
-            // prior crash or ungraceful shutdown.
-            try
-            {
-                Logger.Info("Uninstall: Sweeping phantom virtual pads...");
-                ControllerEmulation.Viiper.ViiperPnpCleanup.CleanupPresentViiperPhantomsBlocking();
-                ControllerEmulation.Viiper.ViiperPnpCleanup.CleanupPresentVigemPhantomsBlocking();
-                ControllerEmulation.Viiper.ViiperPnpCleanup.CleanupAllKnownGhosts();
-                results.AppendLine("✓ Phantom virtual pads swept");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Uninstall: Failed to sweep phantom virtual pads: {ex.Message}");
-                results.AppendLine($"✗ Failed to sweep phantom virtual pads: {ex.Message}");
-            }
-
-            // 13. Restore Power Button action
+            // 9. Restore Power Button action
             if (_restoreData.PowerButtonActionSaved && _restoreData.OriginalPowerButtonActionAC.HasValue)
             {
                 try
@@ -672,7 +604,7 @@ namespace XboxGamingBarHelper.Services
                 results.AppendLine("- Power Button action: No original value saved (was not modified)");
             }
 
-            // 14. Restore Display Timeout
+            // 10. Restore Display Timeout
             if (_restoreData.DisplayTimeoutSaved && _restoreData.OriginalDisplayTimeoutAC.HasValue)
             {
                 try
@@ -696,7 +628,7 @@ namespace XboxGamingBarHelper.Services
                 results.AppendLine("- Display Timeout: No original value saved (was not modified)");
             }
 
-            // 15. Restore Sleep Timeout
+            // 11. Restore Sleep Timeout
             if (_restoreData.SleepTimeoutSaved && _restoreData.OriginalSleepTimeoutAC.HasValue)
             {
                 try

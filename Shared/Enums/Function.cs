@@ -1,5 +1,10 @@
 ﻿namespace Shared.Enums
 {
+    // NOTE: The numeric value of each entry is its position, and the widget and helper
+    // exchange those numbers over the pipe - so entries are NEVER removed or reordered,
+    // only appended. Entries that belong to retired features (Controller Emulation / VIIPER,
+    // HidHide, PawnIO, usbip, the TDP-method picker, setup warnings, gyro-bias calibration,
+    // the EC fan-curve unlock) are kept below as reserved slots; nothing sends or handles them.
     public enum Function
     {
         None = 0,
@@ -636,5 +641,12 @@
         // Helper -> widget push: a registered tile combo fired. Content = the tile id/tag.
         // Widget re-dispatches it through the normal tile-click handler (SimulateTileHotkeyFired).
         TileHotkeyFired,                // string - tile id/tag that the combo activated (helper -> widget)
+
+        // Legion Go / Go 2 controller input mode, mimicking Legion Space's X-Input / D-Input switch.
+        // Helper -> widget: the mode the controllers are actually in, derived from their USB PID.
+        // Widget -> helper: 1 or 2 asks the helper to switch (HID command; the pads re-enumerate).
+        //   0 = unknown / no controller, 1 = X-Input, 2 = D-Input,
+        //   3 = Dual D-Input (controllers detached), 4 = FPS mode (right-controller switch)
+        LegionControllerMode,           // int
     }
 }

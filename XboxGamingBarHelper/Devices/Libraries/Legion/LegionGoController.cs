@@ -428,6 +428,30 @@ public class LegionGoController : IDisposable
 
     #endregion
 
+    #region Gamepad Mode (X-Input / D-Input)
+
+    /// <summary>
+    /// Switches the controllers between X-Input and D-Input, the same switch Legion Space
+    /// exposes. The controllers re-enumerate on USB under a different product ID afterwards
+    /// (see <see cref="Shared.Data.LegionControllerModes"/>), so existing HID handles go stale.
+    ///
+    /// HID Command: 05 00 04 0E 00 [01=X-Input | 02=D-Input]
+    /// (SET_FEATURE_STATUS / FEATURE_GAMEPAD_MODE - same command family as the touchpad and
+    /// gyro commands above; layout matches Lenovo's Linux hid-lenovo-go driver.)
+    /// </summary>
+    /// <param name="mode">X-Input or D-Input.</param>
+    /// <returns>True if command sent successfully.</returns>
+    public bool SetGamepadMode(GamepadInputMode mode)
+    {
+        var command = CreateCommand(
+            0x00, 0x04, 0x0E, 0x00,
+            (byte)mode
+        );
+        return SendCommand(command);
+    }
+
+    #endregion
+
     #region Vibration Control
 
     /// <summary>
@@ -1633,6 +1657,15 @@ public enum VibrationMode : byte
     AVG = 0x03,
     SPG = 0x04,
     RPG = 0x05
+}
+
+/// <summary>
+/// Controller input mode values for the gamepad-mode command (05 00 04 0E 00 [mode]).
+/// </summary>
+public enum GamepadInputMode : byte
+{
+    XInput = 0x01,
+    DInput = 0x02
 }
 
 /// <summary>

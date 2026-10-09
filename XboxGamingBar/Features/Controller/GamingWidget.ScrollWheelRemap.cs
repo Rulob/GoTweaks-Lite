@@ -316,7 +316,7 @@ namespace XboxGamingBar
                             }
                             else
                             {
-                                string errorMsg = actionType == 0 ? "usbip-win2 not installed or controller not found" : "Controller not found";
+                                string errorMsg = "Controller not found";
                                 ScrollRemapStatusText.Text = $"{actionName}: Failed - {errorMsg}";
                                 ScrollRemapStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 100, 100));
                                 actionComboBox.SelectedIndex = 0; // Reset to Disabled

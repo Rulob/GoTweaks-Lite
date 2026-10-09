@@ -101,12 +101,6 @@
     <Reference Include="RTSSSharedMemoryNET">
       <HintPath>.\RTSSSharedMemoryNET.dll</HintPath>
     </Reference>
-    <Reference Include="Nefarius.Drivers.HidHide">
-      <HintPath>..\packages\Nefarius.Drivers.HidHide.1.8.59\lib\netstandard2.0\Nefarius.Drivers.HidHide.dll</HintPath>
-    </Reference>
-    <Reference Include="Nefarius.Utilities.DeviceManagement">
-      <HintPath>..\packages\Nefarius.Utilities.DeviceManagement.4.0.0\lib\net48\Nefarius.Utilities.DeviceManagement.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
@@ -468,8 +462,6 @@
     <Compile Include="Settings\IsForegroundProperty.cs" />
     <Compile Include="Performance\HardwareSensor.cs" />
     <Compile Include="Performance\PerformanceManager.cs" />
-    <Compile Include="Performance\TdpMethodAvailableProperty.cs" />
-    <Compile Include="Performance\InstallPawnIOProperty.cs" />
     <Compile Include="Performance\RyzenAdj.cs" />
     <Compile Include="Performance\Sensors\BatteryChargeRateSensor.cs" />
     <Compile Include="Performance\Sensors\BatteryDischargeRateSensor.cs" />
@@ -521,7 +513,6 @@
     <Compile Include="Services\HelperDeploymentService.cs" />
     <Compile Include="Services\LenovoDriverCheckService.cs" />
     <Compile Include="Services\GoTweaksUpdateService.cs" />
-    <Compile Include="Services\SetupHealthService.cs" />
     <Compile Include="Services\UninstallService.cs" />
     <Compile Include="Services\ScheduledTaskService.cs" />
     <Compile Include="Services\SystemRestoreService.cs" />
@@ -572,41 +563,9 @@
     <Compile Include="RTSS\RTSSManager.cs" />
     <Compile Include="Settings\AutoStartRTSSProperty.cs" />
     <Compile Include="Settings\UseManufacturerWMIProperty.cs" />
-    <Compile Include="Settings\TdpMethodProperty.cs" />
-    <Compile Include="Settings\EmulationBackendProperty.cs" />
-    <Compile Include="ControllerEmulation\Viiper\LibViiper.cs" />
-    <Compile Include="ControllerEmulation\Viiper\ViiperService.cs" />
-    <Compile Include="ControllerEmulation\Viiper\UsbipCli.cs" />
-    <Compile Include="ControllerEmulation\Viiper\ViiperModels.cs" />
-    <Compile Include="ControllerEmulation\Viiper\VirtualButtonNames.cs" />
-    <Compile Include="ControllerEmulation\Viiper\InputStateSnapshot.cs" />
-    <Compile Include="ControllerEmulation\Viiper\ViiperEmulationManager.cs" />
-    <Compile Include="ControllerEmulation\Viiper\XInputNative.cs" />
-    <Compile Include="ControllerEmulation\Viiper\ViiperInputForwarder.cs" />
-    <Compile Include="ControllerEmulation\Viiper\ViiperStickGyroProcessor.cs" />
-    <Compile Include="ControllerEmulation\Viiper\ViiperPnpCleanup.cs" />
-    <Compile Include="ControllerEmulation\Viiper\ViiperStickTriggerLiveSampleProperty.cs" />
-    <Compile Include="Settings\ViiperStickTriggerPreviewEnabledProperty.cs" />
-    <Compile Include="Settings\UsbipInstalledProperty.cs" />
-    <Compile Include="Settings\ViiperDeviceTypeProperty.cs" />
-    <Compile Include="Settings\ViiperInputSourceProperty.cs" />
-    <Compile Include="Settings\ViiperGyroSourceProperty.cs" />
-    <Compile Include="Settings\ViiperJoyconGyroPerHalfProperty.cs" />
-    <Compile Include="Settings\ViiperAlternateGyroConventionProperty.cs" />
-    <Compile Include="Settings\InstallUsbipProperty.cs" />
-    <Compile Include="Settings\ViiperSteamSubDeviceProperty.cs" />
-    <Compile Include="Settings\ViiperSonySubDeviceProperty.cs" />
-    <Compile Include="Settings\ViiperNintendoSubDeviceProperty.cs" />
-    <Compile Include="Settings\ViiperGuideButtonModeProperty.cs" />
-    <Compile Include="Settings\ViiperSwapRumbleMotorsProperty.cs" />
-    <Compile Include="Settings\ViiperRumbleIntensityProperty.cs" />
     <Compile Include="Settings\GoTweaksLightingConfigProperty.cs" />
     <Compile Include="Settings\GoTweaksHapticsConfigProperty.cs" />
     <Compile Include="Settings\LegionControllerSleepMinutesProperty.cs" />
-    <Compile Include="Settings\ViiperMirrorLightbarToStickProperty.cs" />
-    <Compile Include="Settings\ViiperStickGyroEnabledProperty.cs" />
-    <Compile Include="Settings\ViiperStickTriggerConfigProperty.cs" />
-    <Compile Include="Settings\ViiperGyroAxisMapProperty.cs" />
     <Compile Include="Settings\ProfileMatchByExeProperty.cs" />
     <Compile Include="Settings\ProfileCustomGamePathProperty.cs" />
     <Compile Include="Settings\ProfileGamesOnlyProperty.cs" />
@@ -618,8 +577,6 @@
     <Compile Include="Settings\LocalSettingsHelper.cs" />
     <Compile Include="Settings\SettingsManager.cs" />
     <Compile Include="Systems\ForegroundAppProperty.cs" />
-    <Compile Include="PawnIO\PawnIOWrapper.cs" />
-    <Compile Include="PawnIO\RyzenSmuService.cs" />
     <Compile Include="RTSS\DisplayOSDConfigProperty.cs" />
     <Compile Include="Systems\HDREnabledProperty.cs" />
     <Compile Include="Systems\DisplayOrientationProperty.cs" />
@@ -666,9 +623,9 @@
     <Compile Include="Devices\Libraries\Legion\LegionManager.StickDeadzone.cs" />
     <Compile Include="Devices\Libraries\Legion\LegionManager.TriggerTravel.cs" />
     <Compile Include="Devices\Libraries\Legion\LegionManager.TouchpadVibration.cs" />
+    <Compile Include="Devices\Libraries\Legion\LegionManager.ControllerMode.cs" />
     <Compile Include="Devices\Libraries\Legion\LegionManager.JoystickAsMouse.cs" />
     <Compile Include="Devices\Libraries\Legion\LegionManager.ControllerBattery.cs" />
-    <Compile Include="Devices\Libraries\Legion\LegionGo2EcAccess.cs" />
     <Compile Include="Devices\Libraries\Legion\LegionProperties.cs" />
     <Compile Include="Devices\EC\EcController.cs" />
     <Compile Include="Devices\Libraries\GPD\GPDManager.cs" />
@@ -676,22 +633,12 @@
     <Compile Include="Devices\Libraries\GPD\GPDFanController.cs" />
     <Compile Include="Devices\Libraries\GPD\GPDWin5Controller.cs" />
     <Compile Include="Devices\Libraries\GPD\GPDWin5Keycodes.cs" />
-    <Compile Include="ControllerEmulation\ControllerEmulationManager.cs" />
-    <Compile Include="ControllerEmulation\ControllerEmulationManager.Setters.cs" />
-    <Compile Include="ControllerEmulation\ControllerEmulationStartupLock.cs" />
-    <Compile Include="ControllerEmulation\ControllerEmulationManager.Normalize.cs" />
-    <Compile Include="ControllerEmulation\ControllerEmulationManager.GyroSource.cs" />
-    <Compile Include="ControllerEmulation\ControllerEmulationProperties.cs" />
-    <Compile Include="ControllerEmulation\ControllerSuppressionManager.cs" />
-    <Compile Include="ControllerEmulation\GyroBiasEstimator.cs" />
-    <Compile Include="ControllerEmulation\GyroSourceAdapters.cs" />
-    <Compile Include="ControllerEmulation\PlayerSpaceGyro.cs" />
     <Compile Include="Labs\LegionButtonMonitor.cs" />
     <Compile Include="Labs\LegionInputButtons.cs" />
     <Compile Include="Labs\LegionLightingManager.cs" />
     <Compile Include="Labs\GoTweaksHapticManager.cs" />
     <Compile Include="Labs\TaskViewFixManager.cs" />
-    <Compile Include="Labs\HidHideProperties.cs" />
+    <Compile Include="Labs\HapticXInput.cs" />
     <Compile Include="Icons\GameIconHelper.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -727,9 +674,6 @@
     <None Include="libryzenadj.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="libviiper.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="PresentMon.exe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
@@ -761,20 +705,6 @@
     <None Include="ADLXCSharpBind.pdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <!-- Native gyro fusion (Jibb Smart's GamepadMotionHelpers, MIT). Built from
-         Native/GamepadMotion/. Statically links the CRT (/MT) so it has no
-         MSVCP/VCRUNTIME runtime dependencies — same lesson as ADLXCSharpBind. -->
-    <None Include="GamepadMotion.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <!-- PawnIO modules embedded as resources (like ZenStates-Core) -->
-    <EmbeddedResource Include="Resources\PawnIO\RyzenSMU.bin" />
-    <!-- Signed LpcIO module from namazso/PawnIO.Modules 0.2.5. Exposes Super-IO
-         port indexed access (0x2e/0x2f or 0x4e/0x4f) — used to drive the Legion
-         Go 2 EC mailbox protocol for direct fan RPM override (Rodpad-style). -->
-    <EmbeddedResource Include="Resources\PawnIO\LpcIO.bin" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

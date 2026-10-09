@@ -140,45 +140,6 @@ namespace XboxGamingBar
                     return;
                 }
 
-                // Calibration progress messages from helper. Pushed at start,
-                // every ~250ms during the 5s capture, and once on completion
-                // with the captured bias offset. Routed to the Viiper stick-
-                // gyro section so the status text below the Calibrate button
-                // updates live.
-                if (message.TryGetValue("Function", out object calFuncObj) &&
-                    Convert.ToInt32(calFuncObj) == (int)Shared.Enums.Function.ControllerEmulationCalibrateGyroStatus)
-                {
-                    if (message.TryGetValue("Content", out object calContent) && calContent is string calJson)
-                    {
-                        OnCalibrateGyroStatus(calJson);
-                    }
-                    return;
-                }
-
-                // Live gyro readings push for the visualizer.
-                if (message.TryGetValue("Function", out object liveFuncObj) &&
-                    Convert.ToInt32(liveFuncObj) == (int)Shared.Enums.Function.ControllerEmulationStickGyroLiveReadings)
-                {
-                    if (message.TryGetValue("Content", out object liveContent) && liveContent is string liveJson)
-                    {
-                        OnStickGyroLiveReadings(liveJson);
-                    }
-                    return;
-                }
-
-                // Helper push of the current software gyro bias offset (after a calibrate /
-                // reset, and once on connect so the UI shows the persisted state). Routes to
-                // the VIIPER UI handler to update the "Calibrated ... — bias X / Y / Z" line.
-                if (message.TryGetValue("Function", out object gbFuncObj) &&
-                    Convert.ToInt32(gbFuncObj) == (int)Shared.Enums.Function.GyroBiasOffset)
-                {
-                    if (message.TryGetValue("Content", out object gbContent) && gbContent is string gbJson)
-                    {
-                        OnGyroBiasOffsetReceived(gbJson);
-                    }
-                    return;
-                }
-
                 // Helper pushes DriverUpdatesAvailable as an unsolicited message
                 // after its startup driver probe completes. Light up the Quick
                 // tab tile; no other state needs updating yet.
@@ -353,21 +314,10 @@ namespace XboxGamingBar
             App.PipeMessageReceived -= PipeClient_MessageReceived;
             App.PipeDisconnected -= PipeClient_Disconnected;
 
-            // If the active mode had EC override on, the helper was driving 0xC6C8 every
-            // 3s. With the helper gone (crash or kill), 0xC6C8 holds whatever RPM we last
-            // wrote — fan stuck at that value until the helper reconnects or reboot.
-            // Surface a warning in the fan card so the user isn't left wondering why the
-            // fan won't ramp. Cleared on next successful pipe-connect (OnPipeConnectedAsync).
-            bool activeUnlockWasOn = legionUnlockFanCurve != null && legionUnlockFanCurve.Value;
-
             // Show reconnecting state and trigger guarded reconnect flow.
             await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
             {
                 ShowConnectionBanner(BannerState.Reconnecting);
-                if (activeUnlockWasOn && FanCurveHelperDisconnectedWarning != null)
-                {
-                    FanCurveHelperDisconnectedWarning.Visibility = Windows.UI.Xaml.Visibility.Visible;
-                }
             });
 
             // Skip auto-relaunch if the helper just told us it's exiting on purpose. Relaunching

@@ -6,7 +6,6 @@ using System.Threading;
 using Microsoft.Win32.SafeHandles;
 using NLog;
 using Windows.Storage;
-using XboxGamingBarHelper.ControllerEmulation;
 
 namespace XboxGamingBarHelper.Labs
 {
@@ -80,7 +79,7 @@ namespace XboxGamingBarHelper.Labs
 
         /// <summary>
         /// Auto-reset event signaled after each successful gamepad/gyro parse
-        /// so downstream consumers (VIIPER forwarder, legacy CE forwarder) can
+        /// so downstream consumers can
         /// block on a fresh sample instead of polling. Zero CPU when idle,
         /// catches every HID report at the moment it lands in the cache.
         /// </summary>
@@ -412,154 +411,6 @@ namespace XboxGamingBarHelper.Labs
             {
                 _lastExternalOutputReportTime = DateTime.Now;
             }
-        }
-
-        /// <summary>
-        /// Returns the latest parsed controller gyro sample from HID input reports, with the
-        /// stored software bias offset subtracted from each axis (Steam-style one-shot
-        /// calibration; see <see cref="SetGyroBias"/>). Every downstream consumer (legacy CE
-        /// stick-gyro, VIIPER stick-gyro, VIIPER native DS4 / DualSense / Xbox forwarding)
-        /// gets the bias-corrected sample because they all go through this method. To get the
-        /// raw uncorrected sample (e.g. the bias-capture routine), use
-        /// <see cref="TryGetLatestRawGyroSample"/> instead.
-        /// </summary>
-        public static bool TryGetLatestGyroSample(bool useLeftController, out LegionGyroSample sample)
-        {
-            LegionGyroSample raw;
-            bool ok;
-            lock (_gyroSampleLock)
-            {
-                if (useLeftController)
-                {
-                    raw = _latestLeftGyroSample;
-                    ok = _hasLeftGyroSample;
-                }
-                else
-                {
-                    raw = _latestRightGyroSample;
-                    ok = _hasRightGyroSample;
-                }
-            }
-            if (!ok) { sample = raw; return false; }
-            if (!_hasGyroBias) { sample = raw; return true; }
-            sample = new LegionGyroSample(
-                raw.GyroXDegPerSecond - _gyroBiasX,
-                raw.GyroYDegPerSecond - _gyroBiasY,
-                raw.GyroZDegPerSecond - _gyroBiasZ,
-                raw.AccelXG, raw.AccelYG, raw.AccelZG,
-                raw.TimestampTicksUtc);
-            return true;
-        }
-
-        /// <summary>
-        /// Returns the latest parsed gyro sample without the software bias subtraction applied.
-        /// Only the bias-capture path should call this — gameplay paths must go through
-        /// <see cref="TryGetLatestGyroSample"/> so they see corrected values.
-        /// </summary>
-        public static bool TryGetLatestRawGyroSample(bool useLeftController, out LegionGyroSample sample)
-        {
-            lock (_gyroSampleLock)
-            {
-                if (useLeftController)
-                {
-                    sample = _latestLeftGyroSample;
-                    return _hasLeftGyroSample;
-                }
-                sample = _latestRightGyroSample;
-                return _hasRightGyroSample;
-            }
-        }
-
-        // Software gyro bias state — captured one-shot from the bias-capture pipe handler,
-        // persisted to LocalSettings, subtracted from every TryGetLatestGyroSample read.
-        // Steam-style: the user certifies "I am holding it still right now" and we just
-        // average the current gyro reading and store the negative of that as the offset.
-        private static float _gyroBiasX;
-        private static float _gyroBiasY;
-        private static float _gyroBiasZ;
-        private static long _gyroBiasCalibratedAtUtc;
-        private static volatile bool _hasGyroBias;
-
-        public static bool TryGetGyroBias(out float x, out float y, out float z, out long calibratedAtUtc)
-        {
-            x = _gyroBiasX; y = _gyroBiasY; z = _gyroBiasZ;
-            calibratedAtUtc = _gyroBiasCalibratedAtUtc;
-            return _hasGyroBias;
-        }
-
-        public static void SetGyroBias(float x, float y, float z, long calibratedAtUtc)
-        {
-            _gyroBiasX = x;
-            _gyroBiasY = y;
-            _gyroBiasZ = z;
-            _gyroBiasCalibratedAtUtc = calibratedAtUtc;
-            _hasGyroBias = true;
-            try
-            {
-                Settings.LocalSettingsHelper.SetValue("GyroBiasX", (double)x);
-                Settings.LocalSettingsHelper.SetValue("GyroBiasY", (double)y);
-                Settings.LocalSettingsHelper.SetValue("GyroBiasZ", (double)z);
-                // Persist ticks as string. As a JSON number (or UWP boxed long round-tripped
-                // through the file-fallback), a large int64 can come back in scientific
-                // notation (e.g. "6.39e+17") and JsonSerializer.Deserialize<long> rejects that.
-                Settings.LocalSettingsHelper.SetValue("GyroBiasCalibratedAtUtc", calibratedAtUtc.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                Logger.Info($"Stored gyro bias offset: X={x:F3} Y={y:F3} Z={z:F3} deg/s");
-            }
-            catch (Exception ex) { Logger.Warn($"Persist gyro bias failed: {ex.Message}"); }
-        }
-
-        public static void ClearGyroBias()
-        {
-            _gyroBiasX = 0;
-            _gyroBiasY = 0;
-            _gyroBiasZ = 0;
-            _gyroBiasCalibratedAtUtc = 0;
-            _hasGyroBias = false;
-            try
-            {
-                Settings.LocalSettingsHelper.Remove("GyroBiasX");
-                Settings.LocalSettingsHelper.Remove("GyroBiasY");
-                Settings.LocalSettingsHelper.Remove("GyroBiasZ");
-                Settings.LocalSettingsHelper.Remove("GyroBiasCalibratedAtUtc");
-                Logger.Info("Cleared gyro bias offset.");
-            }
-            catch (Exception ex) { Logger.Warn($"Clear gyro bias failed: {ex.Message}"); }
-        }
-
-        public static void LoadGyroBiasFromSettings()
-        {
-            try
-            {
-                bool gotX = Settings.LocalSettingsHelper.TryGetValue<double>("GyroBiasX", out double bx);
-                bool gotY = Settings.LocalSettingsHelper.TryGetValue<double>("GyroBiasY", out double by);
-                bool gotZ = Settings.LocalSettingsHelper.TryGetValue<double>("GyroBiasZ", out double bz);
-                long at = 0;
-                bool gotAt = false;
-                if (Settings.LocalSettingsHelper.TryGetValue<string>("GyroBiasCalibratedAtUtc", out string atStr) &&
-                    long.TryParse(atStr, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out at))
-                {
-                    gotAt = true;
-                }
-                else if (Settings.LocalSettingsHelper.TryGetValue<long>("GyroBiasCalibratedAtUtc", out long atLong))
-                {
-                    at = atLong; gotAt = true;
-                }
-                else if (Settings.LocalSettingsHelper.TryGetValue<double>("GyroBiasCalibratedAtUtc", out double atDbl) && atDbl > 0)
-                {
-                    at = (long)atDbl; gotAt = true;
-                }
-                Logger.Info($"LoadGyroBiasFromSettings: gotX={gotX} gotY={gotY} gotZ={gotZ} gotAt={gotAt} at={at}");
-                if (gotX && gotY && gotZ && gotAt && at > 0)
-                {
-                    _gyroBiasX = (float)bx;
-                    _gyroBiasY = (float)by;
-                    _gyroBiasZ = (float)bz;
-                    _gyroBiasCalibratedAtUtc = at;
-                    _hasGyroBias = true;
-                    Logger.Info($"Loaded persisted gyro bias offset: X={_gyroBiasX:F3} Y={_gyroBiasY:F3} Z={_gyroBiasZ:F3} deg/s (calibrated {new DateTime(at, DateTimeKind.Utc):s}Z)");
-                }
-            }
-            catch (Exception ex) { Logger.Warn($"Load gyro bias from settings failed: {ex.Message}"); }
         }
 
         /// <summary>
@@ -990,12 +841,6 @@ namespace XboxGamingBarHelper.Labs
                                actionType == LegionButtonAction.RunCommand ? $"Command: {commandPath}" :
                                "Focus GoTweaks";
             Logger.Info($"LegionButtonMonitor: Configured {buttonName} - Enabled: {enabled}, Action: {actionName}");
-
-            // Notify so VIIPER can spin up / tear down its guide-only pad when the
-            // mapped Guide action changes (sole owner of the Guide route since the
-            // ViGEm retirement).
-            try { Program.NotifyGuideRouteChanged(); }
-            catch (Exception ex) { Logger.Debug($"ConfigureButton: NotifyGuideRouteChanged threw: {ex.Message}"); }
         }
 
         /// <summary>
@@ -1060,11 +905,6 @@ namespace XboxGamingBarHelper.Labs
                                "Focus GoTweaks";
             Logger.Info($"LegionButtonMonitor: Configured Scroll {direction} - Enabled: {enabled}, Action: {actionName}");
 
-            // Same notify pattern as ConfigureButton — give VIIPER a chance to
-            // (de)activate its guide-only pad before Labs decides about ViGEm.
-            try { Program.NotifyGuideRouteChanged(); }
-            catch (Exception ex) { Logger.Debug($"ConfigureScrollWheel: NotifyGuideRouteChanged threw: {ex.Message}"); }
-
             // If monitor is already running and scroll is now configured, start the scroll wheel thread
             // This handles the case where scroll is configured after the monitor is already running for buttons/battery
             if (isRunning && HasAnyScrollConfigured && (scrollWheelThread == null || !scrollWheelThread.IsAlive))
@@ -1079,18 +919,6 @@ namespace XboxGamingBarHelper.Labs
                 Logger.Info("LegionButtonMonitor: Scroll wheel Raw Input monitor thread started (hot-configured)");
             }
         }
-
-        /// <summary>
-        /// Get whether any user-mapped action is configured to fire the Xbox Guide button.
-        /// Exposed so ViiperEmulationManager can decide whether to spin up its Guide-only
-        /// virtual pad (sole owner of the Guide route since the ViGEm retirement).
-        /// </summary>
-        public bool HasGuideActionConfigured =>
-            (legionLEnabled && legionLActionType == LegionButtonAction.XboxGuide) ||
-            (legionREnabled && legionRActionType == LegionButtonAction.XboxGuide) ||
-            (scrollUpEnabled && scrollUpActionType == LegionButtonAction.XboxGuide) ||
-            (scrollDownEnabled && scrollDownActionType == LegionButtonAction.XboxGuide) ||
-            (scrollClickEnabled && scrollClickActionType == LegionButtonAction.XboxGuide);
 
         /// <summary>
         /// Get whether any button is configured. Includes the brightness gesture, which
@@ -1243,8 +1071,7 @@ namespace XboxGamingBarHelper.Labs
 
         /// <summary>
         /// Start monitoring the configured Legion buttons (L and/or R).
-        /// Guide-mapped actions are delivered through VIIPER (full forwarder or
-        /// guide-only pad) — no dedicated ViGEm pad since the phase-2 retirement.
+        /// The Xbox Guide action opens the Xbox Game Bar (Win+G).
         /// </summary>
         public bool Start()
         {
@@ -1348,11 +1175,9 @@ namespace XboxGamingBarHelper.Labs
                 monitorThread = null;
             }
 
-            // Release Guide button if either was pressed (VIIPER guide-only pad
-            // owns the route since the ViGEm retirement).
+            // Reset the Legion L/R debounce state if either was pressed.
             if (lastLegionLState || lastLegionRState)
             {
-                try { XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager.TrySetGuideFromLabs(false); } catch { }
                 lastLegionLState = false;
                 lastLegionRState = false;
                 pendingLegionLState = null;
@@ -1668,25 +1493,9 @@ namespace XboxGamingBarHelper.Labs
             switch (actionType)
             {
                 case LegionButtonAction.XboxGuide:
-                    // VIIPER backend intercept for scroll-triggered Guide (Native → injects
-                    // a short Guide press into the emulated wire state; GameBar → Win+G).
-                    if (XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperInputForwarder.TryHandleGuidePressFromLabs())
-                    {
-                        Logger.Info($"LegionButtonMonitor: Routed scroll XboxGuide to VIIPER backend ({actionName})");
-                        break;
-                    }
-                    if (XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager.TrySetGuideFromLabs(true))
-                    {
-                        Thread.Sleep(50);
-                        XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager.TrySetGuideFromLabs(false);
-                        Logger.Info($"LegionButtonMonitor: Routed scroll XboxGuide to VIIPER guide-only pad ({actionName})");
-                        break;
-                    }
-                    // No further fallback — the dedicated ViGEm pad was retired
-                    // (phase 2). If neither VIIPER tier took the press, the
-                    // guide-only pad is offline (usbip missing) and the setup
-                    // banner is already telling the user what to install.
-                    Logger.Warn($"LegionButtonMonitor: No virtual pad available for scroll XboxGuide ({actionName}) — is usbip-win2 installed?");
+                    // The Xbox Guide action opens the Xbox Game Bar (Win+G) — GoTweaks no
+                    // longer creates a virtual controller to send a real Guide press.
+                    TriggerGameBarShortcut(actionName);
                     break;
 
                 case LegionButtonAction.KeyboardShortcut:
@@ -2155,7 +1964,7 @@ namespace XboxGamingBarHelper.Labs
         /// throwing. The user must hold the controllers still during this window so the
         /// controller firmware can capture a fresh gyro bias.
         ///
-        /// Wire format (from the VIIPER Controller reference):
+        /// Wire format (Legion controller HID protocol):
         ///   [0]=0x05 (ReportID) [1]=0x00 [2]=0x0E (gyro command family)
         ///   [3]=0x06 (calibrate sub-command) [4]=0x03|0x04 (L/R) [5]=0x01
         /// </summary>
@@ -2518,7 +2327,6 @@ namespace XboxGamingBarHelper.Labs
 
         /// <summary>
         /// Attempts to reconnect to the Legion controller after disconnection.
-        /// Also ensures ViGEm controller is created if Xbox Guide action is configured.
         /// </summary>
         private bool TryReconnect()
         {
@@ -2547,9 +2355,6 @@ namespace XboxGamingBarHelper.Labs
                 pendingLegionRState = null;
                 pendingLegionLStateSince = DateTime.MinValue;
                 pendingLegionRStateSince = DateTime.MinValue;
-
-                // (ViGEm retirement: the dedicated Guide pad is gone — VIIPER's
-                // guide-only pad reconciles itself via NotifyGuideRouteChanged.)
 
                 return true;
             }
@@ -3407,10 +3212,7 @@ namespace XboxGamingBarHelper.Labs
                 }
             }
 
-            // Wake any consumer thread blocked on WaitForNewSample. AutoReset
-            // releases exactly one waiter per Set, but if both VIIPER + legacy
-            // CE forwarders are waiting only one wakes per HID report — fine,
-            // they both share the cache and either can advance the pipeline.
+            // Wake any consumer thread blocked on WaitForNewSample.
             _newSampleEvent.Set();
 
             // Emit button press-edge events (outside the sample lock so handlers can't
@@ -4033,33 +3835,9 @@ namespace XboxGamingBarHelper.Labs
                 switch (actionType)
                 {
                     case LegionButtonAction.XboxGuide:
-                        // VIIPER backend intercept: when the VIIPER forwarder is active, route
-                        // the press through its Guide-button mode (Native → emulated Guide press
-                        // held while physically held, GameBar → Win+G). Skip the legacy ViGEm
-                        // path when VIIPER consumes it.
-                        if (XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperInputForwarder.TryHandleGuideButtonFromLabs(true))
-                        {
-                            Logger.Info($"LegionButtonMonitor: Routed XboxGuide press to VIIPER backend for {buttonName}");
-                            break;
-                        }
-
-                        if (XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager.TrySetGuideFromLabs(true))
-                        {
-                            Logger.Info($"LegionButtonMonitor: Routed XboxGuide press to VIIPER guide-only pad for {buttonName}");
-                            break;
-                        }
-
-                        if (ControllerEmulationManager.TrySetGuideFromExternal(true))
-                        {
-                            Logger.Info($"LegionButtonMonitor: Routed SetGuide(true) to controller emulation virtual pad for {buttonName}");
-                            break;
-                        }
-
-                        // No further fallback — the dedicated ViGEm pad was retired
-                        // (phase 2). All delivery tiers declined, which means the
-                        // VIIPER guide-only pad is offline (usbip-win2 missing);
-                        // the setup banner is already pointing the user at it.
-                        Logger.Warn($"LegionButtonMonitor: No virtual pad available for Xbox Guide press ({buttonName}) — is usbip-win2 installed?");
+                        // The Xbox Guide action opens the Xbox Game Bar (Win+G) — GoTweaks no
+                        // longer creates a virtual controller to send a real Guide press.
+                        TriggerGameBarShortcut(buttonName);
                         break;
 
                     case LegionButtonAction.KeyboardShortcut:
@@ -4105,33 +3883,26 @@ namespace XboxGamingBarHelper.Labs
                         break;
                 }
             }
-            else
-            {
-                // Button released - only release Xbox Guide if that's the action
-                if (actionType == LegionButtonAction.XboxGuide)
-                {
-                    // VIIPER intercept for release (match the press path).
-                    if (XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperInputForwarder.TryHandleGuideButtonFromLabs(false))
-                    {
-                        Logger.Info($"LegionButtonMonitor: Routed XboxGuide release to VIIPER backend for {buttonName}");
-                        return;
-                    }
-
-                    if (XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager.TrySetGuideFromLabs(false))
-                    {
-                        Logger.Info($"LegionButtonMonitor: Routed XboxGuide release to VIIPER guide-only pad for {buttonName}");
-                        return;
-                    }
-
-                    if (ControllerEmulationManager.TrySetGuideFromExternal(false))
-                    {
-                        Logger.Info($"LegionButtonMonitor: Routed SetGuide(false) to controller emulation virtual pad for {buttonName}");
-                    }
-                    // (No ViGEm fallback — dedicated Guide pad retired in phase 2.)
-                }
-            }
+            // (Release: nothing to do — Xbox Guide is a one-shot Win+G, not a held button.)
 
             Logger.Info($"LegionButtonMonitor: ProcessButtonAction completed for {buttonName}");
+        }
+
+        /// <summary>
+        /// "Xbox Guide" remap action: opens the Xbox Game Bar by sending Win+G through the
+        /// helper's shortcut callback.
+        /// </summary>
+        private void TriggerGameBarShortcut(string source)
+        {
+            try
+            {
+                onShortcutTriggered?.Invoke("Win+G");
+                Logger.Info($"LegionButtonMonitor: {source} -> Xbox Guide (Win+G) triggered");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"LegionButtonMonitor: Xbox Guide (Win+G) trigger exception: {ex.Message}");
+            }
         }
 
         public void Dispose()

@@ -194,8 +194,8 @@ namespace XboxGamingBar
                             case "LegionFanFullSpeed":
                                 ToggleLegionFanFullSpeed();
                                 break;
-                            case "ControllerEmulation":
-                                ToggleControllerEmulation();
+                            case "LegionControllerMode":
+                                ToggleLegionControllerMode();
                                 break;
                         }
                     }
@@ -1204,71 +1204,24 @@ namespace XboxGamingBar
             }
         }
 
-        // Cycle order for the Quick-tab Controller tile: every supported virtual-device
-        // tag from ViiperDeviceTypeComboBox. VIIPER is the only emulation backend (the
-        // helper clamps any persisted legacy backend selection forward - CLAUDE.md SS21),
-        // so this is the only cycle left. Ends at "Off" so the user can always get the
-        // tile back to disabled.
-        private static readonly string[] ControllerEmulationViiperCycle = new[]
+        // Quick-tab "Input Mode" tile: flips the Legion controllers between X-Input and
+        // D-Input (the Legion Space switch). Only those two states are switchable - with the
+        // controllers detached (dual D-Input) or the FPS switch on, the firmware owns the mode.
+        private void ToggleLegionControllerMode()
         {
-            // xboxelite2 dropped from the cycle alongside the UI option (the
-            // helper coerces persisted values forward). switchpro is reachable
-            // through the new "nintendo" family entry — switching backend to
-            // nintendo + picking a sub-device from the Debug-tab dropdown.
-            "xbox360", "dualshock4", "dualsenseedge", "steam-generic", "sony", "nintendo"
-        };
-
-        private void ToggleControllerEmulation()
-        {
-            if (controllerEmulationEnabled == null)
+            if (legionGoDetected?.Value != true || legionControllerMode == null)
             {
                 return;
             }
-            if (controllerEmulationAvailable?.Value != true)
+
+            int current = legionControllerMode.Value;
+            if (current != LegionControllerModeXInput && current != LegionControllerModeDInput)
             {
-                Logger.Info("Controller Emulation tile click ignored — emulation not available on this device.");
+                Logger.Info($"Input Mode tile click ignored - controllers are in mode {current} (not switchable).");
                 return;
             }
 
-            CycleControllerEmulationViiper(controllerEmulationEnabled.Value);
-        }
-
-        private void CycleControllerEmulationViiper(bool currentlyEnabled)
-        {
-            string[] cycle = ControllerEmulationViiperCycle;
-
-            if (!currentlyEnabled)
-            {
-                string firstDevice = cycle[0];
-                viiperDeviceType?.SetValue(firstDevice);
-                controllerEmulationEnabled.SetValue(true);
-                if (ControllerEmulationEnabledToggle != null)
-                {
-                    ControllerEmulationEnabledToggle.IsOn = true;
-                }
-                Logger.Info($"Controller Emulation (VIIPER) cycled: Off -> {firstDevice}");
-                return;
-            }
-
-            string current = viiperDeviceType?.Value ?? cycle[0];
-            int currentIndex = Array.IndexOf(cycle, current);
-            int nextIndex = currentIndex + 1;
-
-            if (currentIndex < 0 || nextIndex >= cycle.Length)
-            {
-                controllerEmulationEnabled.SetValue(false);
-                if (ControllerEmulationEnabledToggle != null)
-                {
-                    ControllerEmulationEnabledToggle.IsOn = false;
-                }
-                Logger.Info("Controller Emulation (VIIPER) cycled: -> Off");
-            }
-            else
-            {
-                string nextDevice = cycle[nextIndex];
-                viiperDeviceType?.SetValue(nextDevice);
-                Logger.Info($"Controller Emulation (VIIPER) cycled: {current} -> {nextDevice}");
-            }
+            SetLegionControllerMode(current == LegionControllerModeXInput ? LegionControllerModeDInput : LegionControllerModeXInput);
         }
 
         private void ToggleRemapControlsProfile()

@@ -382,12 +382,18 @@ namespace XboxGamingBar
 
         private bool IsImprovedButtonComboUiEnabled()
         {
-            // The legacy "Improved Input" toggle that used to gate this (default off,
-            // never turned on since VIIPER became the sole emulation backend - see
-            // CLAUDE.md SS21) was removed along with the rest of the dead legacy
-            // Controller Emulation panel. No UI can set it to true anymore, so this
-            // preserves the original default.
+            // The "Improved Input" toggle that used to gate the multi-button combo UI belonged to
+            // the Controller Emulation panel, which no longer exists. No UI can enable it, so
+            // the combo UI stays hidden.
             return false;
+        }
+
+        private void RefreshLegionEnhancedRemapUi()
+        {
+            foreach (string buttonName in LegionRemapButtonNames)
+            {
+                UpdateButtonGamepadComboControls(buttonName);
+            }
         }
 
         private List<int> NormalizeGamepadActions(List<int> actions)

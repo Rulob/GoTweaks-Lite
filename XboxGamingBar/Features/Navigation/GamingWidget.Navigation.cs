@@ -249,7 +249,6 @@ namespace XboxGamingBar
                     case "System":
                         SystemScrollViewer.Visibility = Visibility.Visible;
                         SystemScrollViewer.ChangeView(null, 0, null, true);
-                        RequestControllerEmulationDriverStatus();
                         break;
                 }
             }
@@ -272,14 +271,7 @@ namespace XboxGamingBar
             // press-edge should advance a tab. One press == one tab.
             if (e.Key == VirtualKey.GamepadLeftTrigger)
             {
-                // While the VIIPER Sticks & Triggers live-preview panel is
-                // open the user is pulling the triggers ON PURPOSE to test
-                // their shaping curve — jumping to the previous tab would
-                // make the section impossible to verify. Swallow the press
-                // (still mark Handled so ScrollViewer doesn't scroll) and
-                // let the helper-side telemetry drive the visualizer.
-                if (!IsStickTriggerPreviewOpen
-                    && !ltTriggerHeld && !e.KeyStatus.WasKeyDown
+                if (!ltTriggerHeld && !e.KeyStatus.WasKeyDown
                     && (DateTime.UtcNow - lastTriggerNavigateUtc) >= TriggerNavigateDebounce)
                 {
                     ltTriggerHeld = true;
@@ -291,8 +283,7 @@ namespace XboxGamingBar
             }
             else if (e.Key == VirtualKey.GamepadRightTrigger)
             {
-                if (!IsStickTriggerPreviewOpen
-                    && !rtTriggerHeld && !e.KeyStatus.WasKeyDown
+                if (!rtTriggerHeld && !e.KeyStatus.WasKeyDown
                     && (DateTime.UtcNow - lastTriggerNavigateUtc) >= TriggerNavigateDebounce)
                 {
                     rtTriggerHeld = true;
@@ -335,17 +326,17 @@ namespace XboxGamingBar
 
         /// <summary>
         /// Forcibly clears any held LT/RT press-edge state. Called when the widget gains
-        /// focus or when VIIPER/controller emulation toggles. HidHide CyclePort on the
-        /// physical pad during emulation setup can leave the OS believing RT/LT is
-        /// stuck-down (no KeyUp arrives because the device disappeared between events),
-        /// which would otherwise leave tab nav wedged until the user gets a fresh KeyUp.
-        /// Resetting here lets the very next physical press act as a clean press-edge.
+        /// focus. A controller re-enumeration (for example switching X-Input/D-Input) can
+        /// leave the OS believing RT/LT is stuck-down (no KeyUp arrives because the device
+        /// disappeared between events), which would otherwise leave tab nav wedged until
+        /// the user gets a fresh KeyUp. Resetting here lets the very next physical press
+        /// act as a clean press-edge.
         /// </summary>
         internal void ResetTriggerTabNavState()
         {
             if (ltTriggerHeld || rtTriggerHeld)
             {
-                Logger.Info("Clearing stuck LT/RT tab-nav state (focus/emulation transition)");
+                Logger.Info("Clearing stuck LT/RT tab-nav state (focus transition)");
             }
             ltTriggerHeld = false;
             rtTriggerHeld = false;

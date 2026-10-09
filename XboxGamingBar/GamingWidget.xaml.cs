@@ -704,10 +704,8 @@ namespace XboxGamingBar
         private readonly LegionCustomTDPFastProperty legionCustomTDPFast;
         private readonly LegionCustomTDPPeakProperty legionCustomTDPPeak;
         private readonly LegionFanFullSpeedProperty legionFanFullSpeed;
-        private readonly LegionUnlockFanCurveProperty legionUnlockFanCurve;
         private readonly LegionFanCurveGraphProperty legionFanCurveGraph;
         private readonly LegionFanCurvePerModeProperty legionFanCurvePerMode;
-        private readonly LegionUnlockFanCurvePerModeProperty legionUnlockFanCurvePerMode;
         private readonly LegionCPUTempProperty legionCPUTemp;
         private readonly LegionFanSensorTempProperty legionFanSensorTemp;
         private readonly LegionCPUFanRPMProperty legionCPUFanRPM;
@@ -776,6 +774,7 @@ namespace XboxGamingBar
         private readonly ControllerConnectedLeftProperty controllerConnectedLeft;
         private readonly ControllerConnectedRightProperty controllerConnectedRight;
         private readonly ControllerVidPidProperty controllerVidPid;
+        private readonly LegionControllerModeProperty legionControllerMode;
         private readonly ControllerDeviceStatusProperty controllerDeviceStatus;
 
         // Device capability properties (for UI visibility based on device features)
@@ -813,17 +812,6 @@ namespace XboxGamingBar
         private readonly GPDButtonProperty gpdButtonR3;
         private readonly GPDButtonProperty gpdButtonLSLeft;
         private readonly GPDButtonProperty gpdButtonLSRight;
-        private readonly ControllerEmulationAvailableProperty controllerEmulationAvailable;
-        private readonly ControllerEmulationEnabledProperty controllerEmulationEnabled;
-        private readonly ControllerEmulationGyroActivationModeProperty controllerEmulationGyroActivationMode;
-        private readonly ControllerEmulationGyroActivationButtonProperty controllerEmulationGyroActivationButton;
-        private readonly ControllerEmulationStickInvertXProperty controllerEmulationStickInvertX;
-        private readonly ControllerEmulationStickInvertYProperty controllerEmulationStickInvertY;
-        private readonly ControllerEmulationStickSelectProperty controllerEmulationStickSelect;
-        private readonly ControllerEmulationStickSensitivityV2Property controllerEmulationStickSensitivityV2;
-        private readonly ControllerEmulationStickOrientationV2Property controllerEmulationStickOrientationV2;
-        private readonly ControllerEmulationStickConversionProperty controllerEmulationStickConversion;
-        private bool controllerEmulationSupported = false;
         private bool isApplyingGpdRestoreDefaults = false;
         private readonly GPDFanCurveGraphProperty gpdFanCurveGraph;
         private readonly GPDCPUTempProperty gpdCPUTemp;
@@ -831,42 +819,12 @@ namespace XboxGamingBar
         private readonly GPDFanCurveEnabledProperty gpdFanCurveEnabled;
 
         // Settings properties
-        private readonly TdpMethodProperty tdpMethod;
         private readonly PowerButtonActionProperty powerButtonActionAC;
         private readonly PowerButtonActionProperty powerButtonActionDC;
         private readonly IntTagComboProperty displayTimeoutAC;
         private readonly IntTagComboProperty displayTimeoutDC;
         private readonly IntTagComboProperty hibernateTimeoutAC;
         private readonly IntTagComboProperty hibernateTimeoutDC;
-        private readonly EmulationBackendProperty emulationBackend;
-        private readonly UsbipInstalledProperty usbipInstalled;
-        private readonly ViiperStringComboProperty viiperDeviceType;
-        private readonly ViiperStringComboProperty viiperInputSource;
-        private readonly ViiperStringComboProperty viiperGyroSource;
-        private readonly ViiperStringComboProperty viiperSteamSubDevice;
-        private readonly ViiperStringComboProperty viiperSonySubDevice;
-        private readonly ViiperStringComboProperty viiperNintendoSubDevice;
-        private readonly ViiperStringComboProperty viiperGuideButtonMode;
-        private readonly ViiperSwapRumbleMotorsProperty viiperSwapRumbleMotors;
-        private readonly ViiperMirrorLightbarToStickProperty viiperMirrorLightbarToStick;
-        private readonly ViiperStickGyroEnabledProperty viiperStickGyroEnabled;
-        private readonly ViiperJoyconGyroPerHalfProperty viiperJoyconGyroPerHalf;
-        private readonly ViiperAlternateGyroConventionProperty viiperAlternateGyroConvention;
-        private readonly ViiperRumbleIntensityProperty viiperRumbleIntensity;
-        private readonly ViiperStringComboProperty viiperGyroAxisMapX;
-        private readonly ViiperStringComboProperty viiperGyroAxisMapY;
-        private readonly ViiperStringComboProperty viiperGyroAxisMapZ;
-        private readonly ViiperStickTriggerConfigProperty viiperStickTriggerConfig;
-        private readonly ViiperStickTriggerPreviewEnabledProperty viiperStickTriggerPreviewEnabled;
-        private readonly ViiperStickTriggerLiveSampleProperty viiperStickTriggerLiveSample;
-        private readonly WinRing0AvailableProperty winRing0Available;
-        private readonly PawnIOAvailableProperty pawnIOAvailable;
-        private readonly PawnIOInstalledProperty pawnIOInstalled;
-        private readonly InstallPawnIOProperty installPawnIO;
-        private readonly SetupWarningsProperty setupWarnings;
-        private readonly InstallUsbipProperty installUsbip;
-        private readonly HidHideInstalledProperty hidHideInstalled;
-        private readonly InstallHidHideProperty installHidHide;
 
         private readonly TDPLimitsProperty tdpLimits;
 
@@ -1220,7 +1178,7 @@ namespace XboxGamingBar
             this.PreviewKeyDown += GamingWidget_PreviewKeyDown;
             this.PreviewKeyUp += GamingWidget_PreviewKeyUp;
             // Clear any latched LT/RT "held" state whenever the widget regains focus.
-            // HidHide CyclePort during emulation setup can hide the physical pad while
+            // A controller re-enumeration (e.g. switching X-Input/D-Input) can hide the physical pad while
             // a trigger was physically pressed; the KeyUp never arrives so the widget
             // thinks the trigger is still down. Refreshing on focus is a clean escape.
             this.GotFocus += (s, args) => ResetTriggerTabNavState();
@@ -1371,7 +1329,6 @@ namespace XboxGamingBar
             legionCustomTDPFast = new LegionCustomTDPFastProperty();
             legionCustomTDPPeak = new LegionCustomTDPPeakProperty();
             legionFanFullSpeed = new LegionFanFullSpeedProperty(LegionFanFullSpeedToggle, this);
-            legionUnlockFanCurve = new LegionUnlockFanCurveProperty(LegionUnlockFanCurveToggle, this);
 
             // Fan curve graph properties
             legionFanCurveGraph = new LegionFanCurveGraphProperty(this);
@@ -1382,8 +1339,6 @@ namespace XboxGamingBar
             // channel keyed by the dropdown-selected mode (not the active mode).
             legionFanCurvePerMode = new LegionFanCurvePerModeProperty(this);
             legionFanCurvePerMode.SetCallback(OnFanCurvePerModeReceived);
-            legionUnlockFanCurvePerMode = new LegionUnlockFanCurvePerModeProperty(this);
-            legionUnlockFanCurvePerMode.SetCallback(OnUnlockFanCurvePerModeReceived);
             legionCPUTemp = new LegionCPUTempProperty(this);
             legionCPUTemp.SetTempUpdateCallback(OnCPUTempUpdated);
             legionFanSensorTemp = new LegionFanSensorTempProperty(this);
@@ -1455,6 +1410,7 @@ namespace XboxGamingBar
             controllerConnectedLeft = new ControllerConnectedLeftProperty();
             controllerConnectedRight = new ControllerConnectedRightProperty();
             controllerVidPid = new ControllerVidPidProperty();
+            legionControllerMode = new LegionControllerModeProperty();
             controllerDeviceStatus = new ControllerDeviceStatusProperty();
 
             // Device capability properties (for UI visibility)
@@ -1492,18 +1448,6 @@ namespace XboxGamingBar
             gpdButtonR3 = new GPDButtonProperty(this, Function.GPDButtonR3);
             gpdButtonLSLeft = new GPDButtonProperty(this, Function.GPDButtonLSLeft);
             gpdButtonLSRight = new GPDButtonProperty(this, Function.GPDButtonLSRight);
-            controllerEmulationAvailable = new ControllerEmulationAvailableProperty(this);
-            controllerEmulationEnabled = new ControllerEmulationEnabledProperty(ControllerEmulationEnabledToggle, this);
-            controllerEmulationGyroActivationMode = new ControllerEmulationGyroActivationModeProperty(ControllerEmulationGyroActivationModeComboBox, this);
-            controllerEmulationGyroActivationButton = new ControllerEmulationGyroActivationButtonProperty(ControllerEmulationGyroActivationButtonComboBox, this);
-            controllerEmulationStickInvertX = new ControllerEmulationStickInvertXProperty(ControllerEmulationStickInvertXToggle, this);
-            controllerEmulationStickInvertY = new ControllerEmulationStickInvertYProperty(ControllerEmulationStickInvertYToggle, this);
-            controllerEmulationStickSelect = new ControllerEmulationStickSelectProperty(ControllerEmulationStickSelectComboBox, this);
-            // Min/Max gyro speed, Min/Max output, Power curve, Deadzone, Precision speed,
-            // Output mix — pipeline removed in #79 round 5 (matches HC). Sensitivity stays.
-            controllerEmulationStickSensitivityV2 = new ControllerEmulationStickSensitivityV2Property(StickSensitivityV2Slider, this);
-            controllerEmulationStickOrientationV2 = new ControllerEmulationStickOrientationV2Property(StickOrientationV2ComboBox, this);
-            controllerEmulationStickConversion = new ControllerEmulationStickConversionProperty(StickConversionComboBox, this);
             gpdFanCurveGraph = new GPDFanCurveGraphProperty(this);
             gpdFanCurveGraph.SetGraphUpdateCallback(OnGPDFanCurveUpdated);
             gpdCPUTemp = new GPDCPUTempProperty(this);
@@ -1512,68 +1456,12 @@ namespace XboxGamingBar
             gpdFanCurveEnabled = new GPDFanCurveEnabledProperty(this);
 
             // Settings properties
-            tdpMethod = new TdpMethodProperty(TdpMethodComboBox, this);
             powerButtonActionAC = new PowerButtonActionProperty(Shared.Enums.Function.SystemPowerButtonActionAC, PowerButtonActionACComboBox, this);
             powerButtonActionDC = new PowerButtonActionProperty(Shared.Enums.Function.SystemPowerButtonActionDC, PowerButtonActionDCComboBox, this);
             displayTimeoutAC = new IntTagComboProperty(600, Shared.Enums.Function.SystemDisplayTimeoutAC, DisplayTimeoutACComboBox, this);
             displayTimeoutDC = new IntTagComboProperty(600, Shared.Enums.Function.SystemDisplayTimeoutDC, DisplayTimeoutDCComboBox, this);
             hibernateTimeoutAC = new IntTagComboProperty(0, Shared.Enums.Function.SystemHibernateTimeoutAC, HibernateTimeoutACComboBox, this);
             hibernateTimeoutDC = new IntTagComboProperty(0, Shared.Enums.Function.SystemHibernateTimeoutDC, HibernateTimeoutDCComboBox, this);
-            emulationBackend = new EmulationBackendProperty(ViiperEmulationToggle, this);
-            usbipInstalled = new UsbipInstalledProperty();
-            viiperDeviceType = new ViiperStringComboProperty("xbox360", Shared.Enums.Function.Viiper_DeviceType, ViiperDeviceTypeComboBox, this);
-            viiperInputSource = new ViiperStringComboProperty("XInput", Shared.Enums.Function.Viiper_InputSource, ViiperInputSourceComboBox, this);
-            viiperGyroSource = new ViiperStringComboProperty("Left", Shared.Enums.Function.Viiper_GyroSource, ViiperGyroSourceComboBox, this);
-            viiperSteamSubDevice = new ViiperStringComboProperty("steam-deck", Shared.Enums.Function.Viiper_SteamSubDevice, ViiperSteamSubDeviceComboBox, this);
-            viiperSonySubDevice = new ViiperStringComboProperty("dualsense-edge", Shared.Enums.Function.Viiper_SonySubDevice, ViiperSonySubDeviceComboBox, this);
-            viiperNintendoSubDevice = new ViiperStringComboProperty("switchpro", Shared.Enums.Function.Viiper_NintendoSubDevice, ViiperNintendoSubDeviceComboBox, this);
-            viiperGuideButtonMode = new ViiperStringComboProperty("Native", Shared.Enums.Function.Viiper_GuideButtonMode, ViiperGuideButtonModeComboBox, this);
-            viiperSwapRumbleMotors = new ViiperSwapRumbleMotorsProperty(ViiperSwapRumbleMotorsToggle, this);
-            viiperMirrorLightbarToStick = new ViiperMirrorLightbarToStickProperty(ViiperMirrorLightbarToStickToggle, this);
-            viiperStickGyroEnabled = new ViiperStickGyroEnabledProperty(ViiperStickGyroEnabledToggle, this);
-            viiperJoyconGyroPerHalf = new ViiperJoyconGyroPerHalfProperty(ViiperJoyconGyroPerHalfToggle, this);
-            viiperAlternateGyroConvention = new ViiperAlternateGyroConventionProperty(ViiperAlternateGyroConventionToggle, this);
-            viiperRumbleIntensity = new ViiperRumbleIntensityProperty(100, ViiperRumbleIntensitySlider, this);
-            viiperGyroAxisMapX = new ViiperStringComboProperty("X", Shared.Enums.Function.Viiper_GyroAxisMapX, ViiperGyroAxisMapXComboBox, this);
-            viiperGyroAxisMapY = new ViiperStringComboProperty("Y", Shared.Enums.Function.Viiper_GyroAxisMapY, ViiperGyroAxisMapYComboBox, this);
-            viiperGyroAxisMapZ = new ViiperStringComboProperty("Z", Shared.Enums.Function.Viiper_GyroAxisMapZ, ViiperGyroAxisMapZComboBox, this);
-            viiperStickTriggerConfig = new ViiperStickTriggerConfigProperty(string.Empty);
-            viiperStickTriggerPreviewEnabled = new ViiperStickTriggerPreviewEnabledProperty();
-            viiperStickTriggerLiveSample = new ViiperStickTriggerLiveSampleProperty();
-            InitStickTriggerControls();
-            InitStickTriggerPreview();
-            // Keep the "nn%" label in sync as the user drags.
-            if (ViiperRumbleIntensitySlider != null)
-            {
-                ViiperRumbleIntensitySlider.ValueChanged += (s, e) =>
-                {
-                    if (ViiperRumbleIntensityValue != null)
-                        ViiperRumbleIntensityValue.Text = ((int)ViiperRumbleIntensitySlider.Value) + "%";
-                };
-            }
-            // Refresh the "Legion L disabled" warning when either the Guide mode changes or
-            // the VIIPER backend toggles on.
-            if (ViiperGuideButtonModeComboBox != null)
-                ViiperGuideButtonModeComboBox.SelectionChanged += (s, e) => UpdateViiperLegionLDisabledHint();
-            emulationBackend.PropertyChanged += (s, e) => { UpdateViiperConfigVisibility(); UpdateViiperLegionLDisabledHint(); UpdateQuickSettingsTileStates(); UpdateViiperStickGyroSectionVisibility(); };
-            usbipInstalled.PropertyChanged += (s, e) => { UpdateLabsUsbipUI(usbipInstalled.Value); };
-            // Show Steam sub-device picker only when a Steam device type is selected
-            viiperDeviceType.PropertyChanged += (s, e) => { UpdateViiperConfigVisibility(); UpdateQuickSettingsTileStates(); UpdateViiperStickGyroSectionVisibility(); };
-            // Re-evaluate sub-device-dependent panels (e.g. Joy-Con Pair per-half gyro) when the Nintendo sub-device changes.
-            viiperNintendoSubDevice.PropertyChanged += (s, e) => UpdateViiperConfigVisibility();
-            winRing0Available = new WinRing0AvailableProperty(this);
-            pawnIOAvailable = new PawnIOAvailableProperty();
-            pawnIOInstalled = new PawnIOInstalledProperty(this);
-            installPawnIO = new InstallPawnIOProperty(this);
-            setupWarnings = new SetupWarningsProperty(this) { OnWarningsChanged = OnSetupWarningsChanged };
-            installUsbip = new InstallUsbipProperty(this);
-            hidHideInstalled = new HidHideInstalledProperty(this);
-            installHidHide = new InstallHidHideProperty(this);
-
-            // Set up callbacks for TDP method availability
-            winRing0Available.SetAvailabilityCallback(UpdateWinRing0Visibility);
-            pawnIOInstalled.SetInstalledCallback(UpdatePawnIOInstalledUI);
-            hidHideInstalled.SetInstalledCallback(UpdateHidHideInstalledUI);
 
             tdpLimits = new TDPLimitsProperty("4,35");
 
@@ -1610,7 +1498,6 @@ namespace XboxGamingBar
             gpdDeviceName.SetNameCallback(SetGPDDeviceName);
             gpdSupportsFanControl.SetVisibilityCallback(SetGPDFanControlVisibility);
             gpdWin5Connected.SetConnectionCallback(SetGPDButtonRemapVisibility);
-            controllerEmulationAvailable.SetAvailabilityCallback(SetControllerEmulationAvailability);
             gpdFanRPM.SetRPMCallback(UpdateGPDFanRPM);
             gpdFanMode.SetModeCallback(UpdateGPDFanMode);
 
@@ -1737,10 +1624,8 @@ namespace XboxGamingBar
                 legionCustomTDPFast,
                 legionCustomTDPPeak,
                 legionFanFullSpeed,
-                legionUnlockFanCurve,
                 legionFanCurveGraph,
                 legionFanCurvePerMode,
-                legionUnlockFanCurvePerMode,
                 legionCPUTemp,
                 legionFanSensorTemp,
                 legionCPUFanRPM,
@@ -1778,42 +1663,12 @@ namespace XboxGamingBar
                 legionRightTriggerStart,
                 legionRightTriggerEnd,
                 legionHairTriggers,
-                tdpMethod,
                 powerButtonActionAC,
                 powerButtonActionDC,
                 displayTimeoutAC,
                 displayTimeoutDC,
                 hibernateTimeoutAC,
                 hibernateTimeoutDC,
-                emulationBackend,
-                usbipInstalled,
-                viiperDeviceType,
-                viiperInputSource,
-                viiperGyroSource,
-                viiperSteamSubDevice,
-                viiperSonySubDevice,
-                viiperNintendoSubDevice,
-                viiperGuideButtonMode,
-                viiperSwapRumbleMotors,
-                viiperRumbleIntensity,
-                viiperMirrorLightbarToStick,
-                viiperStickGyroEnabled,
-                viiperJoyconGyroPerHalf,
-                viiperAlternateGyroConvention,
-                viiperGyroAxisMapX,
-                viiperGyroAxisMapY,
-                viiperGyroAxisMapZ,
-                viiperStickTriggerConfig,
-                viiperStickTriggerPreviewEnabled,
-                viiperStickTriggerLiveSample,
-                winRing0Available,
-                pawnIOAvailable,
-                pawnIOInstalled,
-                installPawnIO,
-                setupWarnings,
-                installUsbip,
-                hidHideInstalled,
-                installHidHide,
                 fpsLimit,
                 osPowerMode,
                 tdpLimits,
@@ -1827,6 +1682,7 @@ namespace XboxGamingBar
                 controllerConnectedLeft,
                 controllerConnectedRight,
                 controllerVidPid,
+                legionControllerMode,
                 controllerDeviceStatus,
                 // Device capability properties (for UI visibility)
                 deviceDisplayName,
@@ -1862,16 +1718,6 @@ namespace XboxGamingBar
                 gpdButtonR3,
                 gpdButtonLSLeft,
                 gpdButtonLSRight,
-                controllerEmulationAvailable,
-                controllerEmulationEnabled,
-                controllerEmulationGyroActivationMode,
-                controllerEmulationGyroActivationButton,
-                controllerEmulationStickInvertX,
-                controllerEmulationStickInvertY,
-                controllerEmulationStickSelect,
-                controllerEmulationStickSensitivityV2,
-                controllerEmulationStickOrientationV2,
-                controllerEmulationStickConversion,
                 gpdFanCurveGraph,
                 gpdCPUTemp,
                 gpdFanCurveVisible,
@@ -2122,6 +1968,10 @@ namespace XboxGamingBar
             {
                 controllerVidPid.PropertyChanged += LegionControllerVidPid_PropertyChanged;
             }
+            if (legionControllerMode != null)
+            {
+                legionControllerMode.PropertyChanged += LegionControllerMode_PropertyChanged;
+            }
             if (controllerDeviceStatus != null)
             {
                 controllerDeviceStatus.PropertyChanged += LegionControllerDeviceStatus_PropertyChanged;
@@ -2216,6 +2066,7 @@ namespace XboxGamingBar
             _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
                 UpdateLegionControllerVidPidDisplay();
+                OnControllerVidPidChangedForModeSwitch();
             });
         }
 
@@ -3145,14 +2996,6 @@ namespace XboxGamingBar
                         // Update FPS Limit controls based on RTSS installed status
                         UpdateFPSLimitControls();
 
-                        // Force-recompute the Controller Emulation prereq gate from the freshly
-                        // synced values. Individual property callbacks (UpdateHidHideInstalledUI /
-                        // UpdateLabsUsbipUI) dedupe on unchanged values and may not re-fire on a
-                        // reconnect where the helper's answer didn't change, which would leave the
-                        // gate stuck showing a stale "missing" state from before the real values
-                        // ever arrived.
-                        UpdateControllerEmulationPrereqGate();
-
                         // Register Chill FPS handlers after first sync to prevent crash
                         RegisterChillFPSHandlers();
                     }
@@ -3347,14 +3190,6 @@ namespace XboxGamingBar
             // Stop the post-give-up heartbeat watcher too; we're connected now.
             StopHeartbeatWatcher();
 
-            // Clear the "helper disconnected with EC override active" warning now that
-            // the pipe is back. Helper restart releases 0xC6C8 via ProcessExit hook + the
-            // fresh EC tick on reconnect, so the fan will resume curve-following shortly.
-            if (FanCurveHelperDisconnectedWarning != null)
-            {
-                FanCurveHelperDisconnectedWarning.Visibility = Windows.UI.Xaml.Visibility.Collapsed;
-            }
-
             // Verify we connected to the correct helper version by reading heartbeat
             // This prevents issues during upgrades where we connect to the old dying helper
             try
@@ -3510,11 +3345,6 @@ namespace XboxGamingBar
                     // Without this, CurrentTDPValueText shows stale "Balanced mode" from XAML defaults.
                     UpdateTDPSliderEnabledState();
                     Logger.Info($"[PIPE] Updated Custom TDP display after sync");
-
-                    // Force-recompute the Controller Emulation prereq gate from the freshly synced
-                    // values - see the comment on the other Sync() call site for why this can't
-                    // rely purely on the individual HidHide/usbip property callbacks.
-                    UpdateControllerEmulationPrereqGate();
                 });
 
                 // Send Quick Metrics and Screen Saver enabled states to helper (fire-and-forget)
@@ -3577,12 +3407,6 @@ namespace XboxGamingBar
                     // widget constructor before App.IsConnected, so its Send* calls drop
                     // into a not-yet-connected pipe. Re-push now that the pipe is up.
                     ResendActiveControllerProfileToHelper();
-
-                    // Same equality-skip gotcha applies: if helper's viiperDeviceType matches
-                    // the widget's default ("xbox360"), no PropertyChanged fires and the Gyro →
-                    // Right Stick section never appears. Call once explicitly so the section
-                    // shows on first connect when applicable.
-                    UpdateViiperStickGyroSectionVisibility();
 
                     Logger.Info("[PIPE] Inside dispatcher - post-sync UI updates complete");
                 });

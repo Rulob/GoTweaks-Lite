@@ -106,7 +106,6 @@ namespace XboxGamingBar
         private bool isOSDCustomizeExpanded = false;
         private bool isProfileDetectionExpanded = false;
         private bool isProfileSettingsExpanded = false;
-        private bool isTDPSettingsExpanded = false;
         private bool isColorSettingsExpanded = false;
         private bool isButtonRemappingExpanded = false;
         private bool isGyroSettingsExpanded = false;
@@ -117,7 +116,6 @@ namespace XboxGamingBar
         private bool isTouchpadVibrationExpanded = false;
         private bool isLightingExpanded = false;
         private bool isFanCurveExpanded = false;
-        private bool isControllerEmulationExpanded = false;
         private bool fanCurveGraphInitialized = false;
 
         // Display and OSD settings
@@ -152,7 +150,6 @@ namespace XboxGamingBar
             { "Performance", new int[] { 30, 35, 40, 45, 50, 60, 70, 80, 90, 100 } }, // Performance
             { "MaxCooling", new int[] { 40, 45, 50, 55, 60, 70, 80, 90, 100, 100 } }  // Max Cooling
         };
-        private bool isFanCurvePresetLoading = false;
         private bool isCPUExtrasExpanded = false;
         private bool isDebugExpanded = false;
         private int deviceTDPMin = 4;
@@ -836,52 +833,6 @@ namespace XboxGamingBar
             }
         }
 
-        private void ControllerEmulationExpandButton_Click(object sender, RoutedEventArgs e)
-        {
-            isControllerEmulationExpanded = !isControllerEmulationExpanded;
-            LastCardExpandedBeforeHide = isControllerEmulationExpanded;
-
-            // Show whichever backend's body the user has selected (legacy vs VIIPER).
-            bool viiperActive = emulationBackend != null && emulationBackend.Value;
-
-            if (ControllerEmulationContent != null)
-            {
-                ControllerEmulationContent.Visibility = (isControllerEmulationExpanded && !viiperActive)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-            }
-
-            if (ViiperEmulationContent != null)
-            {
-                ViiperEmulationContent.Visibility = (isControllerEmulationExpanded && viiperActive)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-            }
-
-            if (ControllerEmulationExpandIcon != null)
-            {
-                ControllerEmulationExpandIcon.Glyph = isControllerEmulationExpanded ? "\uE70E" : "\uE70D";
-            }
-
-            UpdateSystemControllerEmulationNavigation();
-        }
-
-        private void TDPSettingsExpandButton_Click(object sender, RoutedEventArgs e)
-        {
-            isTDPSettingsExpanded = !isTDPSettingsExpanded;
-
-            if (TDPSettingsContent != null)
-            {
-                TDPSettingsContent.Visibility = isTDPSettingsExpanded ? Visibility.Visible : Visibility.Collapsed;
-            }
-
-            if (TDPSettingsExpandIcon != null)
-            {
-                // E70D = ChevronDown, E70E = ChevronUp
-                TDPSettingsExpandIcon.Glyph = isTDPSettingsExpanded ? "\uE70E" : "\uE70D";
-            }
-        }
-
         private void SpecialRemappingExpandButton_Click(object sender, RoutedEventArgs e)
         {
             isSpecialRemappingExpanded = !isSpecialRemappingExpanded;
@@ -898,15 +849,6 @@ namespace XboxGamingBar
             }
         }
 
-        private void StickSensitivityV2Slider_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
-        {
-            if (StickSensitivityV2ValueText != null)
-                StickSensitivityV2ValueText.Text = $"{(e.NewValue / 100.0):0.00}x";
-        }
-
-        // Min/Max gyro speed, Min/Max output, Power curve, Deadzone, Precision speed,
-        // Output mix slider value-change handlers all removed in #79 round 5
-        // along with the underlying sliders.
 
 
         private void ColorSettingsExpandButton_Click(object sender, RoutedEventArgs e)

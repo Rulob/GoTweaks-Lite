@@ -8,7 +8,7 @@ namespace XboxGamingBar.Data
     /// <summary>
     /// Shared ComboBox-backed property for int-valued selectors where each ComboBoxItem's
     /// Tag is the value's string representation (e.g. "0", "60", "300"). Mirrors
-    /// ViiperStringComboProperty's pattern: the UI is synced to the constructor's initial
+    /// the other combo properties' pattern: the UI is synced to the constructor's initial
     /// Value BEFORE SelectionChanged is wired up, so a XAML-mount default selection (index
     /// 0) never races the real helper-synced value and gets echoed back up as a bogus
     /// user change.

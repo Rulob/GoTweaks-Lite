@@ -112,29 +112,8 @@
     <Compile Include="Data\Profile\DeleteGameProfileProperty.cs" />
     <Compile Include="Data\Profile\ProfileMatchByExeProperty.cs" />
     <Compile Include="Data\Profile\ProfileGamesOnlyProperty.cs" />
-    <Compile Include="Data\TdpMethodProperty.cs" />
     <Compile Include="Data\PowerButtonActionProperty.cs" />
     <Compile Include="Data\IntTagComboProperty.cs" />
-    <Compile Include="Data\EmulationBackendProperty.cs" />
-    <Compile Include="Data\UsbipInstalledProperty.cs" />
-    <Compile Include="Data\ViiperStringComboProperty.cs" />
-    <Compile Include="Data\ViiperSwapRumbleMotorsProperty.cs" />
-    <Compile Include="Data\ViiperRumbleIntensityProperty.cs" />
-    <Compile Include="Data\ViiperMirrorLightbarToStickProperty.cs" />
-    <Compile Include="Data\ViiperStickGyroEnabledProperty.cs" />
-    <Compile Include="Data\ViiperJoyconGyroPerHalfProperty.cs" />
-    <Compile Include="Data\ViiperAlternateGyroConventionProperty.cs" />
-    <Compile Include="Data\ViiperStickTriggerConfigProperty.cs" />
-    <Compile Include="Data\ViiperStickTriggerPreviewEnabledProperty.cs" />
-    <Compile Include="Data\ViiperStickTriggerLiveSampleProperty.cs" />
-    <Compile Include="Data\WinRing0AvailableProperty.cs" />
-    <Compile Include="Data\PawnIOAvailableProperty.cs" />
-    <Compile Include="Data\PawnIOInstalledProperty.cs" />
-    <Compile Include="Data\InstallPawnIOProperty.cs" />
-    <Compile Include="Data\SetupWarningsProperty.cs" />
-    <Compile Include="Data\InstallUsbipProperty.cs" />
-    <Compile Include="Data\HidHideInstalledProperty.cs" />
-    <Compile Include="Data\InstallHidHideProperty.cs" />
     <Compile Include="Data\CPUBoostProperty.cs" />
     <Compile Include="Data\IsForegroundProperty.cs" />
     <Compile Include="Data\MaxCPUStateProperty.cs" />
@@ -193,7 +172,6 @@
     <Compile Include="Data\GPD\GPDApplyMappingsProperty.cs" />
     <Compile Include="Data\GPD\GPDButtonL4Property.cs" />
     <Compile Include="Data\GPD\GPDButtonR4Property.cs" />
-    <Compile Include="Data\Controller\ControllerEmulationProperties.cs" />
     <Compile Include="Data\Legion\LegionTouchpadEnabledProperty.cs" />
     <Compile Include="Data\Legion\LegionLightModeProperty.cs" />
     <Compile Include="Data\Legion\LegionLightColorProperty.cs" />
@@ -202,7 +180,6 @@
     <Compile Include="Data\Legion\LegionPerformanceModeProperty.cs" />
     <Compile Include="Data\Legion\LegionCustomTDPProperty.cs" />
     <Compile Include="Data\Legion\LegionFanFullSpeedProperty.cs" />
-    <Compile Include="Data\Legion\LegionUnlockFanCurveProperty.cs" />
     <Compile Include="Data\Legion\LegionFanCurveProperty.cs" />
     <Compile Include="Data\Legion\LegionGyroEnabledProperty.cs" />
     <Compile Include="Data\Legion\LegionVibrationProperty.cs" />
@@ -295,9 +272,6 @@
     <Compile Include="GamingWidget.xaml.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="GamingWidget.ViiperStickTrigger.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
     <Compile Include="GamingWidget.PowerAndSleep.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
@@ -364,9 +338,6 @@
     <Compile Include="Features\Connection\GamingWidget.ConnectionBanner.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\Connection\GamingWidget.SetupWarnings.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Features\Connection\GamingWidget.ApplyProfileTDP.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
@@ -380,15 +351,6 @@
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Lifecycle\GamingWidget.WidgetActivity.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Debug\GamingWidget.PawnIODebug.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Debug\GamingWidget.ViiperToggle.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Debug\GamingWidget.ViiperStickGyro.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Debug\GamingWidget.GoTweaksLighting.cs">
@@ -406,6 +368,10 @@
     <Compile Include="Features\Controller\GamingWidget.NintendoLayoutPreset.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Features\Controller\GamingWidget.ControllerMode.cs">
+      <DependentUpon>GamingWidget.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Data\Legion\LegionControllerModeProperty.cs" />
     <Compile Include="Features\Devices\GamingWidget.GpdFanCurve.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>

@@ -477,6 +477,10 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
 
                     // Always try to sync (the property will handle deduplication)
                     ControllerVidPid.SetValueAndSync(vidPid);
+
+                    // The PID encodes the input mode (X-Input / D-Input / ...), so keep the
+                    // mode property in step with whatever the controllers re-enumerated as.
+                    UpdateControllerModeFromVidPid(vidPid);
                 }
             }
             catch (Exception ex)

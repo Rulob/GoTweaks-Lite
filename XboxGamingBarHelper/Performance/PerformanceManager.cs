@@ -12,7 +12,6 @@ using Windows.System.Power;
 using Shared.Enums;
 using XboxGamingBarHelper.Core;
 using XboxGamingBarHelper.Devices.Libraries.Legion;
-using XboxGamingBarHelper.PawnIO;
 using XboxGamingBarHelper.Performance.Sensors;
 using XboxGamingBarHelper.Settings;
 
@@ -20,25 +19,6 @@ namespace XboxGamingBarHelper.Performance
 {
     internal class PerformanceManager : Manager
     {
-        // Native methods for fast PawnIO driver detection
-        private const string PAWNIO_DEVICE_PATH = @"\\.\PawnIO";
-        private const uint GENERIC_READ = 0x80000000;
-        private const uint FILE_SHARE_READ = 0x00000001;
-        private const uint OPEN_EXISTING = 3;
-
-        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
-        private static extern IntPtr CreateFile(
-            string lpFileName,
-            uint dwDesiredAccess,
-            uint dwShareMode,
-            IntPtr lpSecurityAttributes,
-            uint dwCreationDisposition,
-            uint dwFlagsAndAttributes,
-            IntPtr hTemplateFile);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
-        private static extern bool CloseHandle(IntPtr hObject);
-
         private Computer computer;
         private IVisitor updateVisitor;
         private IntPtr ryzenAdjHandle;
@@ -267,16 +247,9 @@ namespace XboxGamingBarHelper.Performance
         // line every tick.
         private long lastAdlxFallbackLogTicksUtc;
 
-        // PawnIO/RyzenSMU support for anti-cheat compatible TDP control
-        private RyzenSmuService ryzenSmuService;
-        private bool pawnIOAvailable;
-
         // WinRing0 removed - deprecated TDP method, no longer bundled
         // private bool winRing0Available;
         // private const string WinRing0BackupFolder = @"C:\GoTweaks";
-
-        // PawnIO driver installation status
-        private bool pawnIOInstalled;
 
         // RyzenAdj lazy loading - only load when user disables Manufacturer WMI
         private bool ryzenAdjInitialized = false;
@@ -285,131 +258,6 @@ namespace XboxGamingBarHelper.Performance
         // Thread synchronization locks to prevent race conditions
         private readonly object tdpLock = new object();
         private readonly object ryzenAdjInitLock = new object();
-
-        // Properties for TDP method availability
-        // private TdpMethodAvailableProperty winRing0AvailableProperty; // WinRing0 removed
-        private TdpMethodAvailableProperty pawnIOAvailableProperty;
-        private TdpMethodAvailableProperty pawnIOInstalledProperty;
-        private InstallPawnIOProperty installPawnIOProperty;
-
-        /// <summary>
-        /// Gets whether PawnIO is available for TDP control.
-        /// </summary>
-        public bool IsPawnIOAvailable => pawnIOAvailable;
-
-        // WinRing0 removed - deprecated TDP method
-        // /// <summary>
-        // /// Gets whether WinRing0 files are available in C:\GoTweaks.
-        // /// </summary>
-        // public bool IsWinRing0Available => winRing0Available;
-
-        // /// <summary>
-        // /// Property for WinRing0 availability (exposed to widget).
-        // /// </summary>
-        // public TdpMethodAvailableProperty WinRing0AvailableProperty => winRing0AvailableProperty;
-
-        /// <summary>
-        /// Property for PawnIO availability (exposed to widget).
-        /// </summary>
-        public TdpMethodAvailableProperty PawnIOAvailableProperty => pawnIOAvailableProperty;
-
-        /// <summary>
-        /// Gets whether PawnIO driver is installed (may not work for TDP yet).
-        /// </summary>
-        public bool IsPawnIOInstalled => pawnIOInstalled;
-
-        /// <summary>
-        /// Property for PawnIO driver installed status (exposed to widget).
-        /// </summary>
-        public TdpMethodAvailableProperty PawnIOInstalledProperty => pawnIOInstalledProperty;
-
-        /// <summary>
-        /// Property to trigger PawnIO installation (exposed to widget).
-        /// </summary>
-        public InstallPawnIOProperty InstallPawnIOProperty => installPawnIOProperty;
-
-        #region PawnIO Debug Tools
-
-        /// <summary>
-        /// Gets CPU info string for PawnIO debug display.
-        /// </summary>
-        public string GetPawnIOCpuInfo()
-        {
-            if (ryzenSmuService == null || !ryzenSmuService.IsInitialized)
-            {
-                return "PawnIO not initialized";
-            }
-
-            var cpuName = ryzenSmuService.CpuCodeName.ToString();
-            var smuVer = $"0x{ryzenSmuService.SmuVersion:X8}";
-            var capabilities = new System.Collections.Generic.List<string>();
-
-            if (ryzenSmuService.CanSetCurveOptimizerAll()) capabilities.Add("CO");
-            if (ryzenSmuService.CanSetCurveOptimizerGfx()) capabilities.Add("CO-GFX");
-            if (ryzenSmuService.CanSetGfxClock()) capabilities.Add("GfxClk");
-            if (ryzenSmuService.CanSetTctlTemp()) capabilities.Add("Tctl");
-            if (ryzenSmuService.CanSetStapmTime()) capabilities.Add("StapmTime");
-
-            return $"{cpuName} (SMU: {smuVer}) | {string.Join(", ", capabilities)}";
-        }
-
-        /// <summary>
-        /// Applies PawnIO debug settings (Curve Optimizer, GfxClk, Tctl).
-        /// </summary>
-        public string ApplyPawnIODebugSettings(int coAll, int coGfx, int gfxClk, int tctlTemp)
-        {
-            if (ryzenSmuService == null || !ryzenSmuService.IsInitialized)
-            {
-                return "Error: PawnIO not initialized";
-            }
-
-            var results = new System.Collections.Generic.List<string>();
-
-            try
-            {
-                // Apply Curve Optimizer All
-                if (coAll != 0 && ryzenSmuService.CanSetCurveOptimizerAll())
-                {
-                    bool success = ryzenSmuService.SetCurveOptimizerAll(coAll);
-                    results.Add($"CO All ({coAll}): {(success ? "OK" : "FAIL")}");
-                }
-
-                // Apply Curve Optimizer iGPU
-                if (coGfx != 0 && ryzenSmuService.CanSetCurveOptimizerGfx())
-                {
-                    bool success = ryzenSmuService.SetCurveOptimizerGfx(coGfx);
-                    results.Add($"CO GFX ({coGfx}): {(success ? "OK" : "FAIL")}");
-                }
-
-                // Apply iGPU Clock
-                if (gfxClk > 0 && ryzenSmuService.CanSetGfxClock())
-                {
-                    bool success = ryzenSmuService.SetGfxClock((uint)gfxClk);
-                    results.Add($"GfxClk ({gfxClk} MHz): {(success ? "OK" : "FAIL")}");
-                }
-
-                // Apply Tctl Temperature
-                if (tctlTemp > 0 && ryzenSmuService.CanSetTctlTemp())
-                {
-                    bool success = ryzenSmuService.SetTctlTemp((uint)tctlTemp);
-                    results.Add($"Tctl ({tctlTemp}°C): {(success ? "OK" : "FAIL")}");
-                }
-
-                if (results.Count == 0)
-                {
-                    return "No settings applied (all values at default or unsupported)";
-                }
-
-                return string.Join(" | ", results);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"PawnIO debug apply failed: {ex.Message}");
-                return $"Error: {ex.Message}";
-            }
-        }
-
-        #endregion
 
         /// <summary>
         /// Sets the Legion Manager reference for WMI TDP support.
@@ -490,42 +338,6 @@ namespace XboxGamingBarHelper.Performance
         /// </summary>
         public bool IsAnyMetricsConsumerActive => AnyMetricsConsumerActive();
 
-        /// <summary>
-        /// Initializes PawnIO/RyzenSMU for anti-cheat compatible TDP control.
-        /// Call this after the helper is initialized.
-        /// </summary>
-        public void InitializePawnIO()
-        {
-            try
-            {
-                Logger.Info("Attempting to initialize PawnIO/RyzenSMU...");
-                ryzenSmuService = new RyzenSmuService();
-
-                if (ryzenSmuService.Initialize())
-                {
-                    pawnIOAvailable = true;
-                    Logger.Info($"PawnIO/RyzenSMU initialized successfully. CPU: {ryzenSmuService.CpuCodeName}, SMU: 0x{ryzenSmuService.SmuVersion:X8}");
-                }
-                else
-                {
-                    pawnIOAvailable = false;
-                    Logger.Warn("PawnIO/RyzenSMU initialization failed. PawnIO driver may not be installed.");
-                    ryzenSmuService?.Dispose();
-                    ryzenSmuService = null;
-                }
-            }
-            catch (Exception ex)
-            {
-                pawnIOAvailable = false;
-                Logger.Error($"Exception initializing PawnIO: {ex.Message}");
-                ryzenSmuService?.Dispose();
-                ryzenSmuService = null;
-            }
-
-            // Update the availability property if already initialized
-            pawnIOAvailableProperty?.SetAvailable(pawnIOAvailable);
-            Logger.Info($"PawnIO availability updated: {pawnIOAvailable}");
-        }
         private const int MaxConsecutiveFailuresBeforeReinit = 5;
         private const double NormalTimerInterval = 2000; // 2 seconds
         private const double BackoffTimerInterval = 10000; // 10 seconds during failures
@@ -658,9 +470,6 @@ namespace XboxGamingBarHelper.Performance
                 NetworkUpload,
             };
 
-            // RyzenAdj initialization deferred - WinRing0 no longer bundled
-            // Use PawnIO for TDP control instead (anti-cheat compatible)
-            Logger.Info("RyzenAdj initialization deferred (deprecated - PawnIO preferred for TDP control)");
             var initialTDP = 25;
             var initialCurrentTDP = "-- W";
 
@@ -681,20 +490,6 @@ namespace XboxGamingBarHelper.Performance
 
             // WinRing0 removed - deprecated TDP method, no longer bundled
             // CheckWinRing0Availability();
-
-            // Check PawnIO driver installation status
-            CheckPawnIODriverInstalled();
-
-            // Initialize TDP method availability properties
-            // winRing0AvailableProperty = new TdpMethodAvailableProperty(winRing0Available, Function.TdpMethod_WinRing0Available, this); // WinRing0 removed
-            pawnIOAvailableProperty = new TdpMethodAvailableProperty(pawnIOAvailable, Function.TdpMethod_PawnIOAvailable, this);
-            pawnIOInstalledProperty = new TdpMethodAvailableProperty(pawnIOInstalled, Function.TdpMethod_PawnIOInstalled, this);
-            installPawnIOProperty = new InstallPawnIOProperty(this);
-            // pawnIOAvailable is always false here — InitializePawnIO() runs
-            // after manager init (Program.cs) and logs "PawnIO availability
-            // updated" with the real value. Label this line accordingly so a
-            // "PawnIO=False" at startup isn't misread as a broken install.
-            Logger.Info($"TDP method availability (pre-init snapshot): PawnIO={pawnIOAvailable}, PawnIOInstalled={pawnIOInstalled} — final availability logged after InitializePawnIO");
         }
 
         /// <summary>
@@ -846,58 +641,6 @@ namespace XboxGamingBarHelper.Performance
             }
         }
 
-        /// <summary>
-        /// Checks if PawnIO driver is installed on the system.
-        /// Uses fast CreateFile check instead of slow WMI query.
-        /// </summary>
-        private void CheckPawnIODriverInstalled()
-        {
-            Logger.Info("Checking PawnIO driver installation status...");
-
-            try
-            {
-                // Try to open the PawnIO device - this is much faster than WMI
-                IntPtr handle = CreateFile(
-                    PAWNIO_DEVICE_PATH,
-                    GENERIC_READ,
-                    FILE_SHARE_READ,
-                    IntPtr.Zero,
-                    OPEN_EXISTING,
-                    0,
-                    IntPtr.Zero);
-
-                if (handle != IntPtr.Zero && handle.ToInt64() != -1)
-                {
-                    // Successfully opened - driver is installed
-                    CloseHandle(handle);
-                    pawnIOInstalled = true;
-                    Logger.Info("PawnIO driver is installed (device opened successfully)");
-                }
-                else
-                {
-                    // Failed to open - driver not installed or not running
-                    pawnIOInstalled = false;
-                    int error = Marshal.GetLastWin32Error();
-                    Logger.Info($"PawnIO driver is not installed (error code: {error})");
-                }
-            }
-            catch (Exception ex)
-            {
-                pawnIOInstalled = false;
-                Logger.Warn($"Error checking PawnIO driver: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Refreshes the PawnIO driver installation status.
-        /// Called after installation attempt to update the UI.
-        /// </summary>
-        public void RefreshPawnIOInstalledStatus()
-        {
-            CheckPawnIODriverInstalled();
-            pawnIOInstalledProperty?.SetAvailable(pawnIOInstalled);
-            Logger.Info($"PawnIO driver installation status refreshed: {pawnIOInstalled}");
-        }
 
         /// <summary>
         /// Forces a refresh of all hardware sensors, particularly useful after resume from hibernation.
@@ -1343,14 +1086,12 @@ namespace XboxGamingBarHelper.Performance
             // (widget slider, AutoTDP, TDP Boost changes, profile switches)
             lock (tdpLock)
             {
-                var settingsManager = SettingsManager.GetInstance();
-                TdpMethod tdpMethod = settingsManager?.TdpMethod?.Method ?? TdpMethod.ManufacturerWMI;
                 bool legionDetected = legionManager?.LegionGoDetected?.Value ?? false;
 
-                // This master-TDP path drives a single flat value (SPL=SPPT=FPPT=tdp) — used by
-                // generic (non-Legion) devices and the PawnIO method. On Legion in Custom mode the
-                // three independent SPL/SPPT/FPPT limits are owned by the dedicated widget sliders and
-                // re-asserted from cache below, so this flat value is intentionally bypassed there.
+                // This master-TDP path drives a single flat value (SPL=SPPT=FPPT=tdp). On Legion in
+                // Custom mode the three independent SPL/SPPT/FPPT limits are owned by the dedicated
+                // widget sliders and re-asserted from cache below, so this flat value is
+                // intentionally bypassed there.
                 int spl = tdp;
                 int sppt = tdp;
                 int fppt = tdp;
@@ -1358,106 +1099,32 @@ namespace XboxGamingBarHelper.Performance
                 // Note: CurrentSPL/SPPT/FPPT are now updated from actual hardware values
                 // in UpdateCurrentTDP, which is called via ScheduleVerificationRead after SetTDP
 
-                Logger.Info($"SetTDP: method={tdpMethod}, legionDetected={legionDetected}, pawnIOAvailable={pawnIOAvailable}");
+                Logger.Info($"SetTDP: legionDetected={legionDetected}");
 
-                // Use the selected TDP method
-                switch (tdpMethod)
+                // Lenovo WMI is the only TDP control method (Legion devices only).
+                if (legionDetected && legionManager != null)
                 {
-                    case TdpMethod.ManufacturerWMI:
-                        if (legionDetected && legionManager != null)
-                        {
-                            // On Legion in Custom mode the three explicit SPL/SPPT/FPPT limits (driven
-                            // by the TDP / SPPT Boost / FPPT Boost sliders) are authoritative. A single
-                            // master-TDP write here must NOT collapse them to tdp/tdp/tdp — the
-                            // ReapplyTDP / power-source / global-profile paths all funnel through SetTDP
-                            // carrying the (Legion-meaningless) master value, which would otherwise slam
-                            // the console back to ~15W. Re-assert the cached Custom triplet instead.
-                            if (legionManager.IsInCustomMode)
-                            {
-                                legionManager.ReassertCustomTDP();
-                                ScheduleVerificationRead();
-                                return;
-                            }
-                            // Note: SetCustomTDP will automatically switch to Custom mode (255) if needed
-                            Logger.Info($"Using Legion WMI to set TDP (SPL={spl}W, SPPL={sppt}W, FPPT={fppt}W)");
-                            legionManager.SetCustomTDP(spl, sppt, fppt);
-                            ScheduleVerificationRead();
-                            return;
-                        }
-                        // Legion not detected - fall through to PawnIO
-                        Logger.Warn("ManufacturerWMI selected but Legion not detected, trying PawnIO");
-                        goto case TdpMethod.PawnIO;
-
-                    case TdpMethod.PawnIO:
-                        if (pawnIOAvailable && ryzenSmuService != null && ryzenSmuService.IsInitialized)
-                        {
-                            if (legionDetected)
-                            {
-                                // Marctraider report: SMU writes on Legion devices get
-                                // re-asserted by the embedded controller within seconds —
-                                // his log showed SetAllLimits(35W) "succeeding" while the
-                                // EC kept SPL at 25W. The write is accepted by the SMU
-                                // but the platform owns the power table.
-                                Logger.Warn("PawnIO TDP method selected on a Legion device: the Lenovo EC typically re-asserts its own power limits over SMU writes within seconds. Lenovo WMI is the supported method on this hardware.");
-                            }
-                            Logger.Info($"Using PawnIO/RyzenSMU to set TDP (SPL={spl}W, SPPT={sppt}W, FPPT={fppt}W)");
-                            if (ryzenSmuService.SetAllLimits(spl, sppt, fppt))
-                            {
-                                Logger.Info($"PawnIO: TDP set commands accepted");
-                                if (legionDetected && legionManager != null)
-                                {
-                                    // On Legion hardware the WMI read shows what the EC
-                                    // actually enforces — let the verification read fill
-                                    // Current* so the OSD/widget report the truth instead
-                                    // of echoing the requested values.
-                                    ScheduleLegionPawnIOVerificationRead();
-                                    return;
-                                }
-                                // No independent read-back path on non-Legion hardware —
-                                // assume the requested values took effect.
-                                CurrentSPL = spl;
-                                CurrentSPPT = sppt;
-                                CurrentFPPT = fppt;
-                                // Update the currentTdp property for widget display
-                                var newTdpString = $"SPL:{spl}W SPPT:{sppt}W FPPT:{fppt}W";
-                                if (newTdpString != lastTdpString)
-                                {
-                                    currentTdp.SetValue(newTdpString);
-                                    lastTdpString = newTdpString;
-                                }
-                                return;
-                            }
-                            Logger.Warn("PawnIO: Failed to set TDP");
-                        }
-                        else
-                        {
-                            Logger.Warn("PawnIO not available");
-                        }
-                        Logger.Warn("SetTDP: No TDP control method available");
+                    // On Legion in Custom mode the three explicit SPL/SPPT/FPPT limits (driven
+                    // by the TDP / SPPT Boost / FPPT Boost sliders) are authoritative. A single
+                    // master-TDP write here must NOT collapse them to tdp/tdp/tdp — the
+                    // ReapplyTDP / power-source / global-profile paths all funnel through SetTDP
+                    // carrying the (Legion-meaningless) master value, which would otherwise slam
+                    // the console back to ~15W. Re-assert the cached Custom triplet instead.
+                    if (legionManager.IsInCustomMode)
+                    {
+                        legionManager.ReassertCustomTDP();
+                        ScheduleVerificationRead();
                         return;
-
-                    // WinRing0 removed - deprecated TDP method, no longer bundled
-                    // case TdpMethod.WinRing0:
-                    //     // RyzenAdj (deprecated - WinRing0 no longer bundled)
-                    //     if (!EnsureRyzenAdjInitialized())
-                    //     {
-                    //         Logger.Warn("SetTDP: WinRing0/RyzenAdj unavailable");
-                    //         return;
-                    //     }
-                    //     Logger.Info($"Using RyzenAdj to set TDP (STAPM={spl}W, SLOW={sppt}W, FAST={fppt}W) (deprecated)");
-                    //     RyzenAdj.set_fast_limit(ryzenAdjHandle, (uint)(fppt * 1000));
-                    //     RyzenAdj.set_slow_limit(ryzenAdjHandle, (uint)(sppt * 1000));
-                    //     RyzenAdj.set_stapm_limit(ryzenAdjHandle, (uint)(spl * 1000));
-                    // #if DEBUG
-                    //     RyzenAdj.refresh_table(ryzenAdjHandle);
-                    //     Logger.Info($"Set TDP, current fast limit is {RyzenAdj.get_fast_limit(ryzenAdjHandle)}");
-                    // #endif
-                    //     break;
+                    }
+                    // Note: SetCustomTDP will automatically switch to Custom mode (255) if needed
+                    Logger.Info($"Using Legion WMI to set TDP (SPL={spl}W, SPPL={sppt}W, FPPT={fppt}W)");
+                    legionManager.SetCustomTDP(spl, sppt, fppt);
+                    ScheduleVerificationRead();
+                    return;
                 }
-            }
 
-            // Schedule a verification read after a short delay to confirm the TDP was applied
-            ScheduleVerificationRead();
+                Logger.Warn("SetTDP: No TDP control method available (Lenovo WMI needs a Legion device)");
+            }
         }
 
         /// <summary>
@@ -1480,51 +1147,6 @@ namespace XboxGamingBarHelper.Performance
                 }
             });
         }
-
-        /// <summary>
-        /// Delayed Legion-WMI read used specifically after a PawnIO/RyzenSMU write on Legion
-        /// hardware, where the Lenovo EC silently re-asserts its own power table over the SMU
-        /// write within seconds. Deliberately does NOT go through UpdateCurrentTDP — that method
-        /// only reads Legion WMI when TdpMethod==ManufacturerWMI (its "Priority 1" gate), so
-        /// calling it here (TdpMethod==PawnIO) would hit the dead WinRing0-removed fallback and
-        /// silently do nothing, leaving the OSD stuck on the last value instead of showing what
-        /// the EC actually enforces.
-        /// </summary>
-        private void ScheduleLegionPawnIOVerificationRead()
-        {
-            System.Threading.Tasks.Task.Run(async () =>
-            {
-                try
-                {
-                    await System.Threading.Tasks.Task.Delay(VerificationDelayMs);
-                    if (legionManager == null) return;
-
-                    var (slow, fast, peak) = legionManager.GetCurrentTDPValues();
-                    if (!slow.HasValue || !fast.HasValue || !peak.HasValue)
-                    {
-                        Logger.Debug("ScheduleLegionPawnIOVerificationRead: Could not read all TDP values from Legion WMI");
-                        return;
-                    }
-
-                    CurrentSPL = slow.Value;
-                    CurrentSPPT = fast.Value;
-                    CurrentFPPT = peak.Value;
-
-                    var newTdpString = $"SPL:{slow}W SPPT:{fast}W FPPT:{peak}W";
-                    if (newTdpString != lastTdpString)
-                    {
-                        Logger.Info($"ScheduleLegionPawnIOVerificationRead: EC-enforced TDP is '{newTdpString}' (PawnIO write may not have stuck)");
-                        currentTdp.SetValue(newTdpString);
-                        lastTdpString = newTdpString;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Debug($"ScheduleLegionPawnIOVerificationRead: Error during verification read: {ex.Message}");
-                }
-            });
-        }
-
         // WinRing0 removed - deprecated TDP method, no longer bundled
         // /// <summary>
         // /// Lazy-loads RyzenAdj when needed. RyzenAdj is deprecated as WinRing0 is no longer bundled.
@@ -1649,13 +1271,10 @@ namespace XboxGamingBarHelper.Performance
         {
             try
             {
-                // Check selected TDP method
-                var settingsManager = SettingsManager.GetInstance();
-                TdpMethod tdpMethod = settingsManager?.TdpMethod?.Method ?? TdpMethod.ManufacturerWMI;
                 bool legionDetected = legionManager?.LegionGoDetected?.Value ?? false;
 
-                // Priority 1: Legion WMI (when ManufacturerWMI selected and Legion is detected)
-                if (tdpMethod == TdpMethod.ManufacturerWMI && legionDetected && legionManager != null)
+                // Priority 1: Legion WMI (Lenovo WMI is the only TDP control method)
+                if (legionDetected && legionManager != null)
                 {
                     // Check current performance mode - if not Custom, show mode name instead of TDP values
                     int performanceMode = legionManager.CurrentPerformanceMode;
@@ -1888,22 +1507,6 @@ namespace XboxGamingBarHelper.Performance
                     currentTdpTimer.Dispose();
                     currentTdpTimer = null;
                     Logger.Info("PerformanceManager: Timer disposed");
-                }
-
-                // Clean up PawnIO/RyzenSMU
-                if (ryzenSmuService != null)
-                {
-                    try
-                    {
-                        ryzenSmuService.Dispose();
-                        Logger.Info("PerformanceManager: PawnIO/RyzenSMU disposed");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warn($"PerformanceManager: Error disposing PawnIO: {ex.Message}");
-                    }
-                    ryzenSmuService = null;
-                    pawnIOAvailable = false;
                 }
 
                 // Clean up RyzenAdj handle

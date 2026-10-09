@@ -94,52 +94,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         // with the active mode for backward compat.
         private readonly Dictionary<int, ushort[]> fanCurvesByMode = new Dictionary<int, ushort[]>();
         private static readonly int[] AllPerformanceModes = { 1, 2, 3, 255 };
-        // EC override unlock — now per-power-mode. Each TdpMode (1=Quiet, 2=Balanced,
-        // 3=Performance, 255=Custom) stores its own on/off state. Mode change → look up
-        // the new mode's setting; start the EC loop if true, stop if false. Persisted as
-        // LegionUnlockFanCurve_<mode>; legacy LegionUnlockFanCurve key kept in sync with
-        // the active mode for backward compat.
-        private bool fanCurveUnlocked = false;
-        private readonly Dictionary<int, bool> ecOverrideByMode = new Dictionary<int, bool>();
-        private LegionGo2EcAccess legionEcAccess; // lazily initialized when fanCurveUnlocked first toggled on
-        private System.Threading.Timer ecFanCurveTimer; // 3s tick that re-applies the curve via direct EC write
-        private const int EC_FAN_TICK_MS = 3000;
-        private const int EC_FAN_MAX_RPM = 7000; // empirical Legion Go 2 fan ceiling — 100% on the curve maps to this
-        private static readonly int[] LegionFanCurveTemps = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 };
-
-        // Anchor-point hysteresis state (Rodpad LeGo2-Fan-Control pattern). The fan target
-        // only re-evaluates when temp has drifted ≥5°C from the anchor, preventing yo-yo
-        // behaviour on small temp fluctuations. Forced re-write every 30s defeats firmware
-        // overrides that may stomp our 0xC6C8 value.
-        private int ecAnchorTempC = int.MinValue; // temp at last anchor recompute (sentinel: not yet set)
-        private int ecCurrentTargetRpm = -1;      // RPM we're actively asserting on the EC
-        private int ecLastWrittenRpm = -1;        // last value actually written via EC mailbox
-        private DateTime ecLastForcedRewriteUtc = DateTime.MinValue;
-        // Consecutive EC write failures. The PawnIO handle can silently die
-        // across sleep/hibernate; after this many failed ticks the loop
-        // rebuilds the whole access path via LegionGo2EcAccess.Reinitialize().
-        private int ecConsecutiveWriteFailures = 0;
-        private const int EC_WRITE_FAILURES_BEFORE_REINIT = 3;
-        private const int EC_ANCHOR_TEMP_DELTA_C = 5;       // recompute target when |temp - anchor| ≥ this
-        private const int EC_FORCED_REWRITE_INTERVAL_S = 30; // re-assert override even if target unchanged
-
-        // Software thermal failsafe (Rodpad LeGo2-Fan-Control "panic mode"). When CPU
-        // temperature meets/exceeds EC_FAN_PANIC_TEMP_C, bypass anchor + curve and force
-        // the fan to max(EC_FAN_PANIC_MIN_RPM, curveMaxRpm). Belt-and-braces alongside
-        // the EC firmware's own thermal failsafe (which engages at the same threshold);
-        // ours fires from the helper-side temp source so misbehaving curves can't keep
-        // the fan low even if the EC's own sensor briefly under-reads.
-        private const int EC_FAN_PANIC_TEMP_C = 101;
-        private const int EC_FAN_PANIC_MIN_RPM = 4800; // matches the EC firmware's own failsafe RPM
-        private bool ecInPanicMode = false; // sticky log latch — log once when entering, once when leaving
-
-        // Fan-full-speed override latch. When the user enables "Fan Full Speed" while the EC
-        // override loop is active (curve unlocked for the current mode), the WMI full-speed
-        // command and the EC loop's 0xC6C8 curve write fight — the loop walks the fan back to
-        // the curve target within one tick. While fanFullSpeed is on, the loop commands
-        // EC_FAN_MAX_RPM instead of the curve value so both paths agree; on the off transition
-        // it resets the anchor so the curve target is re-asserted on the next tick.
-        private bool ecInFullSpeed = false;
         private bool gyroEnabled = false;
         private int vibrationLevel = 2; // Medium
         private bool powerLightEnabled = true;
@@ -172,16 +126,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         /// the user has the panel open.
         /// </summary>
         public bool IsFanCurveVisible => fanCurveVisible;
-
-        // True only when the EC fan override timer is actually ticking. Used by
-        // PerformanceManager's metrics-consumer check so the LHM sensor walk does not gate while
-        // the loop is running — the cached CPUTemperature would otherwise sit at the last
-        // reading (e.g. 68°C from gameplay) while the device is idle/screen-off and the loop
-        // would keep writing the matching high-RPM target until something else wakes the walk
-        // up. Gates strictly on ecFanCurveTimer (not fanCurveUnlocked + legionEcAccess) so a
-        // toggled-on-but-EC-init-failed configuration (PawnIO missing) does not keep sensors
-        // walking pointlessly. (kayti #88 fan stays loud after sleep, gap ~90 s in her capture.)
-        public bool IsEcFanOverrideActive => ecFanCurveTimer != null;
 
         // TDP reapply timer (used when switching to Custom mode)
         private System.Timers.Timer tdpReapplyTimer;
@@ -229,12 +173,10 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         public readonly LegionCustomTDPPeakProperty LegionCustomTDPPeak;
         public readonly LegionFanFullSpeedProperty LegionFanFullSpeed;
         public readonly LegionFanCurveDataProperty LegionFanCurveData;
-        public readonly LegionUnlockFanCurveProperty LegionUnlockFanCurve;
-        // Per-mode pipe channels — let the widget edit any mode's saved curve / unlock
-        // state without changing the running power mode. Active-mode hardware writes
-        // still go through LegionFanCurveData / LegionUnlockFanCurve.
+        // Per-mode pipe channel — lets the widget edit a mode's saved curve without
+        // changing the running power mode. Active-mode hardware writes still go through
+        // LegionFanCurveData.
         public readonly LegionFanCurvePerModeProperty LegionFanCurvePerMode;
-        public readonly LegionUnlockFanCurvePerModeProperty LegionUnlockFanCurvePerMode;
         public readonly LegionCPUCurrentTempProperty LegionCPUCurrentTemp;
         public readonly LegionFanSensorTempProperty LegionFanSensorTemp;
         public readonly LegionCPUFanRPMProperty LegionCPUFanRPM;
@@ -302,6 +244,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         public readonly ControllerConnectedLeftProperty ControllerConnectedLeft;
         public readonly ControllerConnectedRightProperty ControllerConnectedRight;
         public readonly ControllerVidPidProperty ControllerVidPid;
+        public readonly LegionControllerModeProperty LegionControllerMode;
         public readonly ControllerDeviceStatusProperty ControllerDeviceStatus;
 
         // Device capability properties (for widget UI visibility)
@@ -365,17 +308,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             LegionCustomTDPFast = new LegionCustomTDPFastProperty(customTDPFast, this);
             LegionCustomTDPPeak = new LegionCustomTDPPeakProperty(customTDPPeak, this);
             LegionFanFullSpeed = new LegionFanFullSpeedProperty(fanFullSpeed, this);
-
-            // Restore per-mode fan-curve unlock prefs from LocalSettings. Each mode has its
-            // own on/off slot (LegionUnlockFanCurve_<mode>); migrate the legacy single-key
-            // value into all four slots on first run so users keep their setting after
-            // upgrade. The "active" fanCurveUnlocked tracks whichever mode is currently
-            // selected — re-loaded after the WMI mode read settles.
-            LoadAllPerModeEcOverride();
-            // performanceMode is still the field default at this point (Balanced=2). The
-            // real value loads later via ReadCurrentPerformanceMode; we re-sync there.
-            fanCurveUnlocked = ecOverrideByMode.TryGetValue(performanceMode, out bool initialUnlock) && initialUnlock;
-            LegionUnlockFanCurve = new LegionUnlockFanCurveProperty(fanCurveUnlocked, this);
 
             // Initialize fan curve - first try LocalSettings, then device
             if (isLegionGoDetected)
@@ -470,7 +402,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             string fanCurveString = string.Join(",", fanCurve.Select(v => (int)v));
             LegionFanCurveData = new LegionFanCurveDataProperty(fanCurveString, this);
             LegionFanCurvePerMode = new LegionFanCurvePerModeProperty(this);
-            LegionUnlockFanCurvePerMode = new LegionUnlockFanCurvePerModeProperty(this);
             LegionCPUCurrentTemp = new LegionCPUCurrentTempProperty(0, this);
             LegionFanSensorTemp = new LegionFanSensorTempProperty(0, this);
             LegionCPUFanRPM = new LegionCPUFanRPMProperty(0, this);
@@ -614,6 +545,10 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             ControllerConnectedLeft = new ControllerConnectedLeftProperty(false, this);
             ControllerConnectedRight = new ControllerConnectedRightProperty(false, this);
             ControllerVidPid = new ControllerVidPidProperty("", this);
+            // Controller input mode (X-Input / D-Input). Starts from what the USB device list says
+            // right now; kept current from the controller VID:PID (UpdateControllerVidPid).
+            detectedControllerMode = isLegionGoDetected ? DetectControllerModeFromHid() : LegionControllerModes.Unknown;
+            LegionControllerMode = new LegionControllerModeProperty(detectedControllerMode, this);
             ControllerDeviceStatus = new ControllerDeviceStatusProperty("", this);
 
             // Initialize device capability properties (for widget UI visibility)
@@ -674,7 +609,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 LegionCustomTDPPeak.SetValueSilent(customTDPPeak);
                 LegionFanFullSpeed.SetValueSilent(fanFullSpeed);
 
-                // Reload curve + unlock state from the per-mode slots now that we know
+                // Reload the curve from the per-mode slots now that we know
                 // the actual mode WMI returned. The earlier load at line ~312 used the
                 // performanceMode field default (Balanced=2), so if the user was in a
                 // different mode at last shutdown the wrong slots were active until this
@@ -701,19 +636,10 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                         }
                         catch (Exception ex) { Logger.Debug($"Failed to align legacy LegionFanCurveData after WMI read: {ex.Message}"); }
                     }
-
-                    bool actualUnlock = ecOverrideByMode.TryGetValue(performanceMode, out bool v) && v;
-                    if (actualUnlock != fanCurveUnlocked)
-                    {
-                        fanCurveUnlocked = actualUnlock;
-                        Logger.Info($"EC override state re-loaded for actual mode {performanceMode}: {(actualUnlock ? "ON" : "off")}");
-                        try { Settings.LocalSettingsHelper.SetValue("LegionUnlockFanCurve", actualUnlock); } catch { }
-                        try { LegionUnlockFanCurve?.SetValueSilent(actualUnlock); } catch { }
-                    }
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn($"Failed to reload fan curve / unlock state for actual mode {performanceMode}: {ex.Message}");
+                    Logger.Warn($"Failed to reload fan curve for actual mode {performanceMode}: {ex.Message}");
                 }
             }
 
@@ -730,16 +656,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 };
                 fanCurveEnableTimer.AutoReset = false;
                 fanCurveEnableTimer.Start();
-            }
-
-            // If the user previously toggled fan-curve unlock on and the helper is
-            // restarting (e.g. after upgrade), bootstrap the EC override loop now —
-            // SetFanCurveUnlocked won't fire from a property change here because the
-            // initial property value already matches the persisted state.
-            if (fanCurveUnlocked && isLegionGoDetected)
-            {
-                Logger.Info("LegionUnlockFanCurve persisted as on — bootstrapping EC override path post-construction.");
-                EnsureEcOverrideRunning();
             }
 
             constructorTimer.Stop();
@@ -1517,7 +1433,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             // Per-mode fan curve swap fires on every actual mode transition (not on no-op
             // "set to current" calls). Independent from the WMI debounce that gates
             // SetSmartFanMode rapid-fire suppression — we want the active curve to swap
-            // immediately so the EC override loop's next tick uses the right one.
+            // immediately.
             if (modeActuallyChanged)
             {
                 OnPerformanceModeChanged(oldMode, mode);
@@ -1983,55 +1899,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             }
         }
 
-        // Toggles the fan-curve override path. When false: Lenovo WMI Fan_Set_Table only
-        // (subject to firmware minimums). When true: helper will additionally drive the EC
-        // _EC_TargetRPM register at 0xC6C8 directly via PawnIO (Rodpad-style; bypasses
-        // Lenovo's fan controller). The .pawn module that exposes EC port-IO functions
-        // isn't bundled yet — see legion_go2_ec.pawn TODO + Resources/PawnIO/. For now we
-        // persist the pref + log clearly so the next round-trip with the user shows the
-        // unlock state in helper logs.
-        public void SetFanCurveUnlocked(bool unlocked)
-        {
-            if (fanCurveUnlocked == unlocked) return;
-            fanCurveUnlocked = unlocked;
-
-            // Persist to the CURRENT mode's slot. Other modes keep their own setting —
-            // user can have EC override on for Performance/Custom but off for Quiet, etc.
-            SaveOverrideForMode(performanceMode, unlocked);
-
-            // Keep the legacy LegionUnlockFanCurve property aligned with the active-mode
-            // unlock state. SetValueSilent skips NotifyPropertyChanged so we don't
-            // re-enter SetFanCurveUnlocked or echo back to the widget — just sync the
-            // in-memory Value so any caller that reads it sees current state.
-            try { LegionUnlockFanCurve?.SetValueSilent(unlocked); }
-            catch (Exception ex) { Logger.Debug($"Failed to sync legacy LegionUnlockFanCurve: {ex.Message}"); }
-
-            if (unlocked)
-            {
-                EnsureEcOverrideRunning();
-            }
-            else
-            {
-                Logger.Info("Fan curve override locked — stopping EC override loop, returning fan to firmware control.");
-                StopEcFanCurveLoop();
-            }
-
-            // Re-apply current curve so behavior reflects the new lock state immediately.
-            // Lenovo's Fan_Set_Table is idempotent; firmware re-evaluates on each call.
-            try
-            {
-                if (wmiService != null && fanCurve != null && fanCurve.Length == 10)
-                {
-                    var result = wmiService.SetFanCurve(fanCurve);
-                    Logger.Info($"Fan curve re-applied after unlock toggle: {result.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Failed to re-apply fan curve after unlock toggle: {ex.Message}");
-            }
-        }
-
         // === Per-mode fan curve storage (Rodpad pattern) ============================
 
         private static string FanCurveKeyForMode(int mode) => $"LegionFanCurve_{mode}";
@@ -2100,57 +1967,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             return foundAny;
         }
 
-        // Loads each mode's EC-override unlock state from LegionUnlockFanCurve_<mode>.
-        // Migrates the legacy single key into all four slots if no per-mode keys exist
-        // yet. Missing slots default to false (firmware controls fan unless user opts
-        // in per-mode).
-        private static string EcOverrideKeyForMode(int mode) => $"LegionUnlockFanCurve_{mode}";
-
-        private void LoadAllPerModeEcOverride()
-        {
-            bool foundAny = false;
-            foreach (int mode in AllPerformanceModes)
-            {
-                try
-                {
-                    if (Settings.LocalSettingsHelper.TryGetValue<bool>(EcOverrideKeyForMode(mode), out bool v))
-                    {
-                        ecOverrideByMode[mode] = v;
-                        foundAny = true;
-                    }
-                }
-                catch { }
-            }
-
-            if (!foundAny)
-            {
-                bool legacy = false;
-                try { Settings.LocalSettingsHelper.TryGetValue<bool>("LegionUnlockFanCurve", out legacy); }
-                catch { }
-                foreach (int mode in AllPerformanceModes)
-                    ecOverrideByMode[mode] = legacy;
-                if (legacy) Logger.Info($"Migrated legacy LegionUnlockFanCurve=true into all per-mode slots");
-            }
-
-            foreach (int mode in AllPerformanceModes)
-                if (!ecOverrideByMode.ContainsKey(mode)) ecOverrideByMode[mode] = false;
-        }
-
-        private void SaveOverrideForMode(int mode, bool enabled)
-        {
-            ecOverrideByMode[mode] = enabled;
-            try
-            {
-                Settings.LocalSettingsHelper.SetValue(EcOverrideKeyForMode(mode), enabled);
-                if (mode == performanceMode)
-                    Settings.LocalSettingsHelper.SetValue("LegionUnlockFanCurve", enabled);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"SaveOverrideForMode({mode}) failed: {ex.Message}");
-            }
-        }
-
         // Persists the given curve to the per-mode LocalSettings key. Also updates the
         // legacy single-curve key when the saved mode is the one currently active, so
         // older code paths (and downgrade scenarios) stay consistent.
@@ -2171,12 +1987,12 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             }
         }
 
-        // === Per-mode pipe channels (LegionFanCurvePerMode / LegionUnlockFanCurvePerMode) ====
+        // === Per-mode pipe channels (LegionFanCurvePerMode) ====
 
         // Parse "<mode>:v0,v1,…,v9" coming from the widget. Updates that mode's slot in
         // fanCurvesByMode + LocalSettings. If the named mode is the active power mode,
-        // also reroutes through SetFanCurveFromString so the EC override anchor / WMI
-        // table reflect the edit immediately.
+        // also reroutes through SetFanCurveFromString so the WMI table reflects
+        // the edit immediately.
         public void OnFanCurvePerModePayload(string payload)
         {
             if (string.IsNullOrEmpty(payload)) return;
@@ -2214,41 +2030,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             }
         }
 
-        // Parse "<mode>:0|1" coming from the widget. Updates that mode's unlock slot.
-        // If the named mode is active, also flips fanCurveUnlocked so the EC loop
-        // starts/stops; otherwise just persists.
-        public void OnUnlockFanCurvePerModePayload(string payload)
-        {
-            if (string.IsNullOrEmpty(payload)) return;
-            try
-            {
-                int colon = payload.IndexOf(':');
-                if (colon <= 0) return;
-                if (!int.TryParse(payload.Substring(0, colon), out int mode)) return;
-                string val = payload.Substring(colon + 1).Trim();
-                bool unlocked = val == "1" || string.Equals(val, "true", StringComparison.OrdinalIgnoreCase);
-
-                SaveOverrideForMode(mode, unlocked);
-
-                if (mode == performanceMode)
-                {
-                    // Active mode: flip the live state via the same code path as the
-                    // legacy single-toggle property so the EC loop bootstraps/teardown
-                    // logic runs.
-                    SetFanCurveUnlocked(unlocked);
-                }
-                else
-                {
-                    Logger.Info($"Per-mode unlock saved for mode {mode}: {(unlocked ? "ON" : "off")} (not active — no EC change)");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"OnUnlockFanCurvePerModePayload failed for '{payload}': {ex.Message}");
-            }
-        }
-
-        // Push every mode's saved curve and unlock state to the widget. Called once on
+        // Push every mode's saved curve to the widget. Called once on
         // pipe connect so the widget can cache all four modes locally and let the user
         // edit any of them. Each SetValue call carries a unique "<mode>:..." prefix, so
         // GenericProperty's equality check never collapses the four messages.
@@ -2269,12 +2051,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                         LegionFanCurvePerMode?.PushOutbound($"{mode}:{csv}");
                     }
                 }
-                foreach (var mode in AllPerformanceModes)
-                {
-                    bool u = ecOverrideByMode.TryGetValue(mode, out bool v) && v;
-                    LegionUnlockFanCurvePerMode?.PushOutbound($"{mode}:{(u ? 1 : 0)}");
-                }
-                Logger.Info("Pushed all per-mode fan curves + unlock states to widget on pipe connect.");
+                Logger.Info("Pushed all per-mode fan curves to widget on pipe connect.");
             }
             catch (Exception ex)
             {
@@ -2299,21 +2076,10 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             catch (Exception ex) { Logger.Debug($"PushPerModeCurveToWidget({mode}) failed: {ex.Message}"); }
         }
 
-        private void PushPerModeUnlockToWidget(int mode)
-        {
-            try
-            {
-                bool u = ecOverrideByMode.TryGetValue(mode, out bool v) && v;
-                LegionUnlockFanCurvePerMode?.PushOutbound($"{mode}:{(u ? 1 : 0)}");
-            }
-            catch (Exception ex) { Logger.Debug($"PushPerModeUnlockToWidget({mode}) failed: {ex.Message}"); }
-        }
-
         // Called from SetPerformanceMode whenever the active power mode actually changes
         // (after debounce). Saves the active curve to the OUTGOING mode's slot in case
         // the user edited it while in that mode, then loads the INCOMING mode's curve
-        // into the active state, pushes it to the widget so the displayed curve matches,
-        // and resets the EC override anchor so the next tick re-evaluates.
+        // into the active state and pushes it to the widget so the displayed curve matches.
         private void OnPerformanceModeChanged(int oldMode, int newMode)
         {
             if (oldMode == newMode) return;
@@ -2323,11 +2089,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 if (fanCurve != null && fanCurve.Length == 10)
                     SaveCurveForMode(oldMode, fanCurve);
 
-                // 2. Save outgoing mode's unlock state (already current in-memory; this
-                //    keeps the dict + legacy key consistent for backward compat).
-                ecOverrideByMode[oldMode] = fanCurveUnlocked;
-
-                // 3. Load incoming mode's curve into the active state.
+                // 2. Load incoming mode's curve into the active state.
                 if (fanCurvesByMode.TryGetValue(newMode, out var newCurve)
                     && newCurve != null && newCurve.Length == 10)
                 {
@@ -2335,42 +2097,13 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                     Logger.Info($"Fan curve swapped for mode change {oldMode}→{newMode}: [{string.Join(",", fanCurve)}]%");
                 }
 
-                // 4. Look up the incoming mode's persisted EC-override state.
-                bool newUnlock = ecOverrideByMode.TryGetValue(newMode, out bool v) && v;
-                bool unlockChanged = newUnlock != fanCurveUnlocked;
-                fanCurveUnlocked = newUnlock;
-
-                // Update the legacy single key so it tracks the active mode (downgrade compat).
-                try { Settings.LocalSettingsHelper.SetValue("LegionUnlockFanCurve", newUnlock); }
-                catch { }
-
-                Logger.Info($"EC override state for mode {newMode}: {(newUnlock ? "ON" : "off")}{(unlockChanged ? " (changed from previous mode)" : "")}");
-
-                // 5. Reset EC anchor so the next tick recomputes target with the new curve.
-                ecAnchorTempC = int.MinValue;
-                ecCurrentTargetRpm = -1;
-                ecLastWrittenRpm = -1;
-                ecLastForcedRewriteUtc = DateTime.MinValue;
-
-                // 6. Start or stop the EC loop based on the new mode's unlock state.
-                if (newUnlock)
-                {
-                    EnsureEcOverrideRunning();
-                }
-                else if (ecFanCurveTimer != null)
-                {
-                    Logger.Info($"Mode {newMode} has EC override off — stopping loop, restoring firmware fan control.");
-                    StopEcFanCurveLoop();
-                }
-
-                // 7. Push the new curve + unlock state to widget so its UI reflects the active
-                //    mode. ForceSetValue bypasses the equality check (string may match byte-
-                //    for-byte if both modes had the same shape; bool would never refresh).
+                // 3. Push the new curve to the widget so its UI reflects the active mode.
+                //    ForceSetValue bypasses the equality check (string may match byte-for-byte
+                //    if both modes had the same shape).
                 try
                 {
                     string s = string.Join(",", fanCurve.Select(v => (int)v));
                     LegionFanCurveData?.ForceSetValue(s);
-                    LegionUnlockFanCurve?.ForceSetValue(newUnlock);
                 }
                 catch (Exception ex) { Logger.Debug($"Failed to push state to widget after mode change: {ex.Message}"); }
             }
@@ -2378,369 +2111,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             {
                 Logger.Warn($"OnPerformanceModeChanged({oldMode}→{newMode}) failed: {ex.Message}");
             }
-        }
-
-        // === EC override path =======================================================
-
-        // Idempotent bootstrap for the EC override path. Loads the signed LpcIO module
-        // (lazily, once), runs a sanity-check read, and starts the 3s curve-driven loop.
-        // Safe to call from both the unlock-toggle handler and the post-construction
-        // bootstrap when fanCurveUnlocked was persisted as true.
-        private void EnsureEcOverrideRunning()
-        {
-            Logger.Warn("Fan curve override UNLOCKED — initialising direct EC access path via signed PawnIO LpcIO module.");
-
-            if (legionEcAccess == null)
-                legionEcAccess = new LegionGo2EcAccess();
-
-            if (!legionEcAccess.IsAvailable && !legionEcAccess.Initialize())
-            {
-                Logger.Warn("EC access initialisation failed — falling through to WMI Fan_Set_Table. Check PawnIO driver is installed.");
-                return;
-            }
-
-            int currentRpm = legionEcAccess.GetCurrentFanRpm();
-            if (currentRpm < 0)
-            {
-                Logger.Warn("EC access loaded but ReadWord(0xC6C0) returned error — mailbox protocol may not match this firmware revision. Will fall through to WMI for now.");
-                return;
-            }
-
-            Logger.Info($"EC access verified — current fan RPM via 0xC6C0 = {currentRpm}. Starting curve-driven EC override loop ({EC_FAN_TICK_MS}ms tick).");
-            StartEcFanCurveLoop();
-        }
-
-        // 3s tick — re-applies the user's fan curve via direct EC RPM override. Beats the
-        // firmware's own write to _EC_TargetRPM (which would otherwise overwrite our value
-        // on its next curve evaluation).
-        private void StartEcFanCurveLoop()
-        {
-            if (ecFanCurveTimer != null) return; // already running
-            ecLastWrittenRpm = -1;
-            ecCurrentTargetRpm = -1;
-            ecAnchorTempC = int.MinValue;
-            ecLastForcedRewriteUtc = DateTime.MinValue;
-            ecInPanicMode = false;
-            ecFanCurveTimer = new System.Threading.Timer(
-                EcFanCurveTick,
-                state: null,
-                dueTime: 0,        // first tick immediately for responsiveness
-                period: EC_FAN_TICK_MS);
-        }
-
-        internal void StopEcFanCurveLoop()
-        {
-            if (ecFanCurveTimer == null) return;
-            ecFanCurveTimer.Dispose();
-            ecFanCurveTimer = null;
-            ecLastWrittenRpm = -1;
-            ecCurrentTargetRpm = -1;
-            ecAnchorTempC = int.MinValue;
-            ecLastForcedRewriteUtc = DateTime.MinValue;
-            ecInPanicMode = false;
-
-            // Explicitly clear the EC's _EC_TargetRPM override register (0xC6C8 = 0
-            // means "no override, fall back to firmware curve"). Without this, the
-            // EC keeps the last RPM we wrote — leaving the fan stuck at that value
-            // when the override loop stops, especially on a process crash where
-            // this method may not be reached at all but other shutdown hooks call
-            // it. Belt-and-suspenders: also re-apply Lenovo's WMI curve so firmware
-            // re-evaluates immediately rather than waiting for its next tick.
-            try
-            {
-                legionEcAccess?.SetTargetFanRpm(0);
-                Logger.Info("EC override loop stopped — wrote 0xC6C8=0 to clear target RPM override");
-            }
-            catch (Exception ex) { Logger.Debug($"EC clear on stop failed: {ex.Message}"); }
-
-            try
-            {
-                if (wmiService != null && fanCurve != null && fanCurve.Length == 10)
-                {
-                    wmiService.SetFanCurve(fanCurve);
-                    Logger.Info("EC override loop stopped — restored Lenovo WMI fan curve");
-                }
-            }
-            catch (Exception ex) { Logger.Debug($"WMI fan curve restore on unlock-off failed: {ex.Message}"); }
-        }
-
-        /// <summary>
-        /// Best-effort cleanup for process exit (graceful or unhandled exception).
-        /// Writes 0xC6C8=0 to release the EC fan override and re-applies the WMI
-        /// curve so firmware retakes control. Safe to call even if the EC loop was
-        /// never running. Idempotent.
-        /// </summary>
-        public void EmergencyReleaseFanOverride()
-        {
-            if (!isLegionGoDetected) return;
-            try
-            {
-                if (legionEcAccess != null)
-                {
-                    legionEcAccess.SetTargetFanRpm(0);
-                    Logger.Warn("EmergencyReleaseFanOverride: wrote 0xC6C8=0 to release fan override");
-                }
-                if (wmiService != null && fanCurve != null && fanCurve.Length == 10)
-                {
-                    wmiService.SetFanCurve(fanCurve);
-                    Logger.Warn("EmergencyReleaseFanOverride: re-applied WMI fan curve");
-                }
-            }
-            catch (Exception ex)
-            {
-                // Last-ditch: log to the system event log too, since we may be exiting
-                // and the file logger could be torn down.
-                try { Logger.Error($"EmergencyReleaseFanOverride failed: {ex}"); } catch { }
-            }
-        }
-
-        /// <summary>
-        /// Called on system resume. The PawnIO handle backing the EC fan
-        /// override can die across sleep/hibernate (Rodpad's Windows tool
-        /// shipped the same fix on 2026-06-04). Probe the EC path and rebuild
-        /// it proactively so the user's fan curve reasserts within one tick of
-        /// waking instead of waiting for three failed writes. No-op when the
-        /// override loop isn't running.
-        /// </summary>
-        public void RecoverEcFanOverrideAfterResume()
-        {
-            try
-            {
-                if (!fanCurveUnlocked || legionEcAccess == null || ecFanCurveTimer == null)
-                    return;
-
-                bool healthy = legionEcAccess.IsAvailable && legionEcAccess.GetCurrentFanRpm() >= 0;
-                if (!healthy)
-                {
-                    Logger.Warn("Resume: EC fan access unhealthy after wake — reinitializing PawnIO path");
-                    if (!legionEcAccess.Reinitialize())
-                    {
-                        Logger.Warn("Resume: EC access reinit failed; tick-level self-heal will keep retrying");
-                        return;
-                    }
-                }
-
-                // Firmware may have cleared 0xC6C8 during sleep. Force the next
-                // tick to recompute from a fresh anchor and write unconditionally.
-                ecAnchorTempC = int.MinValue;
-                ecLastWrittenRpm = -1;
-                ecLastForcedRewriteUtc = DateTime.MinValue;
-                ecConsecutiveWriteFailures = 0;
-                Logger.Info("Resume: EC fan override state reset — curve reasserts on next tick");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"RecoverEcFanOverrideAfterResume failed: {ex.Message}");
-            }
-        }
-
-        private void EcFanCurveTick(object _)
-        {
-            try
-            {
-                if (!fanCurveUnlocked || legionEcAccess == null || !legionEcAccess.IsAvailable)
-                    return;
-
-                int tempC = ReadFanControlTempForEcLoop();
-                if (tempC < 0) return; // sensor read failed; skip this tick
-
-                // --- Software thermal failsafe (panic mode). ---
-                // Fires BEFORE anchor + curve logic. Bypasses smoothing entirely so the
-                // fan ramps to the failsafe RPM on the very next tick if temp crosses
-                // the panic threshold (matches Rodpad's behaviour). Force a re-write
-                // every tick while panic is active to defeat any firmware path that
-                // might try to walk our value back down.
-                if (tempC >= EC_FAN_PANIC_TEMP_C)
-                {
-                    int curveMaxPercent = fanCurve.Max();
-                    int curveMaxRpm = (int)Math.Round(curveMaxPercent * EC_FAN_MAX_RPM / 100.0);
-                    int panicRpm = Math.Max(EC_FAN_PANIC_MIN_RPM, curveMaxRpm);
-                    if (panicRpm > 65535) panicRpm = 65535;
-
-                    if (!ecInPanicMode)
-                    {
-                        Logger.Warn($"EC fan PANIC: temp={tempC}°C ≥ {EC_FAN_PANIC_TEMP_C}°C — forcing fan to {panicRpm} RPM (max of {EC_FAN_PANIC_MIN_RPM} firmware-failsafe and {curveMaxRpm} curve-max). Curve and anchor logic bypassed until temp drops.");
-                        ecInPanicMode = true;
-                    }
-
-                    if (legionEcAccess.SetTargetFanRpm((ushort)panicRpm))
-                    {
-                        ecCurrentTargetRpm = panicRpm;
-                        ecLastWrittenRpm = panicRpm;
-                        ecLastForcedRewriteUtc = DateTime.UtcNow;
-                    }
-                    return; // skip anchor/curve evaluation while in panic
-                }
-
-                if (ecInPanicMode)
-                {
-                    Logger.Info($"EC fan PANIC cleared: temp={tempC}°C dropped below {EC_FAN_PANIC_TEMP_C}°C — resuming curve-driven control.");
-                    ecInPanicMode = false;
-                    // Force a fresh anchor evaluation so we don't keep panic RPM after panic ends.
-                    ecAnchorTempC = int.MinValue;
-                    ecCurrentTargetRpm = -1;
-                }
-
-                // --- Fan Full Speed override. ---
-                // When the user has Full Speed on, the WMI full-speed command and this loop's
-                // curve write to 0xC6C8 would otherwise fight. Command EC_FAN_MAX_RPM here so
-                // both paths agree (force a re-write every tick to defeat any firmware walk-back).
-                if (fanFullSpeed)
-                {
-                    int fullRpm = Math.Min(EC_FAN_MAX_RPM, 65535);
-                    if (!ecInFullSpeed)
-                    {
-                        Logger.Info($"EC fan FULL SPEED engaged — commanding {fullRpm} RPM via 0xC6C8 (curve/anchor bypassed until Full Speed is turned off).");
-                        ecInFullSpeed = true;
-                    }
-                    if (legionEcAccess.SetTargetFanRpm((ushort)fullRpm))
-                    {
-                        ecCurrentTargetRpm = fullRpm;
-                        ecLastWrittenRpm = fullRpm;
-                        ecLastForcedRewriteUtc = DateTime.UtcNow;
-                    }
-                    return; // skip anchor/curve evaluation while Full Speed is on
-                }
-
-                if (ecInFullSpeed)
-                {
-                    Logger.Info("EC fan FULL SPEED cleared — resuming curve-driven control.");
-                    ecInFullSpeed = false;
-                    // Force a fresh anchor evaluation so the curve target is re-asserted now.
-                    ecAnchorTempC = int.MinValue;
-                    ecCurrentTargetRpm = -1;
-                }
-
-                // --- Anchor-point hysteresis (Rodpad pattern). ---
-                // Only recompute the target RPM when temperature has drifted ≥5°C from the
-                // last anchor. Between anchors the fan target stays constant — prevents the
-                // fan yo-yoing on idle ±1°C jitter without sacrificing curve responsiveness
-                // for real temperature changes.
-                bool anchorMoved = (ecAnchorTempC == int.MinValue)
-                                || Math.Abs(tempC - ecAnchorTempC) >= EC_ANCHOR_TEMP_DELTA_C;
-
-                if (anchorMoved)
-                {
-                    int percent = InterpolateFanCurvePercent(tempC);
-                    int targetRpm = (int)Math.Round(percent * EC_FAN_MAX_RPM / 100.0);
-
-                    // EC reg 0xC6C8 treats value 0 as "no override — fall back to firmware
-                    // curve". To honor a user-configured 0% point we have to write 1
-                    // (Rodpad's pattern); the EC then drives fan to its hardware minimum.
-                    if (targetRpm < 1) targetRpm = 1;
-                    if (targetRpm > 65535) targetRpm = 65535;
-
-                    if (targetRpm != ecCurrentTargetRpm)
-                    {
-                        Logger.Info($"EC fan anchor moved: temp {ecAnchorTempC}→{tempC}°C → curve {percent}% → target {ecCurrentTargetRpm}→{targetRpm} RPM");
-                        ecCurrentTargetRpm = targetRpm;
-                    }
-                    ecAnchorTempC = tempC;
-                }
-
-                if (ecCurrentTargetRpm < 0) return; // first tick before anchor settled
-
-                // --- Forced re-write every 30s (defeats firmware overrides that may stomp 0xC6C8). ---
-                bool forcedRewriteDue = (DateTime.UtcNow - ecLastForcedRewriteUtc).TotalSeconds >= EC_FORCED_REWRITE_INTERVAL_S;
-                bool valueChanged = ecCurrentTargetRpm != ecLastWrittenRpm;
-
-                if (!valueChanged && !forcedRewriteDue) return; // skip — no reason to write
-
-                if (legionEcAccess.SetTargetFanRpm((ushort)ecCurrentTargetRpm))
-                {
-                    int actualRpm = legionEcAccess.GetCurrentFanRpm();
-                    string reason = valueChanged ? "target changed" : "30s forced refresh";
-                    Logger.Info($"EC fan tick: temp={tempC}°C → wrote {ecCurrentTargetRpm} RPM to 0xC6C8 ({reason}, current={actualRpm})");
-                    ecLastWrittenRpm = ecCurrentTargetRpm;
-                    ecLastForcedRewriteUtc = DateTime.UtcNow;
-                    ecConsecutiveWriteFailures = 0;
-                }
-                else
-                {
-                    ecConsecutiveWriteFailures++;
-                    if (ecConsecutiveWriteFailures >= EC_WRITE_FAILURES_BEFORE_REINIT)
-                    {
-                        // Stale PawnIO handle (typically after sleep/hibernate) —
-                        // rebuild the access path instead of failing forever.
-                        Logger.Warn($"EC fan tick: {ecConsecutiveWriteFailures} consecutive write failures — reinitializing EC access path");
-                        ecConsecutiveWriteFailures = 0;
-                        if (legionEcAccess.Reinitialize())
-                        {
-                            Logger.Info("EC fan tick: EC access path rebuilt — forcing immediate rewrite next tick");
-                            ecLastWrittenRpm = -1; // guarantee the next tick writes
-                        }
-                        else
-                        {
-                            Logger.Warn("EC fan tick: EC access reinit failed; will retry after further failures");
-                        }
-                    }
-                    else
-                    {
-                        Logger.Warn($"EC fan tick: SetTargetFanRpm({ecCurrentTargetRpm}) failed ({ecConsecutiveWriteFailures}/{EC_WRITE_FAILURES_BEFORE_REINIT} before reinit); will retry next tick");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"EC fan tick exception: {ex.Message}");
-            }
-        }
-
-        // Source temperature for the EC override loop. We use the AMD CPU temperature
-        // (k10temp/Tctl exposed via LibreHardwareMonitor / RyzenSMU) — same sensor source
-        // Rodpad's Linux tool reads from sysfs (k10temp/amdgpu/zenpower). Choosing this
-        // sensor means our curve responds to the same temp signal a user would see in
-        // HWiNFO or RyzenAdj, and avoids the EC-side filtering on Lenovo's 0x01 sensor
-        // which can lag actual workload changes by several seconds.
-        //
-        // Lenovo WMI's GetFanControlSensorTemp is kept as a fallback for the case where
-        // PerformanceManager hasn't initialized yet (e.g. early boot ticks before LHM
-        // hardware enumeration completes).
-        private int ReadFanControlTempForEcLoop()
-        {
-            try
-            {
-                if (performanceManager?.CPUTemperature != null && performanceManager.CPUTemperature.Value > 0)
-                    return (int)performanceManager.CPUTemperature.Value;
-            }
-            catch { /* fall through */ }
-
-            try
-            {
-                if (wmiService != null)
-                {
-                    var r = wmiService.GetFanControlSensorTemp();
-                    if (r.Success && r.Result.HasValue && r.Result.Value > 0)
-                        return r.Result.Value;
-                }
-            }
-            catch { /* fall through */ }
-
-            return -1;
-        }
-
-        // Linear interpolation against the user's fanCurve[10] using LegionFanCurveTemps[10] as the temp axis.
-        // Returns percentage 0–100; values can stay at user-configured 0 (which then maps to 0 RPM = fan off).
-        private int InterpolateFanCurvePercent(int tempC)
-        {
-            if (tempC <= LegionFanCurveTemps[0]) return fanCurve[0];
-            // Clamp to the user's top curve point, not a hardcoded 100. Forcing 100% here
-            // made the fan spike to max ("jet engine", issue #88) any time temp crossed the
-            // top threshold, ignoring the configured top point. True over-temp is handled
-            // separately by panic mode (EC_FAN_PANIC_TEMP_C = 101°C), so respecting the curve
-            // here is safe.
-            if (tempC >= LegionFanCurveTemps[9]) return fanCurve[9];
-            for (int i = 0; i < 9; i++)
-            {
-                if (tempC >= LegionFanCurveTemps[i] && tempC <= LegionFanCurveTemps[i + 1])
-                {
-                    float t = (tempC - LegionFanCurveTemps[i])
-                            / (float)(LegionFanCurveTemps[i + 1] - LegionFanCurveTemps[i]);
-                    int speed = (int)Math.Round(fanCurve[i] + t * (fanCurve[i + 1] - fanCurve[i]));
-                    return Math.Max(0, Math.Min(100, speed));
-                }
-            }
-            return 100;
         }
 
         public void SetFanFullSpeed(bool enabled)
@@ -2758,16 +2128,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 {
                     fanFullSpeed = enabled;
                     Logger.Info($"Fan full speed {(enabled ? "enabled" : "disabled")}");
-
-                    // If the EC override loop is running (curve unlocked for the active mode),
-                    // run one tick immediately so Full Speed engages/releases at once instead of
-                    // fighting the loop for up to one EC_FAN_TICK_MS window. The tick honors the
-                    // fanFullSpeed flag set above (max RPM on, curve target on release).
-                    if (ecFanCurveTimer != null)
-                    {
-                        try { EcFanCurveTick(null); }
-                        catch (Exception tickEx) { Logger.Debug($"Immediate EC tick after full-speed toggle failed: {tickEx.Message}"); }
-                    }
                 }
                 else
                 {
@@ -2822,14 +2182,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
 
                 Logger.Info($"Fan curve parsed: [{string.Join(", ", fanCurve)}]%");
 
-                // Curve changed → invalidate the EC anchor so the next tick recomputes the
-                // target against the new curve. Without this, anchor hysteresis (which only
-                // recomputes when |temp - anchorTemp| ≥ 5°C) holds the old target indefinitely
-                // when the user edits the curve at a stable temperature, and edits don't
-                // visibly take effect until the temp drifts ≥5°C.
-                ecAnchorTempC = int.MinValue;
-                ecCurrentTargetRpm = -1;
-
                 // Keep the legacy LegionFanCurveData property in sync with the active
                 // curve. SetValueSilent skips NotifyPropertyChanged so we don't echo back
                 // to the widget (the per-mode channel already handled the inbound).
@@ -2851,16 +2203,15 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
 
         private void ApplyFanCurve()
         {
-            // Persist always — per-mode storage means edits in Quiet/Balanced/Performance
-            // are kept in their own slot and used when the EC override loop runs (or when
-            // the user later switches to Custom). The WMI Fan_Set_Table call below stays
-            // gated on Custom mode because preset modes have firmware-controlled curves
-            // that ignore Fan_Set_Table writes.
+            // Persist always — per-mode storage means edits are kept in their own slot and
+            // used when the user later switches to that mode. The WMI Fan_Set_Table call
+            // below stays gated on Custom mode because preset modes have
+            // firmware-controlled curves that ignore Fan_Set_Table writes.
             SaveFanCurveToSettings();
 
             if (performanceMode != 255)
             {
-                Logger.Info($"Fan curve persisted for mode {performanceMode} but not pushed to Lenovo WMI (preset modes use firmware curves; EC override path applies the saved curve when unlocked).");
+                Logger.Info($"Fan curve persisted for mode {performanceMode} but not pushed to Lenovo WMI (preset modes use firmware curves).");
                 return;
             }
 
@@ -3306,7 +2657,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 LegionCPUFanRPM.UpdateRPM(cpuFanSpeed);
 
                 // Send the true CPU temperature (Tctl/Tdie). This is what the fan-curve UI
-                // displays and what the EC override loop evaluates the curve against — NOT
+                // displays — NOT
                 // the EC fan-control sensor (0x01) below, which reads a chipset/board area
                 // and was being mistaken for the CPU temp.
                 if (performanceManager?.CPUTemperature != null && performanceManager.CPUTemperature.Value > 0)

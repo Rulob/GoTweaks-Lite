@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using NLog;
-using XboxGamingBarHelper.ControllerEmulation.Viiper;
 
 namespace XboxGamingBarHelper.Labs
 {
@@ -9,9 +8,8 @@ namespace XboxGamingBarHelper.Labs
     /// Standalone button haptics ("GoTweaks Haptics"). On each bound Legion button press
     /// edge, plays a short crisp LRA click on the physical controller motors — the same
     /// envelope we tuned for the Steam Deck trigger haptic (~20ms on-time so the LRA spins
-    /// up to a uniform click, then a hard stop). Works independent of VIIPER emulation by
-    /// driving the Legion controller's own XInput slot directly. Per-group enable +
-    /// intensity (ABXY / front / back / triggers).
+    /// up to a uniform click, then a hard stop). Drives the Legion controller's own XInput
+    /// slot directly. Per-group enable + intensity (ABXY / front / back / triggers).
     /// </summary>
     internal sealed class GoTweaksHapticManager : IDisposable
     {
@@ -230,11 +228,11 @@ namespace XboxGamingBarHelper.Labs
             int found = -1;
             for (uint i = 0; i < 4; i++)
             {
-                var caps = default(ViiperXInputCapabilitiesEx);
+                var caps = default(HapticXInputCapabilitiesEx);
                 uint rc;
-                try { rc = ViiperXInput.GetCapabilitiesEx(1, i, 1, ref caps); }
+                try { rc = HapticXInput.GetCapabilitiesEx(1, i, 1, ref caps); }
                 catch { return; }
-                if (rc != ViiperXInput.ErrorSuccess) continue;
+                if (rc != HapticXInput.ErrorSuccess) continue;
                 if (caps.VendorId == LegionVendorId) { found = (int)i; break; }
             }
             lock (_stateLock)
@@ -254,8 +252,8 @@ namespace XboxGamingBarHelper.Labs
             if (slot < 0) return;
 
             ushort speed = (ushort)(strength * 257); // 0..255 -> 0..65535
-            var vib = new ViiperXInputVibration { LeftMotorSpeed = speed, RightMotorSpeed = speed };
-            try { ViiperXInput.SetState((uint)slot, ref vib); }
+            var vib = new HapticXInputVibration { LeftMotorSpeed = speed, RightMotorSpeed = speed };
+            try { HapticXInput.SetState((uint)slot, ref vib); }
             catch (Exception ex) { Logger.Debug($"GoTweaksHaptics: SetState failed: {ex.Message}"); }
         }
 

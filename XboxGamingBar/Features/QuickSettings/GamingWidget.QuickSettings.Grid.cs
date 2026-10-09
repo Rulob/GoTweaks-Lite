@@ -408,6 +408,7 @@ namespace XboxGamingBar
                  tile.Id == "LegionDesktopControls" || tile.Id == "LegionRemapControls" ||
                  tile.Id == "LegionChargeLimit" || tile.Id == "LegionPowerLight" ||
                  tile.Id == "LegionVibration" || tile.Id == "LegionVibrationMode" ||
+                 tile.Id == "LegionControllerMode" ||
                  tile.Id == "Touchscreen") &&
                 (legionGoDetected?.Value != true))
             {
@@ -418,13 +419,6 @@ namespace XboxGamingBar
 
             // Skip Lossless Scaling tile if not installed
             if (tile.Id == "LosslessScaling" && (losslessScalingInstalled?.Value != true))
-            {
-                return true;
-            }
-
-            // Skip Controller Emulation tile if helper has reported the backend as unavailable
-            // (handheld-agnostic emulation requires LegionGo / GPD / similar, gated by the helper).
-            if (tile.Id == "ControllerEmulation" && (controllerEmulationAvailable?.Value != true))
             {
                 return true;
             }

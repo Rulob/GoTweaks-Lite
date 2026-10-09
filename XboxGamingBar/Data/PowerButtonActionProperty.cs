@@ -15,7 +15,7 @@ namespace XboxGamingBar.Data
     {
         // Goes true once the helper has pushed the real Windows value via BatchSync.
         // Until then the ComboBox's XAML-mount SelectionChanged is a default-render
-        // artifact, not a user action (same guard as TdpMethodProperty).
+        // artifact, not a user action (same guard as the other helper-synced settings).
         private bool hasReceivedHelperSync;
 
         // Set true while NotifyPropertyChanged programmatically updates SelectedIndex,

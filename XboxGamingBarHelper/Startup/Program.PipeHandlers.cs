@@ -19,7 +19,6 @@ using Windows.System;
 using Windows.UI.Input.Preview.Injection;
 using XboxGamingBarHelper.AMD;
 using XboxGamingBarHelper.Core;
-using XboxGamingBarHelper.ControllerEmulation;
 using XboxGamingBarHelper.Devices.Libraries.GPD;
 using XboxGamingBarHelper.Devices.Libraries.Legion;
 using XboxGamingBarHelper.LosslessScaling;
@@ -268,9 +267,7 @@ namespace XboxGamingBarHelper
                 // Handle gyro-calibration request. Widget fires this as a one-shot while
                 // the user holds the Legion controllers still; helper sends the HID
                 // output report to the controllers' firmware to capture a fresh bias.
-                // Strictly firmware-only; JSL calibration lives on the separate
-                // ControllerEmulation Calibrate Gyro button (different concern, kept
-                // separate per user request).
+                // Strictly firmware-only.
                 if (pipeMsg.Extra.ContainsKey("CalibrateLegionGyro"))
                 {
                     HandleCalibrateLegionGyro(pipeMsg);
@@ -1293,32 +1290,15 @@ namespace XboxGamingBarHelper
                 {
                     response = HandleScreenSaverEnabled(request);
                 }
-                // Software gyro bias capture or reset. Steam-style one-shot calibration:
-                // user puts the device on a flat surface, presses Calibrate, we sample for
-                // ~500 ms and store the average as the bias offset. LegionButtonMonitor
-                // subtracts this from every TryGetLatestGyroSample read so all gyro
-                // consumers (legacy CE stick-gyro, VIIPER stick-gyro, VIIPER native DS4 /
-                // DualSense / Xbox forwarding) see the corrected stream.
-                else if (functionValue == (int)Function.CalibrateGyroBias)
-                {
-                    response = HandleCalibrateGyroBias(request);
-                }
                 // (AutoHibernateMode handler removed — Auto Hibernate feature retired,
                 // 2026-07-10 System-tab cleanup. Function ordinal stays reserved.)
                 // (ViGEmBusInstalled / InstallViGEmBus handlers removed — ViGEm
                 // backend retired. The Function enum entries stay so the wire
                 // values of later entries don't shift; unknown functions from
                 // any stale sender are simply ignored.)
-                // HidHide: Check installed status
-                else if (functionValue == (int)Function.HidHideInstalled)
-                {
-                    response = HandleHidHideInstalled(request);
-                }
-                // HidHide: Install request - only install when explicitly requested with Set command and "install" content
-                else if (functionValue == (int)Function.InstallHidHide)
-                {
-                    response = HandleInstallHidHide(request);
-                }
+                // (CalibrateGyroBias / HidHide / PawnIO-debug handlers removed along with
+                // Controller Emulation and the driver prerequisites — same rule: the
+                // Function enum entries stay reserved.)
                 // Debug: Export Per-Game Profiles
                 else if (functionValue == (int)Function.Debug_ExportProfiles)
                 {
@@ -1353,16 +1333,6 @@ namespace XboxGamingBarHelper
                 else if (functionValue == (int)Function.ImportAllData)
                 {
                     response = HandleImportAllData(request);
-                }
-                // PawnIO Debug: Get CPU Info
-                else if (functionValue == (int)Function.PawnIOGetCpuInfo)
-                {
-                    response = HandlePawnIOGetCpuInfo(request);
-                }
-                // PawnIO Debug: Apply Settings
-                else if (functionValue == (int)Function.PawnIOApplySettings)
-                {
-                    response = HandlePawnIOApplySettings(request);
                 }
                 else
                 {
@@ -1607,148 +1577,6 @@ namespace XboxGamingBarHelper
                 SetScreenSaverEnabled(enabled);
                 Logger.Info($"Pipe: Screen Saver enabled set to: {enabled}");
             }
-            return response;
-        }
-
-        // Software gyro bias capture or reset (Steam-style one-shot calibration). Samples
-        // ~500 ms and stores the average as the bias offset (subtracted by LegionButtonMonitor
-        // for all gyro consumers). Sends results via SendGyroBiasOffsetToWidget; no response here.
-        private static global::Windows.Foundation.Collections.ValueSet HandleCalibrateGyroBias(Shared.IPC.PipeMessage request)
-        {
-            global::Windows.Foundation.Collections.ValueSet response = null;
-            string action = request.Content?.ToString()?.Trim()?.ToLowerInvariant() ?? "";
-            if (action == "reset")
-            {
-                XboxGamingBarHelper.Labs.LegionButtonMonitor.ClearGyroBias();
-                SendGyroBiasOffsetToWidget();
-                Logger.Info("Pipe: CalibrateGyroBias reset");
-            }
-            else
-            {
-                Logger.Info("Pipe: CalibrateGyroBias capture starting (500 ms sample window)");
-                // Run async so the pipe doesn't block during the capture window.
-                _ = System.Threading.Tasks.Task.Run(() =>
-                {
-                    try
-                    {
-                        var xs = new System.Collections.Generic.List<double>(256);
-                        var ys = new System.Collections.Generic.List<double>(256);
-                        var zs = new System.Collections.Generic.List<double>(256);
-                        long lastTimestamp = 0;
-                        var start = DateTime.UtcNow;
-                        while ((DateTime.UtcNow - start).TotalMilliseconds < 500)
-                        {
-                            // Average both controllers when both are present so we get a
-                            // single combined bias. The forwarder uses Merge() at runtime,
-                            // which averages signs-corrected left+right, so we approximate
-                            // the same here by summing samples from whichever sides reply.
-                            bool any = false;
-                            if (XboxGamingBarHelper.Labs.LegionButtonMonitor.TryGetLatestRawGyroSample(true, out var left)
-                                && left.TimestampTicksUtc != lastTimestamp)
-                            {
-                                xs.Add(left.GyroXDegPerSecond);
-                                ys.Add(left.GyroYDegPerSecond);
-                                zs.Add(left.GyroZDegPerSecond);
-                                any = true;
-                            }
-                            if (XboxGamingBarHelper.Labs.LegionButtonMonitor.TryGetLatestRawGyroSample(false, out var right)
-                                && right.TimestampTicksUtc != lastTimestamp)
-                            {
-                                xs.Add(right.GyroXDegPerSecond);
-                                ys.Add(right.GyroYDegPerSecond);
-                                zs.Add(right.GyroZDegPerSecond);
-                                any = true;
-                                lastTimestamp = right.TimestampTicksUtc;
-                            }
-                            if (!any) System.Threading.Thread.Sleep(2);
-                            else System.Threading.Thread.Sleep(4); // ~250 Hz outer poll
-                        }
-                        int count = xs.Count;
-                        if (count < 8)
-                        {
-                            Logger.Warn($"Pipe: CalibrateGyroBias capture insufficient samples ({count}) — leaving bias unchanged. Are the controllers attached and producing input?");
-                            SendGyroBiasOffsetToWidget(); // still push so widget can show "not calibrated"
-                            return;
-                        }
-                        // Compute median-and-MAD per axis and reject samples outside
-                        // median +/- k*MAD. MAD scaled by 1.4826 ~= Gaussian sigma, k=6
-                        // keeps ~99.99% of clean noise while pruning the ~one-in-thousand
-                        // single-sample BMI260 spikes (~+/-15 deg/s, see capture audit
-                        // 2026-05-30). Final mean is computed on the kept samples; if any
-                        // axis drops > 25% the capture is rejected as "not still enough".
-                        AxisStats sx = ComputeRobustAxisStats(xs);
-                        AxisStats sy = ComputeRobustAxisStats(ys);
-                        AxisStats sz = ComputeRobustAxisStats(zs);
-                        int maxDropped = Math.Max(sx.Dropped, Math.Max(sy.Dropped, sz.Dropped));
-                        if (maxDropped * 4 > count)
-                        {
-                            Logger.Warn($"Pipe: CalibrateGyroBias rejected — too many outliers (X dropped={sx.Dropped} Y={sy.Dropped} Z={sz.Dropped} of {count}). Was the device actually still?");
-                            SendGyroBiasOffsetToWidget();
-                            return;
-                        }
-                        float bx = (float)sx.TrimmedMean;
-                        float by = (float)sy.TrimmedMean;
-                        float bz = (float)sz.TrimmedMean;
-                        long atUtc = DateTime.UtcNow.Ticks;
-                        XboxGamingBarHelper.Labs.LegionButtonMonitor.SetGyroBias(bx, by, bz, atUtc);
-                        Logger.Info($"Pipe: CalibrateGyroBias captured {count} samples, bias X={bx:F3} Y={by:F3} Z={bz:F3} deg/s");
-                        Logger.Info($"  X: trimMean={bx:F3} trimStd={sx.TrimmedStd:F3} rawMean={sx.RawMean:F3} rawStd={sx.RawStd:F3} min={sx.Min:F3} max={sx.Max:F3} dropped={sx.Dropped}");
-                        Logger.Info($"  Y: trimMean={by:F3} trimStd={sy.TrimmedStd:F3} rawMean={sy.RawMean:F3} rawStd={sy.RawStd:F3} min={sy.Min:F3} max={sy.Max:F3} dropped={sy.Dropped}");
-                        Logger.Info($"  Z: trimMean={bz:F3} trimStd={sz.TrimmedStd:F3} rawMean={sz.RawMean:F3} rawStd={sz.RawStd:F3} min={sz.Min:F3} max={sz.Max:F3} dropped={sz.Dropped}");
-                        SendGyroBiasOffsetToWidget();
-                    }
-                    catch (Exception capEx)
-                    {
-                        Logger.Warn($"Pipe: CalibrateGyroBias capture threw: {capEx.Message}");
-                    }
-                });
-            }
-            return response;
-        }
-
-        // HidHide: Check installed status
-        private static global::Windows.Foundation.Collections.ValueSet HandleHidHideInstalled(Shared.IPC.PipeMessage request)
-        {
-            global::Windows.Foundation.Collections.ValueSet response = null;
-            int functionValue = (int)request.Function;
-            bool installed = XboxGamingBarHelper.Labs.HidHideHelper.IsInstalled();
-            response = new global::Windows.Foundation.Collections.ValueSet();
-            response.Add(nameof(Function), functionValue);
-            response.Add("Content", installed);
-            response.Add("UpdatedTime", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-            Logger.Info($"Pipe: HidHide installed status: {installed}");
-            return response;
-        }
-
-        // HidHide: Install request - only install when explicitly requested with Set + "install"
-        private static global::Windows.Foundation.Collections.ValueSet HandleInstallHidHide(Shared.IPC.PipeMessage request)
-        {
-            global::Windows.Foundation.Collections.ValueSet response = null;
-            bool shouldInstall = request.Command == Shared.Enums.Command.Set && request.Content == "install";
-
-            if (!shouldInstall)
-            {
-                Logger.Debug("Pipe: InstallHidHide - Ignoring non-install request (Get or empty content)");
-                return null;
-            }
-
-            Logger.Info("Pipe: HidHide installation requested from widget");
-            _ = Task.Run(() =>
-            {
-                bool success = XboxGamingBarHelper.Labs.HidHideHelper.Install();
-                bool installed = XboxGamingBarHelper.Labs.HidHideHelper.IsInstalled();
-                var updateMsg = new Shared.IPC.PipeMessage
-                {
-                    Command = Shared.Enums.Command.Set,
-                    Function = Function.HidHideInstalled,
-                    Content = installed.ToString()
-                };
-                SendPipeMessage(updateMsg);
-                Logger.Info($"Pipe: HidHide installation complete (success={success}), sent updated status: {installed}");
-            });
-
-            response = new global::Windows.Foundation.Collections.ValueSet();
-            response.Add("Content", true); // Acknowledge request started
             return response;
         }
 
@@ -2002,7 +1830,7 @@ namespace XboxGamingBarHelper
 
             try
             {
-                string result = Services.SystemRestoreService.PrepareForUninstall(legionManager, systemManager, viiperEmulationManager);
+                string result = Services.SystemRestoreService.PrepareForUninstall(legionManager, systemManager);
                 response.Add(nameof(Function), functionValue);
                 response.Add("Content", result);
                 response.Add("UpdatedTime", DateTimeOffset.Now.ToUnixTimeMilliseconds());
@@ -2089,50 +1917,6 @@ namespace XboxGamingBarHelper
             return response;
         }
 
-        // PawnIO Debug: Get CPU Info
-        private static global::Windows.Foundation.Collections.ValueSet HandlePawnIOGetCpuInfo(Shared.IPC.PipeMessage request)
-        {
-            Logger.Info("Pipe: PawnIOGetCpuInfo request received");
-            var response = new global::Windows.Foundation.Collections.ValueSet();
-            try
-            {
-                string cpuInfo = performanceManager?.GetPawnIOCpuInfo() ?? "PerformanceManager not initialized";
-                response.Add("Content", cpuInfo);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Pipe: PawnIOGetCpuInfo failed: {ex.Message}");
-                response.Add("Content", $"Error: {ex.Message}");
-            }
-            return response;
-        }
-
-        // PawnIO Debug: Apply Settings
-        private static global::Windows.Foundation.Collections.ValueSet HandlePawnIOApplySettings(Shared.IPC.PipeMessage request)
-        {
-            Logger.Info("Pipe: PawnIOApplySettings request received");
-            var response = new global::Windows.Foundation.Collections.ValueSet();
-            try
-            {
-                int coAll = 0, coGfx = 0, gfxClk = 0, tctlTemp = 0;
-                var valueSet = request.ToValueSet();
-                if (valueSet.TryGetValue("CoAll", out object coAllObj)) coAll = Convert.ToInt32(coAllObj);
-                if (valueSet.TryGetValue("CoGfx", out object coGfxObj)) coGfx = Convert.ToInt32(coGfxObj);
-                if (valueSet.TryGetValue("GfxClk", out object gfxClkObj)) gfxClk = Convert.ToInt32(gfxClkObj);
-                if (valueSet.TryGetValue("TctlTemp", out object tctlObj)) tctlTemp = Convert.ToInt32(tctlObj);
-
-                Logger.Info($"PawnIO Apply: CoAll={coAll}, CoGfx={coGfx}, GfxClk={gfxClk}, Tctl={tctlTemp}");
-                string result = performanceManager?.ApplyPawnIODebugSettings(coAll, coGfx, gfxClk, tctlTemp)
-                    ?? "PerformanceManager not initialized";
-                response.Add("Content", result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Pipe: PawnIOApplySettings failed: {ex.Message}");
-                response.Add("Content", $"Error: {ex.Message}");
-            }
-            return response;
-        }
 
         /// <summary>
         /// Returns true if the Named Pipe to the widget is connected.
@@ -2387,164 +2171,6 @@ namespace XboxGamingBarHelper
             catch (Exception ex)
             {
                 Logger.Warn($"NotifyWidgetSystemResumed failed: {ex.Message}");
-            }
-        }
-
-        private struct AxisStats
-        {
-            public double TrimmedMean;
-            public double TrimmedStd;
-            public double RawMean;
-            public double RawStd;
-            public double Min;
-            public double Max;
-            public int Dropped;
-        }
-
-        // MAD-rejection threshold. 6 * 1.4826 * MAD is roughly 6 sigma for Gaussian noise,
-        // which keeps essentially all clean samples and prunes the rare BMI260 single-sample
-        // step (~+/-15 deg/s at rest) we caught during the 2026-05-30 capture audit.
-        private const double GyroBiasMadK = 6.0;
-
-        private static AxisStats ComputeRobustAxisStats(System.Collections.Generic.List<double> samples)
-        {
-            var s = new AxisStats();
-            int n = samples.Count;
-            if (n == 0) return s;
-            double sum = 0, sumSq = 0, min = double.MaxValue, max = double.MinValue;
-            for (int i = 0; i < n; i++)
-            {
-                double v = samples[i];
-                sum += v; sumSq += v * v;
-                if (v < min) min = v;
-                if (v > max) max = v;
-            }
-            s.RawMean = sum / n;
-            s.RawStd = Math.Sqrt(Math.Max(0.0, sumSq / n - s.RawMean * s.RawMean));
-            s.Min = min;
-            s.Max = max;
-
-            var sorted = new double[n];
-            samples.CopyTo(sorted);
-            Array.Sort(sorted);
-            double median = (n % 2 == 0)
-                ? 0.5 * (sorted[n / 2 - 1] + sorted[n / 2])
-                : sorted[n / 2];
-            var dev = new double[n];
-            for (int i = 0; i < n; i++) dev[i] = Math.Abs(sorted[i] - median);
-            Array.Sort(dev);
-            double mad = (n % 2 == 0)
-                ? 0.5 * (dev[n / 2 - 1] + dev[n / 2])
-                : dev[n / 2];
-            // Floor MAD so an essentially-flat run (mad ~= 0) doesn't reject all but the median
-            // value as outliers. 0.05 deg/s is ~one HQ LSB scaled, well below sensor noise floor.
-            double sigma = Math.Max(0.05, 1.4826 * mad);
-            double lo = median - GyroBiasMadK * sigma;
-            double hi = median + GyroBiasMadK * sigma;
-
-            double tSum = 0, tSumSq = 0;
-            int tN = 0;
-            for (int i = 0; i < n; i++)
-            {
-                double v = samples[i];
-                if (v < lo || v > hi) continue;
-                tSum += v; tSumSq += v * v; tN++;
-            }
-            s.Dropped = n - tN;
-            if (tN > 0)
-            {
-                s.TrimmedMean = tSum / tN;
-                s.TrimmedStd = Math.Sqrt(Math.Max(0.0, tSumSq / tN - s.TrimmedMean * s.TrimmedMean));
-            }
-            else
-            {
-                s.TrimmedMean = s.RawMean;
-                s.TrimmedStd = s.RawStd;
-            }
-            return s;
-        }
-
-        /// <summary>
-        /// Push the current software gyro bias offset to the widget for display. JSON content
-        /// matches the GyroBiasOffset Function comment:
-        ///   { "x":<deg/s>, "y":<deg/s>, "z":<deg/s>, "at":<UTC ticks>, "valid":<bool> }
-        /// Sent after every CalibrateGyroBias capture/reset, and on widget connect (so the
-        /// status text reflects the persisted state immediately on reopen).
-        /// </summary>
-        // Last SetupWarnings JSON pushed to the widget. Re-pushed only when the
-        // evaluation changes so the banner doesn't flicker on every timer tick.
-        private static string lastSetupWarningsJson = null;
-
-        /// <summary>
-        /// Evaluates setup/environment health (missing PawnIO) and pushes the
-        /// result to the widget when it changed — or unconditionally when
-        /// <paramref name="force"/> (widget just connected and has no prior state).
-        /// </summary>
-        internal static void SendSetupWarningsToWidget(bool force = false)
-        {
-            try
-            {
-                if (pipeServer == null || !pipeServer.IsConnected) return;
-
-                bool isLegion = legionManager?.LegionGoDetected?.Value ?? false;
-                bool controllerFeatures = (legionManager?.DetectedDevice?.SupportsControllerRemap ?? false)
-                                       || (legionManager?.DetectedDevice?.SupportsGyro ?? false);
-                bool pawnIO = performanceManager?.IsPawnIOInstalled ?? true; // assume fine when unknown
-                // usbip is needed when Controller Emulation is actually turned on OR a Legion
-                // button maps to Xbox Guide (VIIPER's guide-only pad serves that route on every
-                // backend since the ViGEm retirement). NOTE: EmulationBackend is "which backend
-                // is selected," not "is emulation on" — since the ViGEm retirement it's
-                // hard-pinned true (VIIPER) for every install regardless of whether the user has
-                // ever enabled the feature, so it must not be used as the on/off signal here (it
-                // used to be, which nagged every user with the "usbip-win2 missing" banner even
-                // with Controller Emulation completely untouched).
-                bool usbipNeeded = (controllerEmulationManager?.ControllerEmulationEnabled?.Value ?? false)
-                                || (legionButtonMonitor?.HasGuideActionConfigured ?? false);
-                bool usbip = settingsManager?.UsbipInstalled?.Value ?? true; // assume fine when unknown
-
-                string json = Services.SetupHealthService.EvaluateJson(isLegion, controllerFeatures, pawnIO, usbipNeeded, usbip);
-                if (!force && string.Equals(json, lastSetupWarningsJson, StringComparison.Ordinal)) return;
-                lastSetupWarningsJson = json;
-
-                var msg = new global::Windows.Foundation.Collections.ValueSet();
-                msg.Add(nameof(Shared.Enums.Function), (int)Shared.Enums.Function.SetupWarnings);
-                msg.Add("Content", json);
-                var pm = Shared.IPC.PipeMessage.FromValueSet(msg);
-                pipeServer.SendMessage(pm.ToJson());
-                if (json != "[]")
-                {
-                    Logger.Info($"SetupWarnings pushed to widget: {json}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"SendSetupWarningsToWidget failed: {ex.Message}");
-            }
-        }
-
-        private static void SendGyroBiasOffsetToWidget()
-        {
-            try
-            {
-                if (pipeServer == null || !pipeServer.IsConnected) return;
-                bool valid = XboxGamingBarHelper.Labs.LegionButtonMonitor.TryGetGyroBias(
-                    out float bx, out float by, out float bz, out long atUtc);
-                string json =
-                    "{\"x\":" + bx.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)
-                    + ",\"y\":" + by.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)
-                    + ",\"z\":" + bz.ToString("F4", System.Globalization.CultureInfo.InvariantCulture)
-                    + ",\"at\":" + atUtc.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    + ",\"valid\":" + (valid ? "true" : "false")
-                    + "}";
-                var msg = new global::Windows.Foundation.Collections.ValueSet();
-                msg.Add(nameof(Shared.Enums.Function), (int)Shared.Enums.Function.GyroBiasOffset);
-                msg.Add("Content", json);
-                var pm = Shared.IPC.PipeMessage.FromValueSet(msg);
-                pipeServer.SendMessage(pm.ToJson());
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"SendGyroBiasOffsetToWidget failed: {ex.Message}");
             }
         }
 

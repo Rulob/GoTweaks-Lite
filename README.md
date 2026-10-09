@@ -57,9 +57,17 @@ upstream, and why.
   brought back in PID-only form — see below.)
 - The beta **Sidebar overlay** — _Focus GoTweaks Lite_ now simply opens the Game Bar.
 - **Microsoft / bundled Default Game Profiles** — only your own per-game profiles remain.
-- The **Advanced panel** (core parking / affinity), the **AC/DC Power Plan** selector, the debug
-  **Themes** selector, and the old **ViGEm** emulation backend (**VIIPER** is now the only one) —
-  niche, no-ops on the Legion Go 2, or superseded.
+- The **Advanced panel** (core parking / affinity), the **AC/DC Power Plan** selector, and the
+  debug **Themes** selector — niche, no-ops on the Legion Go 2, or superseded.
+- **Controller Emulation** (the VIIPER virtual-gamepad feature: virtual Xbox 360 / DualShock 4 /
+  DualSense / Switch Pro / Steam pads, gyro forwarding, the Sticks & Triggers shaping panel) and
+  everything that only existed to support it. The Xbox Guide remap action now simply opens the
+  Xbox Game Bar (Win+G).
+- The **Prerequisites** installer card and the setup-warning banner: GoTweaks Lite no longer
+  installs or asks for **PawnIO**, **usbip-win2** or **HidHide**. With PawnIO gone, the
+  _Unlock Fan Curve Override_ (direct EC fan control) and the per-mode fan curves for Quiet /
+  Balanced / Performance went with it — the Fan Curve card now edits the **Custom**-mode curve
+  (applied through Lenovo WMI), and **Fan Full Speed** is unchanged. TDP is Lenovo WMI only.
 
 > **Why:** a smaller, more predictable surface with fewer background systems that can silently
 > fight your settings.
@@ -88,6 +96,9 @@ upstream, and why.
   restart with a USB hub attached, focusing the desktop pops open Task View (Win+Tab) and buzzes
   the controller. It re-enumerates the controller's USB port once per boot — the software
   equivalent of physically replugging a pad. Enable it only if you have this bug.
+- **Controller Mode (X-Input / D-Input)** — a Legion Space style switch for the Legion Go / Go 2
+  controllers, on the Legion tab and as an _Input Mode_ Quick Settings tile (see
+  [Controller Mode](#-controller-mode-x-input--d-input)).
 - **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
   the whole install behind a small progress window (see [Installation](#-installation)).
 
@@ -187,7 +198,7 @@ Deep support for the Legion Go 2 with automatic device detection.
 **Fan & performance**
 - Quiet, Balanced, Performance, and Custom modes
 - Custom TDP with fine-grained control (SPL, SPPT, FPPT)
-- Custom fan curve and a Fan Full Speed toggle
+- Custom-mode fan curve (via Lenovo WMI) and a Fan Full Speed toggle
 
 **Controller settings**
 - **Button Remapping** — customize the M2, M3, Y1, Y2, Y3 buttons
@@ -218,22 +229,19 @@ restored on uninstall.
 - **Hibernate after** — a GoTweaks-owned, input-aware idle timer (Windows has no built-in one)
 - **Disable Sleep Timer** shortcut
 
-### 🎮 Controller Emulation (VIIPER)
+### 🎮 Controller Mode (X-Input / D-Input)
 
-Present the Legion Go's controls as a different virtual gamepad — useful for games or Steam Input
-profiles that expect a specific pad type, or that support native gyro aim only on certain
-controllers.
+The same switch Legion Space has, for the Legion Go / Go 2 controllers: flip them between
+**X-Input** (the standard Xbox-style pad) and **D-Input** (a generic gamepad that a few games
+and emulators prefer).
 
-- **Virtual device types** — Xbox 360, DualShock 4, DualSense, DualSense Edge, Switch Pro, Joy-Con
-  pair, or Steam Controller
-- **Native gyro/accel forwarding** — the Legion Go's own motion sensors drive the emulated pad's
-  gyro, so games read real hardware motion instead of a stick-to-gyro conversion
-- **Alternate Gyro Convention** toggle — flips gyro polarity per target if a game's aim feels
-  inverted
-- **Guide-button remap** — map a Legion button to Xbox Guide independent of whether full emulation
-  is on
-- Requires the free **usbip-win2** driver — install it once from the in-app prompt (Controller
-  Emulation tab or the setup-warning banner)
+- **Legion tab → D-Input mode** switch, and an **Input Mode** tile for Quick Settings
+- The card always shows the mode the controllers are _really_ in (read from their USB product
+  ID), so a switch that doesn't take snaps back by itself
+- With the controllers detached (Dual D-Input) or the right controller's FPS switch on, the
+  hardware picks the mode and the switch is locked
+- Switching reconnects the controllers for a few seconds. In D-Input the Xbox / Game Bar
+  interface may stop reacting to the pads — use the touchscreen to switch back.
 
 ### 🔴 AMD Radeon Features
 
@@ -318,11 +326,10 @@ and settings.
 
 For a plain removal, **Settings → Apps → Installed apps → GoTweaks Lite → Uninstall** is enough.
 
-For a deeper clean (stops the helper, clears any HidHide controller-hiding rules it added so a
-controller is never left hidden, sweeps leftover virtual controllers, removes the scheduled task,
+For a deeper clean (stops the helper, removes the scheduled task and the deployed helper copy,
 then removes the app package itself), grab **`scripts/Uninstall-GoTweaks.ps1`** from the repo
-(not included in the release download). Shared drivers (PawnIO, ViGEmBus) are left installed by
-default since other tools may use them too — pass `-RemoveDrivers` to also uninstall those.
+(not included in the release download). GoTweaks Lite installs no drivers, so there is nothing
+else to take out.
 
 Open **PowerShell as Administrator**, `cd` to the folder with the script, then run:
 
@@ -338,7 +345,7 @@ powershell -ExecutionPolicy Bypass -File ".\Uninstall-GoTweaks.ps1"
 | --- | --- |
 | **OS** | Windows 10 / 11 |
 | **Required** | Xbox Game Bar |
-| **Optional** | [RivaTuner Statistics Server](https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/) (OSD overlay) · [PawnIO](https://github.com/SuporteTI/PawnIO) (custom fan curve / Fan Full Speed) · [usbip-win2](https://github.com/vadimgrn/usbip-win2/releases) (controller emulation / VIIPER — installable in-app) · AMD GPU (Radeon features) · Legion Go 2 / Legion Go (device features) · Lossless Scaling (scaling integration) |
+| **Optional** | [RivaTuner Statistics Server](https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/) (OSD overlay) · AMD GPU (Radeon features) · Legion Go 2 / Legion Go (device features) · Lossless Scaling (scaling integration) |
 
 > [!IMPORTANT]
 > **Smart App Control** may interfere with this application. If it doesn't work correctly, you may
@@ -358,8 +365,6 @@ Free and open source. Built with C#.
 | **RTSSSharedMemoryNET** | Custom build with frametime-graph support, tuned for low CPU/memory use |
 | **ADLX** | AMD Display Library for Radeon features |
 | **PresentMon** | Rendered / displayed FPS and frame-generation metrics |
-| **PawnIO** | Direct EC access for the Legion Go 2 custom fan curve |
-| **libviiper** (usbip-win2) | USBIP-based virtual controller emulation with native gyro |
 
 ---
 
@@ -375,8 +380,9 @@ GoTweaks Lite builds on the work of the upstream projects:
 GoTweaks Lite has a layered license, inherited from upstream:
 
 - The **original source code** is licensed under the **MIT License** (see [`LICENSE`](LICENSE)).
-- The **distributed binaries** link `libviiper.dll` (a GPL-3.0 fork of VIIPER), so the
-  **combined work as distributed is conveyed under the GPL-3.0** (see [`COPYING`](COPYING)).
+- Releases up to **1.6** shipped `libviiper.dll` (a GPL-3.0 fork of VIIPER) for the Controller
+  Emulation feature, so those binaries were conveyed under the **GPL-3.0** (see [`COPYING`](COPYING)).
+  Controller Emulation and that DLL have since been removed, and newer builds no longer link it.
 
 See [`LICENSING.md`](LICENSING.md) and [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) for the full
-details and the written offer of source.
+details and the written offer of source for the older releases.

@@ -20,7 +20,6 @@ using Windows.System;
 using Windows.UI.Input.Preview.Injection;
 using XboxGamingBarHelper.AMD;
 using XboxGamingBarHelper.Core;
-using XboxGamingBarHelper.ControllerEmulation;
 using XboxGamingBarHelper.Devices.Libraries.GPD;
 using XboxGamingBarHelper.Devices.Libraries.Legion;
 using XboxGamingBarHelper.LosslessScaling;
@@ -723,23 +722,6 @@ namespace XboxGamingBarHelper
             }
         }
 
-        /// <summary>
-        /// Called when a controller-emulation backend (VIIPER or legacy) changes state.
-        /// Re-runs VIIPER's guide-only reconciliation (ReapplyMode) — the sole
-        /// owner of the Guide route since the ViGEm retirement.
-        /// </summary>
-        internal static void NotifyGuideRouteChanged()
-        {
-            try
-            {
-                viiperEmulationManager?.OnGuideRouteChanged();
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Labs: viiperEmulationManager.OnGuideRouteChanged threw: {ex.Message}");
-            }
-        }
-
         private static void LegionButtonMonitor_BatteryUpdated(object sender, LegionButtonBatteryEventArgs e)
         {
             try
@@ -999,10 +981,8 @@ namespace XboxGamingBarHelper
                         }
                     );
 
-                    // Handle different scenarios. (ViGEm retirement: the old
-                    // restart-on-pad-requirement-change branch is gone — button
-                    // config is always hot-applied while running; Guide delivery
-                    // rides VIIPER which reconciles itself via NotifyGuideRouteChanged.)
+                    // Handle different scenarios. Button config is always hot-applied
+                    // while the monitor is running.
                     if (!monitor.HasAnyButtonConfigured)
                     {
                         if (!wasRunning)

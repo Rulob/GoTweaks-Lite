@@ -19,7 +19,6 @@ using Windows.System;
 using Windows.UI.Input.Preview.Injection;
 using XboxGamingBarHelper.AMD;
 using XboxGamingBarHelper.Core;
-using XboxGamingBarHelper.ControllerEmulation;
 using XboxGamingBarHelper.Devices.Libraries.GPD;
 using XboxGamingBarHelper.Devices.Libraries.Legion;
 using XboxGamingBarHelper.LosslessScaling;
@@ -111,8 +110,6 @@ namespace XboxGamingBarHelper
         private static LegionManager legionManager;
         private static GPDManager gpdManager;
         private static XboxGamingBarHelper.AutoTDP.AutoTDPManager autoTDPManager;
-        private static ControllerEmulationManager controllerEmulationManager;
-        private static XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager viiperEmulationManager;
         private static List<IManager> Managers;
 
         public static OnScreenDisplayProperty onScreenDisplay;
@@ -161,8 +158,8 @@ namespace XboxGamingBarHelper
         /// <summary>
         /// Labs: Unified Legion button monitor (handles both L and R buttons + battery)
         /// </summary>
-        // internal so siblings (ControllerEmulationManager.CalibrateGyro) can route
-        // through the shared HID handle instead of opening a parallel one.
+        // internal so siblings can route through the shared HID handle instead of
+        // opening a parallel one.
         internal static LegionButtonMonitor legionButtonMonitor;
         private static readonly object legionButtonMonitorLock = new object();
         private static bool legionButtonMonitorBatteryHooked;
@@ -228,14 +225,6 @@ namespace XboxGamingBarHelper
         private static System.Threading.Timer screenSaverTimer;
         private const int ScreenSaverIdleTimeoutMs = 60000; // 60 seconds idle before triggering
         private const int ScreenSaverCheckIntervalMs = 5000; // Check every 5 seconds
-
-        /// <summary>
-        /// Setup/environment health re-check (PawnIO can be installed mid-session).
-        /// Push is change-gated inside SendSetupWarningsToWidget so a 2-min cadence
-        /// costs almost nothing and usually no pipe traffic.
-        /// </summary>
-        private static System.Threading.Timer setupHealthTimer;
-        private const int SetupHealthCheckIntervalMs = 2 * 60 * 1000;
 
         /// <summary>
         /// Configures NLog to write logs to the package's LocalCache/Local folder.
@@ -304,8 +293,8 @@ namespace XboxGamingBarHelper
             // crashed/zombied (released or disposed its single-instance mutex but didn't
             // fully exit), or where the bootstrapper fired schtasks /Run twice during a
             // redeploy. Without this gate, two elevated helpers can race past the mutex
-            // check in Main()/RunAsService(), each creating its own ViGEm Guide pad and
-            // leaving stale PnP entries that survive reboot.
+            // check in Main()/RunAsService(), each fighting over the pipe and the
+            // controller HID handles.
             //
             // Skip the gate for one-shot CLI modes (they're expected to coexist with a
             // running helper for the duration of their work and exit immediately after).
@@ -336,40 +325,23 @@ namespace XboxGamingBarHelper
                 Logger.Info("Peer helper exited during wait — proceeding with startup (takeover after kill/restart).");
             }
 
-            // Process-exit + unhandled-exception cleanup. Two shared concerns:
-            //
-            //   1. EC fan override: 0xC6C8 keeps the last RPM we wrote until
-            //      reboot. Release it so the fan returns to firmware control.
-            //
-            //   2. HidHide suppression: BlockedInstanceIds live in HidHide's
-            //      driver registry and persist across helper death. If we
-            //      leave the Legion hidden, games can't see it until the
-            //      next helper boot reapplies state — and if the helper
-            //      stays dead, the user has no controller. Clear it here so
-            //      the user's pad is always visible when the helper isn't.
-            //      The next graceful start re-applies the right state.
+            // Process-exit + unhandled-exception cleanup: flush pending debounced
+            // profile writes so the last change isn't lost on exit.
             //
             // ProcessExit covers normal shutdowns and most crashes that
             // unwind through the runtime; UnhandledException covers the rest.
-            // Neither fires on TerminateProcess (hard kill) — the only
-            // remaining gap, which the helper recovers from on next start
-            // (ApplySuppressionInner diffs against current state).
+            // Neither fires on TerminateProcess (hard kill).
             AppDomain.CurrentDomain.ProcessExit += (s, e) =>
             {
                 try
                 {
-                    Logger.Warn("ProcessExit fired — releasing EC fan + HidHide suppression + VIIPER bus before shutdown");
+                    Logger.Warn("ProcessExit fired — flushing pending writes before shutdown");
                     // Flush any pending debounced GameProfile writes (global.xml etc, 250ms debounce
                     // in Shared/Data/GameProfile.cs) - without this a Custom TDP change made just
                     // before an update/exit-triggered Environment.Exit(0) is silently lost and the
                     // profile reverts to whatever was last flushed.
                     try { Shared.Data.GameProfile.FlushAllPendingWrites(); }
                     catch (Exception ex) { Logger.Warn($"ProcessExit FlushAllPendingWrites threw: {ex.Message}"); }
-                    legionManager?.EmergencyReleaseFanOverride();
-                    try { controllerEmulationManager?.SuppressionManager?.Disable(); }
-                    catch (Exception ex) { Logger.Warn($"ProcessExit HidHide.Disable threw: {ex.Message}"); }
-                    try { viiperEmulationManager?.Stop(); }
-                    catch (Exception ex) { Logger.Warn($"ProcessExit VIIPER.Stop threw: {ex.Message}"); }
                     LogManager.Flush();
                 }
                 catch { }
@@ -378,28 +350,21 @@ namespace XboxGamingBarHelper
             {
                 try
                 {
-                    Logger.Error($"UnhandledException — releasing EC fan + HidHide suppression + VIIPER bus. Exception: {e.ExceptionObject}");
+                    Logger.Error($"UnhandledException — flushing pending writes. Exception: {e.ExceptionObject}");
                     try { Shared.Data.GameProfile.FlushAllPendingWrites(); }
                     catch (Exception ex) { Logger.Warn($"UnhandledException FlushAllPendingWrites threw: {ex.Message}"); }
-                    legionManager?.EmergencyReleaseFanOverride();
-                    try { controllerEmulationManager?.SuppressionManager?.Disable(); }
-                    catch (Exception ex) { Logger.Warn($"UnhandledException HidHide.Disable threw: {ex.Message}"); }
-                    try { viiperEmulationManager?.Stop(); }
-                    catch (Exception ex) { Logger.Warn($"UnhandledException VIIPER.Stop threw: {ex.Message}"); }
                     LogManager.Flush();
                 }
                 catch { }
             };
 
-            // Uninstall restoration mode: stop peers, clear our HidHide rules,
-            // sweep phantom pads, remove the scheduled task + deployed copy,
-            // optionally uninstall the driver stack (--remove-drivers), then EXIT.
-            // Runnable from the deployed helper even after the MSIX package is
-            // gone — this is what Uninstall-GoTweaks.ps1 invokes.
+            // Uninstall restoration mode: stop peers, remove the scheduled task +
+            // deployed copy, then EXIT. Runnable from the deployed helper even after
+            // the MSIX package is gone — this is what Uninstall-GoTweaks.ps1 invokes.
             if (args.Contains("--uninstall"))
             {
                 Logger.Info("=== Uninstall Mode ===");
-                Services.UninstallService.Run(removeDrivers: args.Contains("--remove-drivers"));
+                Services.UninstallService.Run();
                 LogManager.Flush();
                 return;
             }
@@ -533,9 +498,7 @@ namespace XboxGamingBarHelper
                 // The kernel releases named mutexes automatically on process exit.
                 // Releasing in finally caused a duplicate-helper race: a slow shutdown
                 // would free the mutex while threads were still draining, letting a
-                // new schtasks /Run-spawned helper acquire it and run concurrently
-                // (each creating its own ViGEm Guide pad → 2 phantom Xbox 360
-                // controllers surviving reboot).
+                // new schtasks /Run-spawned helper acquire it and run concurrently.
             }
 
         }
@@ -812,14 +775,6 @@ namespace XboxGamingBarHelper
                     // without changing the running power mode.
                     try { legionManager?.PushAllPerModeStateToWidget(); }
                     catch (Exception ex) { Logger.Warn($"Failed to push per-mode fan curve state on connect: {ex.Message}"); }
-                    // Push the persisted software gyro bias offset so the Calibrate Gyro Bias
-                    // status text in the widget reflects the saved state immediately on connect.
-                    try { SendGyroBiasOffsetToWidget(); }
-                    catch (Exception ex) { Logger.Warn($"Failed to push gyro bias offset on connect: {ex.Message}"); }
-                    // Setup/environment health (missing PawnIO) — force so a freshly-
-                    // connected widget always gets current state.
-                    try { SendSetupWarningsToWidget(force: true); }
-                    catch (Exception ex) { Logger.Warn($"Failed to push setup warnings on connect: {ex.Message}"); }
                     // Controller battery/connection state is change-gated at the source, so a
                     // widget connecting after the last change (boot: battery pinned at 100%)
                     // would otherwise show "--" / Detached until something changes. The widget
@@ -841,12 +796,6 @@ namespace XboxGamingBarHelper
                 pipeServer.Disconnected += (s, e) => Logger.Info("Widget disconnected from Named Pipe");
                 pipeServer.Start();
                 Logger.Info($"Named Pipe server started: {IPC.NamedPipeServer.FullPipePath}");
-
-                // Periodic setup-health re-check; push is change-gated so this is quiet
-                // unless something actually changes (e.g. PawnIO installed mid-session).
-                setupHealthTimer = new System.Threading.Timer(
-                    _ => SendSetupWarningsToWidget(),
-                    null, SetupHealthCheckIntervalMs, SetupHealthCheckIntervalMs);
             }
             catch (Exception ex)
             {
@@ -977,49 +926,6 @@ namespace XboxGamingBarHelper
             deviceTimer.Stop();
             Logger.Info($"[TIMING] DeviceDetector pre-cached: {deviceTimer.ElapsedMilliseconds}ms (Device: {deviceInfo.Manufacturer} {deviceInfo.Model})");
 
-            // Sweep Present=True ViGEm Xbox 360 phantoms from PRIOR helper
-            // sessions BEFORE any manager constructs its own ViGEm pad. ViGEmBus
-            // is supposed to release virtual pads when the owning process exits,
-            // but during MSIX upgrade cycles or abnormal exits, Labs ViGEm Xbox
-            // 360 pads can linger — accumulating one phantom per cycle. Each
-            // phantom is a live virtual controller delivering input to apps, so
-            // games see double (or triple) presses from a single physical button.
-            // Runs on a thread pool task — non-blocking.
-            // Three-phase cleanup. The two Present=True phantom sweeps (VIIPER
-            // and ViGEm) MUST complete before any backend creates a virtual
-            // pad, otherwise the active pad is visible alongside the phantom
-            // for ~5s until pnputil catches up (seen in
-            // helper_2026-05-21_01.log around 01:18:08-14). Run both
-            // synchronously here — blocks ~1-3s total — then fire the
-            // disconnected-ghost sweep async since it's safe to overlap with
-            // any backend's startup.
-            try
-            {
-                XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperPnpCleanup.CleanupPresentViiperPhantomsBlocking();
-            }
-            catch (Exception ex)
-            {
-                Logger.Debug($"ViiperPnpCleanup Present=True VIIPER sweep threw: {ex.Message}");
-            }
-
-            try
-            {
-                XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperPnpCleanup.CleanupPresentVigemPhantomsBlocking();
-            }
-            catch (Exception ex)
-            {
-                Logger.Debug($"ViiperPnpCleanup Present=True ViGEm sweep threw: {ex.Message}");
-            }
-
-            try
-            {
-                XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperPnpCleanup.CleanupAllKnownGhosts();
-            }
-            catch (Exception ex)
-            {
-                Logger.Debug($"ViiperPnpCleanup early sweep threw: {ex.Message}");
-            }
-
             // PARALLEL MANAGER INITIALIZATION - Wave-based to respect dependencies
             var totalTimer = System.Diagnostics.Stopwatch.StartNew();
             Logger.Info("Initialize managers (parallel waves)...");
@@ -1146,19 +1052,6 @@ namespace XboxGamingBarHelper
             // Set PerformanceManager reference in GPDManager for software fan curve CPU temperature access
             gpdManager?.SetPerformanceManager(performanceManager);
 
-            // Initialize handheld-agnostic controller emulation manager.
-            controllerEmulationManager = new ControllerEmulationManager(legionManager, gpdManager, settingsManager);
-
-            // Initialize VIIPER emulation manager (toggle-driven; mutually exclusive with legacy).
-            // legionManager is passed so VIIPER can forward LED color reports to the Legion stick lights.
-            viiperEmulationManager = new XboxGamingBarHelper.ControllerEmulation.Viiper.ViiperEmulationManager(settingsManager, controllerEmulationManager, legionManager);
-
-            // PawnIO/RyzenSMU initialization for anti-cheat compatible TDP control
-            // Priority: Legion WMI > PawnIO/RyzenSMU > RyzenAdj (deprecated, WinRing0 not bundled)
-            // Uses official signed module from release 0.2.1
-            // Supported CPUs: StrixHalo (Ryzen AI Max 385/395), etc.
-            performanceManager.InitializePawnIO();
-
             // Set LegionManager reference in RTSSManager for fan speed OSD support
             rtssManager.SetLegionManager(legionManager);
 
@@ -1188,11 +1081,6 @@ namespace XboxGamingBarHelper
                     try
                     {
                         LegionButtonMonitor.LoadCachedDevicePathFromSettings();
-                        LegionButtonMonitor.LoadGyroBiasFromSettings();
-                        // Widget typically connects to the pipe seconds before this load runs,
-                        // so the Connected-event push happens with _hasGyroBias=false. Push
-                        // again here so the widget UI reflects the persisted offset.
-                        try { SendGyroBiasOffsetToWidget(); } catch { }
                         LegionButtonMonitor monitor = EnsureLegionButtonMonitor();
 
                         if (monitor.StartForBatteryMonitoring())
@@ -1247,7 +1135,6 @@ namespace XboxGamingBarHelper
                 settingsManager,
                 legionManager,
                 gpdManager,
-                controllerEmulationManager,
                 autoTDPManager
             };
 
@@ -1261,13 +1148,6 @@ namespace XboxGamingBarHelper
                 try
                 {
                     if (legionManager?.IsFanCurveVisible == true) return true;
-                    // EC fan override loop reads CPUTemperature every tick to drive 0xC6C8. If
-                    // the sensor walk is gated off when no one else needs sensors, the cached
-                    // temperature stays at the last reading (e.g. 68°C from gameplay) while the
-                    // device idles or sleeps, and the loop keeps writing the matching high-RPM
-                    // target until something else wakes the sensor walk up. Treating the EC
-                    // override as a metrics consumer keeps the temperature fresh. (#88 kayti.)
-                    if (legionManager?.IsEcFanOverrideActive == true) return true;
                     var runningGameProp = systemManager?.RunningGame;
                     if (runningGameProp != null && runningGameProp.Value.GameId.IsValid()) return true;
                 }
@@ -1403,32 +1283,9 @@ namespace XboxGamingBarHelper
                 losslessScalingManager.LosslessScalingLS1Sharpness,
                 settingsManager.AutoStartRTSS,
                 settingsManager.UseManufacturerWMI,
-                settingsManager.TdpMethod,
-                settingsManager.EmulationBackend,
-                settingsManager.UsbipInstalled,
-                settingsManager.InstallUsbip,
-                settingsManager.ViiperDeviceType,
-                settingsManager.ViiperInputSource,
-                settingsManager.ViiperGyroSource,
-                settingsManager.ViiperSteamSubDevice,
-                settingsManager.ViiperSonySubDevice,
-                settingsManager.ViiperNintendoSubDevice,
-                settingsManager.ViiperGuideButtonMode,
-                settingsManager.ViiperSwapRumbleMotors,
-                settingsManager.ViiperRumbleIntensity,
                 settingsManager.GoTweaksLightingConfig,
                 settingsManager.GoTweaksHapticsConfig,
                 settingsManager.LegionControllerSleepMinutes,
-                settingsManager.ViiperMirrorLightbarToStick,
-                settingsManager.ViiperStickGyroEnabled,
-                settingsManager.ViiperJoyconGyroPerHalf,
-                settingsManager.ViiperAlternateGyroConvention,
-                settingsManager.ViiperGyroAxisMapX,
-                settingsManager.ViiperGyroAxisMapY,
-                settingsManager.ViiperGyroAxisMapZ,
-                settingsManager.ViiperStickTriggerConfig,
-                settingsManager.ViiperStickTriggerPreviewEnabled,
-                viiperEmulationManager.StickTriggerLiveSample,
                 // Profile Detection Settings
                 settingsManager.ProfileMatchByExe,
                 settingsManager.ProfileCustomGamePath,
@@ -1472,18 +1329,6 @@ namespace XboxGamingBarHelper
                 gpdManager.CPUTemp,
                 gpdManager.GyroSource,
                 gpdManager.GyroSimulateMode,
-                // Handheld-agnostic controller emulation properties
-                controllerEmulationManager.ControllerEmulationAvailable,
-                controllerEmulationManager.ControllerEmulationEnabled,
-                controllerEmulationManager.ControllerEmulationGyroActivationMode,
-                controllerEmulationManager.ControllerEmulationGyroActivationButton,
-                controllerEmulationManager.ControllerEmulationStickInvertX,
-                controllerEmulationManager.ControllerEmulationStickInvertY,
-                controllerEmulationManager.ControllerEmulationStickSelect,
-                controllerEmulationManager.ControllerEmulationCalibrateGyro,
-                controllerEmulationManager.ControllerEmulationStickSensitivityV2,
-                controllerEmulationManager.ControllerEmulationStickOrientationV2,
-                controllerEmulationManager.ControllerEmulationStickConversion,
                 // Legion Go specific properties
                 legionManager.LegionGoDetected,
                 legionManager.LegionTouchpadEnabled,
@@ -1497,9 +1342,7 @@ namespace XboxGamingBarHelper
                 legionManager.LegionCustomTDPPeak,
                 legionManager.LegionFanFullSpeed,
                 legionManager.LegionFanCurveData,
-                legionManager.LegionUnlockFanCurve,
                 legionManager.LegionFanCurvePerMode,
-                legionManager.LegionUnlockFanCurvePerMode,
                 legionManager.LegionCPUCurrentTemp,
                 legionManager.LegionFanSensorTemp,
                 legionManager.LegionCPUFanRPM,
@@ -1556,6 +1399,7 @@ namespace XboxGamingBarHelper
                 legionManager.ControllerConnectedLeft,
                 legionManager.ControllerConnectedRight,
                 legionManager.ControllerVidPid,
+                legionManager.LegionControllerMode,
                 legionManager.ControllerDeviceStatus,
                 // Device capability properties (for UI visibility based on device features)
                 legionManager.DeviceDisplayName,
@@ -1567,9 +1411,6 @@ namespace XboxGamingBarHelper
                 legionManager.DeviceHasTouchpad,
                 // TDP Boost removed — boost is always on (SPL/SPPT/FPPT set directly in Custom mode).
                 // performanceManager.WinRing0AvailableProperty, // WinRing0 removed - deprecated
-                performanceManager.PawnIOAvailableProperty,
-                performanceManager.PawnIOInstalledProperty,
-                performanceManager.InstallPawnIOProperty
             };
 
             // Initialize properties
@@ -1950,11 +1791,6 @@ namespace XboxGamingBarHelper
             losslessScalingManager = null;
             settingsManager = null;
             legionManager = null;
-            controllerEmulationManager = null;
-
-            try { viiperEmulationManager?.Dispose(); }
-            catch (Exception ex) { Logger.Warn($"viiperEmulationManager.Dispose threw: {ex.Message}"); }
-            viiperEmulationManager = null;
 
             Logger.Info("All managers disposed.");
         }

@@ -303,9 +303,8 @@ namespace XboxGamingBar
             AddTileDefinition("Touchscreen", "Touchscreen", "\uE815", order: order++);
             AddTileDefinition("LegionRemapControls", "Remap", "\uE7FC", order: order++);
             AddTileDefinition("LegionDesktopControls", "Desktop", "\uE7F4", order: order++);
-            // Quick toggle for controller emulation (VIIPER); state text shows the active
-            // target device mode when on, "Off" otherwise.
-            AddTileDefinition("ControllerEmulation", "Ctrl. Emulation", "\uE7FC", order: order++);
+            // Legion Space style X-Input / D-Input switch; state text shows the active mode.
+            AddTileDefinition("LegionControllerMode", "Input Mode", "\uE7FC", order: order++);
 
             // Row 7 - System/Device
             AddTileDefinition("LegionLightMode", "Light Mode", "\uEA80", order: order++); // Lightbulb

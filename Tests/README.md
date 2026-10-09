@@ -20,13 +20,12 @@ non-zero if any test fails.
 The test project is **intentionally not part of `XboxGamingBar.sln`** so it
 doesn't disturb the production MSIX build or an open Visual Studio instance.
 
-## What's covered (16 tests, all green)
+## What's covered
 
 | File | Subject | Why it matters |
 |------|---------|----------------|
 | `PipeMessageTests.cs` | `Shared.IPC.PipeMessage` ToJson/FromJson round-trip, numeric/bool/escaped content, malformed input | The hand-rolled (regex) JSON serializer for **all** widget↔helper IPC — the most fragile part of the wire layer |
-| `StickTriggerProcessorTests.cs` | `Shared.Data.StickTriggerProcessor` stick/trigger shaping math | Pure math run identically by the helper (real forwarding) and widget (live preview); deadzone/center/identity invariants |
-| `StickTriggerConfigBundleTests.cs` | `StickTriggerConfigBundle` Serialize/Deserialize | Hand-rolled persistence round-trip; corrupt input must fall back to passthrough defaults |
+| `LegionControllerModesTests.cs` | `Shared.Data.LegionControllerModes` USB product-ID / VID:PID → X-Input / D-Input / Dual D-Input / FPS | The Controller Mode switch trusts this mapping to report what the controllers are really in; a wrong PID here shows the wrong state or hides the switch |
 
 ## Project layout / build notes
 

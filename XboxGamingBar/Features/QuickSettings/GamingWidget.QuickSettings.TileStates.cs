@@ -869,55 +869,33 @@ namespace XboxGamingBar
                     }
                 }
 
-                // Controller Emulation tile — label is the active VIIPER virtual-device
-                // tag (Xbox / DS4 / DS Edge / Elite 2 / Steam / Switch). VIIPER is the
-                // only emulation backend now (CLAUDE.md SS21).
-                if (qsTileMap.TryGetValue("ControllerEmulation", out var ceTile) && ceTile.TileButton != null)
+                // Input Mode tile — Legion Space style X-Input / D-Input switch. "On" (accent)
+                // means D-Input; detached / FPS-switch states show as such and aren't clickable.
+                if (qsTileMap.TryGetValue("LegionControllerMode", out var modeTile) && modeTile.TileButton != null)
                 {
-                    bool available = controllerEmulationAvailable?.Value == true;
-                    bool enabled = available && (controllerEmulationEnabled?.Value == true);
-                    string label;
-                    if (!available)
+                    if (legionGoDetected?.Value == true)
                     {
-                        label = "N/A";
-                    }
-                    else if (!enabled)
-                    {
-                        label = "Off";
-                    }
-                    else
-                    {
-                        string device = viiperDeviceType?.Value ?? "";
-                        switch (device)
+                        int mode = legionControllerMode?.Value ?? 0;
+                        bool dInput = mode == LegionControllerModeDInput;
+                        string label;
+                        switch (mode)
                         {
-                            case "xbox360": label = "Xbox"; break;
-                            case "dualshock4": label = "DS4"; break;
-                            case "dualsenseedge": label = "DS Edge"; break;
-                            // xboxelite2 removed from UI but kept here so legacy
-                            // persisted settings still render a sane label until
-                            // the helper coerces them forward on next launch.
-                            case "xboxelite2": label = "Xbox"; break;
-                            case "steam-generic": label = "Steam"; break;
-                            case "sony": label = "Sony"; break;
-                            case "nintendo": label = "Switch"; break;
-                            // Helper resolves nintendo+sub → joycon-left/right/pair;
-                            // keep direct labels for those when they arrive.
-                            case "switchpro": label = "Switch"; break;
-                            case "joycon-left": label = "JoyL"; break;
-                            case "joycon-right": label = "JoyR"; break;
-                            case "joycon-pair": label = "JoyPair"; break;
-                            default: label = "On"; break;
+                            case LegionControllerModeXInput: label = "X-Input"; break;
+                            case LegionControllerModeDInput: label = "D-Input"; break;
+                            case LegionControllerModeDualDInput: label = "Detached"; break;
+                            case LegionControllerModeFps: label = "FPS"; break;
+                            default: label = "N/A"; break;
                         }
+                        // StateText can be null if the tile was rebuilt mid-update during a
+                        // foreground-window-change cascade — null-check before assigning.
+                        if (modeTile.StateText != null)
+                        {
+                            modeTile.StateText.Text = label;
+                            modeTile.StateText.Foreground = dInput ? accentForeground : offForeground;
+                            SetTileAccentBar(modeTile, dInput);
+                        }
+                        modeTile.TileButton.Background = dInput ? tileOnBrush : tileOffBrush;
                     }
-                    // StateText can be null if the tile was rebuilt mid-update during a
-                    // foreground-window-change cascade — null-check before assigning.
-                    if (ceTile.StateText != null)
-                    {
-                        ceTile.StateText.Text = label;
-                        ceTile.StateText.Foreground = enabled ? accentForeground : offForeground;
-                        SetTileAccentBar(ceTile, enabled);
-                    }
-                    ceTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
                 }
 
                 // Fan Full Speed tile (Legion or GPD)

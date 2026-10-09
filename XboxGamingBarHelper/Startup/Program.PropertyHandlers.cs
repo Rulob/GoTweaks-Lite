@@ -19,7 +19,6 @@ using Windows.System;
 using Windows.UI.Input.Preview.Injection;
 using XboxGamingBarHelper.AMD;
 using XboxGamingBarHelper.Core;
-using XboxGamingBarHelper.ControllerEmulation;
 using XboxGamingBarHelper.Devices.Libraries.GPD;
 using XboxGamingBarHelper.Devices.Libraries.Legion;
 using XboxGamingBarHelper.LosslessScaling;
@@ -76,11 +75,6 @@ namespace XboxGamingBarHelper
 
             // Force refresh hardware sensors (battery values can be stale after hibernation)
             performanceManager?.ForceRefreshHardware();
-
-            // Rebuild the EC fan override path if the PawnIO handle died during
-            // sleep — otherwise the custom fan curve silently stops applying
-            // until three tick-level write failures trigger the self-heal.
-            legionManager?.RecoverEcFanOverrideAfterResume();
 
             // Re-arm the idle-to-hibernate monitor so a fresh sleep/hibernate cycle doesn't
             // immediately re-trigger on stale pre-sleep idle timestamps.

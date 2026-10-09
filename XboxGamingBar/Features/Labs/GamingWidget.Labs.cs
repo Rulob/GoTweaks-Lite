@@ -85,10 +85,6 @@ namespace XboxGamingBar
             // Mark Labs section as initialized (enables event handlers)
             labsSectionInitialized = true;
 
-            // Sync the "Legion L is disabled" hint in the Controller Emulation card with
-            // the freshly-loaded Legion L action state.
-            UpdateViiperLegionLDisabledHint();
-
             // Apply saved settings to helper (after connection is established)
             _ = Task.Run(async () =>
             {
@@ -226,41 +222,6 @@ namespace XboxGamingBar
             {
                 Logger.Error($"Failed to send brightness gesture settings to helper: {ex.Message}");
             }
-        }
-
-        // (RequestViGEmBusStatus removed — ViGEm backend retired. The Labs
-        // Guide-remap prerequisite line reflects usbip-win2 via UpdateLabsUsbipUI,
-        // driven by the UsbipInstalled property push.)
-
-        private async void RequestHidHideStatus()
-        {
-            if (!App.IsConnected)
-                return;
-
-            // Request HidHide installed status from helper
-            try
-            {
-                var request = new Windows.Foundation.Collections.ValueSet();
-                request.Add("Command", (int)Command.Get);
-                request.Add("Function", (int)Function.HidHideInstalled);
-                var response = await App.SendMessageAsync(request);
-
-                if (response != null && response.TryGetValue("Content", out object installedObj))
-                {
-                    bool installed = Convert.ToBoolean(installedObj);
-                    UpdateHidHideInstalledUI(installed);
-                    Logger.Debug($"HidHide status received: {installed}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to request HidHide status: {ex.Message}");
-            }
-        }
-
-        private void RequestControllerEmulationDriverStatus()
-        {
-            RequestHidHideStatus();
         }
 
         private async void UpdateDAServiceStatus()
@@ -518,24 +479,6 @@ namespace XboxGamingBar
                 ApplyLegionButtonConfig(true);
 
             UpdateLegionRemapDescription();
-            UpdateViiperLegionLDisabledHint();
-        }
-
-        /// <summary>
-        /// Shows the "Legion L is disabled" warning in the Controller Emulation card's
-        /// Guide/Mode section when the user has Guide mode set to Native but the Legion L
-        /// Special Remapping action is set to Disabled — otherwise Native mode can't route
-        /// the Xbox button through the emulated device.
-        /// </summary>
-        internal void UpdateViiperLegionLDisabledHint()
-        {
-            if (ViiperLegionLDisabledHint == null) return;
-
-            int legionLAction = LegionLActionComboBox?.SelectedIndex ?? 0;
-            string guideMode = (ViiperGuideButtonModeComboBox?.SelectedItem as ComboBoxItem)?.Tag as string;
-
-            bool show = legionLAction == 0 && string.Equals(guideMode, "Native", StringComparison.Ordinal);
-            ViiperLegionLDisabledHint.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void LegionLCommandApplyButton_Click(object sender, RoutedEventArgs e)
@@ -914,7 +857,7 @@ namespace XboxGamingBar
                             }
                             else
                             {
-                                string errorMsg = actionType == 0 ? "ViGEmBus not installed or controller not found" : "Controller not found";
+                                string errorMsg = "Controller not found";
                                 LegionRemapStatusText.Text = $"{buttonName}: Failed - {errorMsg}";
                                 LegionRemapStatusText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 255, 100, 100));
                                 actionComboBox.SelectedIndex = 0; // Reset to Disabled

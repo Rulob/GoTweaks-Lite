@@ -184,10 +184,6 @@ namespace XboxGamingBar
             ProfileSaveCPUStateCheckBox.GotFocus += StandaloneControl_GotFocus;
             ProfileSaveAMDFeaturesCheckBox.GotFocus += StandaloneControl_GotFocus;
 
-            // System tab - TDP Method card
-            TdpMethodComboBox.GotFocus += Control_GotFocus;
-            TdpMethodComboBox.LostFocus += Control_LostFocus;
-
             // System tab - Power & Sleep card
             PowerAndSleepExpandButton.GotFocus += Control_GotFocus;
             PowerAndSleepExpandButton.LostFocus += Control_LostFocus;
@@ -204,37 +200,9 @@ namespace XboxGamingBar
             HibernateTimeoutDCComboBox.GotFocus += Control_GotFocus;
             HibernateTimeoutDCComboBox.LostFocus += Control_LostFocus;
 
-            // System tab - PawnIO Driver card
-            TDPSettingsExpandButton.GotFocus += Control_GotFocus;
-            TDPSettingsExpandButton.LostFocus += Control_LostFocus;
-
             // System tab - OSD Customization card
             OSDCustomizeExpandButton.GotFocus += Control_GotFocus;
             OSDCustomizeExpandButton.LostFocus += Control_LostFocus;
-
-            // System tab - Controller Emulation card
-            ControllerEmulationExpandButton.GotFocus += Control_GotFocus;
-            ControllerEmulationExpandButton.LostFocus += Control_LostFocus;
-            ControllerEmulationEnabledToggle.GotFocus += Control_GotFocus;
-            ControllerEmulationEnabledToggle.LostFocus += Control_LostFocus;
-            ControllerEmulationGyroActivationModeComboBox.GotFocus += Control_GotFocus;
-            ControllerEmulationGyroActivationModeComboBox.LostFocus += Control_LostFocus;
-            ControllerEmulationGyroActivationButtonComboBox.GotFocus += Control_GotFocus;
-            ControllerEmulationGyroActivationButtonComboBox.LostFocus += Control_LostFocus;
-            StickConversionComboBox.GotFocus += Control_GotFocus;
-            StickConversionComboBox.LostFocus += Control_LostFocus;
-            StickOrientationV2ComboBox.GotFocus += Control_GotFocus;
-            StickOrientationV2ComboBox.LostFocus += Control_LostFocus;
-            StickSensitivityV2Slider.GotFocus += Control_GotFocus;
-            StickSensitivityV2Slider.LostFocus += Control_LostFocus;
-            ControllerEmulationStickInvertXToggle.GotFocus += Control_GotFocus;
-            ControllerEmulationStickInvertXToggle.LostFocus += Control_LostFocus;
-            ControllerEmulationStickInvertYToggle.GotFocus += Control_GotFocus;
-            ControllerEmulationStickInvertYToggle.LostFocus += Control_LostFocus;
-            // Min/Max gyro speed, Min/Max output, Power curve, Deadzone, Precision speed,
-            // Output mix sliders all removed in #79 round 5 (pipeline matches HC).
-            ControllerEmulationStickSelectComboBox.GotFocus += Control_GotFocus;
-            ControllerEmulationStickSelectComboBox.LostFocus += Control_LostFocus;
 
             // Scaling tab - Status card buttons
             ShowLosslessScalingWindowButton.GotFocus += Control_GotFocus;

@@ -7,7 +7,7 @@
     TFM is net*-windows because Shared uses built-in WinRT (it references the raw
     Windows.winmd for Windows.Foundation.Collections.ValueSet); a non-windows TFM
     can't reference such an assembly (NETSDK1149). The tested types here
-    (PipeMessage JSON, StickTrigger* math) never touch ValueSet, so no WinRT type
+    (PipeMessage JSON, the gyro filter and byte-order helpers) never touch ValueSet, so no WinRT type
     is resolved at runtime.
 
     Uses xunit.v3 in Microsoft Testing Platform mode (OutputType=Exe):
