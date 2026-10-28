@@ -202,30 +202,6 @@ namespace XboxGamingBarHelper.Systems
         private const string AdaptiveBrightnessRequestedKey = "AdaptiveBrightnessRequested";
         private bool adaptiveBrightnessRequested;
 
-        // Auto SDR white-level matching (Go2HDR integration). The toggle is persisted helper-side
-        // (it's a helper capability, not widget-owned UI state) and re-applied on startup.
-        private readonly AutoSdrManager autoSdrManager = new AutoSdrManager();
-        private const string AutoSdrEnabledKey = "AutoSdrEnabled";
-        private readonly AutoSdrEnabledProperty autoSdrEnabled;
-        public AutoSdrEnabledProperty AutoSdrEnabled
-        {
-            get { return autoSdrEnabled; }
-        }
-
-        private const string AutoSdrPresetKey = "AutoSdrPreset";
-        private readonly AutoSdrPresetProperty autoSdrPreset;
-        public AutoSdrPresetProperty AutoSdrPreset
-        {
-            get { return autoSdrPreset; }
-        }
-
-        private const string AutoSdrCustomCurveKey = "AutoSdrCustomCurve";
-        private readonly AutoSdrCustomCurveProperty autoSdrCustomCurve;
-        public AutoSdrCustomCurveProperty AutoSdrCustomCurve
-        {
-            get { return autoSdrCustomCurve; }
-        }
-
         private readonly TrackedGameProperty trackedGame;
         public TrackedGameProperty TrackedGame
         {
@@ -304,41 +280,6 @@ namespace XboxGamingBarHelper.Systems
                     ApplyAdaptiveBrightnessBackend(true, adaptiveBrightnessMode.Mode);
                 }
             }
-
-            // Auto SDR — restore persisted toggle, seed the manager with the live HDR state,
-            // and react to future HDR on/off transitions. hdrEnabled.PropertyChanged fires both
-            // for display-settings changes (RefreshDisplaySettings) and widget HDR toggles, so a
-            // single subscription covers every way HDR can flip.
-            bool autoSdrSaved = false;
-            XboxGamingBarHelper.Settings.LocalSettingsHelper.TryGetValue<bool>(AutoSdrEnabledKey, out autoSdrSaved);
-            autoSdrEnabled = new AutoSdrEnabledProperty(autoSdrSaved, this);
-            autoSdrManager.OnHdrStateChanged(hdrStatus.Enabled);
-            if (autoSdrSaved)
-            {
-                Logger.Info($"AutoSDR: restoring enabled=true on startup (HDR active={hdrStatus.Enabled}).");
-                autoSdrManager.SetEnabled(true);
-            }
-            hdrEnabled.PropertyChanged += (s, e) => autoSdrManager.OnHdrStateChanged(hdrEnabled.Value);
-
-            // Auto SDR curve preset + custom curve - restore persisted values, seeding the
-            // custom curve from the Legion Go 2 default the very first time (nothing saved yet).
-            string savedCurveJson = null;
-            XboxGamingBarHelper.Settings.LocalSettingsHelper.TryGetValue<string>(AutoSdrCustomCurveKey, out savedCurveJson);
-            if (!string.IsNullOrEmpty(savedCurveJson) && AutoSdrManager.TryParseCurveJson(savedCurveJson, out _, out _))
-            {
-                autoSdrManager.SetCustomCurveFromJson(savedCurveJson, out _);
-            }
-            else
-            {
-                autoSdrManager.SeedCustomCurveFromDefaultIfUnset();
-            }
-
-            int savedPreset = 0;
-            XboxGamingBarHelper.Settings.LocalSettingsHelper.TryGetValue<int>(AutoSdrPresetKey, out savedPreset);
-            autoSdrManager.SetPreset(savedPreset);
-
-            autoSdrPreset = new AutoSdrPresetProperty(savedPreset, this);
-            autoSdrCustomCurve = new AutoSdrCustomCurveProperty(autoSdrManager.GetCustomCurveJson(), this);
 
             // Seed the AC/DC dedupe baseline from the live PowerManager status now,
             // before subscribing. Otherwise the lazy-on-first-event capture below loses
@@ -1151,108 +1092,6 @@ namespace XboxGamingBarHelper.Systems
             ApplyAdaptiveBrightnessBackend(adaptiveBrightnessRequested, mode);
         }
 
-        // Auto SDR master toggle: persist + hand off to the manager. The manager already knows
-        // the live HDR state (seeded at construction + kept current via hdrEnabled.PropertyChanged)
-        // and only writes the SDR white level while HDR is active.
-        public void SetAutoSdrEnabled(bool enabled)
-        {
-            try { XboxGamingBarHelper.Settings.LocalSettingsHelper.SetValue(AutoSdrEnabledKey, enabled); } catch { }
-            Logger.Info($"SetAutoSdrEnabled requested={enabled}");
-            autoSdrManager.SetEnabled(enabled);
-        }
-
-        /// <summary>
-        /// Switches the Auto SDR curve preset. Selecting Custom for the first time (nothing
-        /// saved yet) seeds it from the Legion Go 2 default curve, matching Go2HDR's own
-        /// "Custom starts as a copy of the default" behavior.
-        /// </summary>
-        public void SetAutoSdrPreset(int preset)
-        {
-            try { XboxGamingBarHelper.Settings.LocalSettingsHelper.SetValue(AutoSdrPresetKey, preset); } catch { }
-            Logger.Info($"SetAutoSdrPreset requested={preset}");
-
-            if (preset == (int)AutoSdrManager.CurvePreset.Custom)
-            {
-                autoSdrManager.SeedCustomCurveFromDefaultIfUnset();
-                var seeded = autoSdrManager.GetCustomCurveJson();
-                try { XboxGamingBarHelper.Settings.LocalSettingsHelper.SetValue(AutoSdrCustomCurveKey, seeded); } catch { }
-                autoSdrCustomCurve?.ForceSetValue(seeded);
-            }
-
-            autoSdrManager.SetPreset(preset);
-        }
-
-        /// <summary>
-        /// Replaces the Custom preset's curve from Go2HDR-compatible JSON (a single edited
-        /// point from the widget's +/-1 spinner, or a freshly imported file already routed
-        /// through ImportAutoSdrCurve). Persists on success; rejects and logs on malformed input.
-        /// </summary>
-        public void SetAutoSdrCustomCurve(string curveJson)
-        {
-            if (!autoSdrManager.SetCustomCurveFromJson(curveJson, out var error))
-            {
-                Logger.Warn($"SetAutoSdrCustomCurve rejected: {error}");
-                return;
-            }
-            try { XboxGamingBarHelper.Settings.LocalSettingsHelper.SetValue(AutoSdrCustomCurveKey, autoSdrManager.GetCustomCurveJson()); } catch { }
-            Logger.Info("SetAutoSdrCustomCurve applied.");
-        }
-
-        /// <summary>Writes the currently ACTIVE curve (whichever preset) to a JSON file.</summary>
-        public bool ExportAutoSdrCurve(string path, out string error)
-        {
-            error = null;
-            try
-            {
-                System.IO.File.WriteAllText(path, autoSdrManager.GetActiveCurveJson());
-                Logger.Info($"AutoSDR curve exported to {path}");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                error = ex.Message;
-                Logger.Warn($"ExportAutoSdrCurve failed: {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Reads a Go2HDR-compatible curve JSON file, applies it as the Custom curve, and
-        /// switches to the Custom preset (importing implies "use this curve now"). Pushes both
-        /// updated properties back to the widget with ForceSetValue.
-        /// </summary>
-        public bool ImportAutoSdrCurve(string path, out string error)
-        {
-            error = null;
-            try
-            {
-                if (!System.IO.File.Exists(path))
-                {
-                    error = "File not found.";
-                    return false;
-                }
-
-                var json = System.IO.File.ReadAllText(path);
-                if (!autoSdrManager.SetCustomCurveFromJson(json, out error)) return false;
-
-                var normalized = autoSdrManager.GetCustomCurveJson();
-                try { XboxGamingBarHelper.Settings.LocalSettingsHelper.SetValue(AutoSdrCustomCurveKey, normalized); } catch { }
-                autoSdrCustomCurve?.ForceSetValue(normalized);
-
-                autoSdrManager.SetPreset((int)AutoSdrManager.CurvePreset.Custom);
-                try { XboxGamingBarHelper.Settings.LocalSettingsHelper.SetValue(AutoSdrPresetKey, (int)AutoSdrManager.CurvePreset.Custom); } catch { }
-                autoSdrPreset?.ForceSetValue((int)AutoSdrManager.CurvePreset.Custom);
-
-                Logger.Info($"AutoSDR curve imported from {path}");
-                return true;
-            }
-            catch (Exception ex)
-            {
-                error = ex.Message;
-                Logger.Warn($"ImportAutoSdrCurve failed: {ex.Message}");
-                return false;
-            }
-        }
 
         // Disables/enables the built-in touch screen digitizer via SetupAPI (Device Manager's
         // own "Disable device" mechanism). Matches by HID compatible ID (UP:000D_U:0004 =

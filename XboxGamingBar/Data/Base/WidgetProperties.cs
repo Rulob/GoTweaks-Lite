@@ -107,7 +107,6 @@ namespace XboxGamingBar.Data
             Function.LegionButtonM3,
             Function.LegionButtonDesktop,
             Function.LegionButtonPage,
-            Function.LegionNintendoLayout,
             Function.LegionGamepadButtonMapping,
             // Gyro
             Function.LegionGyroTarget,

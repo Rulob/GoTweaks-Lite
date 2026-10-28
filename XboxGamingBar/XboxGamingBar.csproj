@@ -142,10 +142,8 @@
     <Compile Include="Data\Legion\LegionButtonM3Property.cs" />
     <Compile Include="Data\Legion\LegionButtonDesktopProperty.cs" />
     <Compile Include="Data\Legion\LegionButtonPageProperty.cs" />
-    <Compile Include="Data\Legion\LegionNintendoLayoutProperty.cs" />
     <Compile Include="Data\Legion\LegionDesktopControlsProperty.cs" />
     <Compile Include="Data\Legion\LegionVibrationModeProperty.cs" />
-    <Compile Include="Data\Legion\LegionControllerProfileProperty.cs" />
     <Compile Include="Data\Legion\LegionGyroTargetProperty.cs" />
     <Compile Include="Data\Legion\LegionGyroSensitivityXProperty.cs" />
     <Compile Include="Data\Legion\LegionGyroSensitivityYProperty.cs" />

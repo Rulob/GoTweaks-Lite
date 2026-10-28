@@ -1799,54 +1799,6 @@
                                             <Border x:Name="GlobalProfilePowerModeSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
                                         </StackPanel>
 
-                                        <StackPanel x:Name="GlobalProfileAMDRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="AMD" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="GlobalProfileAMDText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Border x:Name="GlobalProfileAMDSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
-                                        <StackPanel x:Name="GlobalProfileHDRRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="HDR" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="GlobalProfileHDRText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Border x:Name="GlobalProfileHDRSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
-                                        <StackPanel x:Name="GlobalProfileResolutionRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="Resolution" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="GlobalProfileResolutionText" Text="Native" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Border x:Name="GlobalProfileResolutionSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
-                                        <StackPanel x:Name="GlobalProfileRefreshRateRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="Refresh Rate" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="GlobalProfileRefreshRateText" Text="Auto" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                            </Grid>
-                                            <Border x:Name="GlobalProfileRefreshRateSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
                                         <StackPanel x:Name="GlobalProfileOverlayLevelRow" Visibility="Collapsed">
                                             <Grid Margin="0,8,0,0">
                                                 <Grid.ColumnDefinitions>
@@ -1983,66 +1935,6 @@
                                                 <TextBlock Grid.Column="2" x:Name="DCProfilePowerModeText" Text="Balanced" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
                                             </Grid>
                                             <Border x:Name="ACDCProfilePowerModeSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- AMD Features Row -->
-                                        <StackPanel x:Name="ACDCProfileAMDRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="84"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="AMD" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="ACProfileAMDText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" x:Name="DCProfileAMDText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                            </Grid>
-                                            <Border x:Name="ACDCProfileAMDSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- HDR Row -->
-                                        <StackPanel x:Name="ACDCProfileHDRRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="84"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="HDR" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="ACProfileHDRText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" x:Name="DCProfileHDRText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                            </Grid>
-                                            <Border x:Name="ACDCProfileHDRSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- Resolution Row -->
-                                        <StackPanel x:Name="ACDCProfileResolutionRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="84"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="Resolution" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="ACProfileResolutionText" Text="Native" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" x:Name="DCProfileResolutionText" Text="Native" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                            </Grid>
-                                            <Border x:Name="ACDCProfileResolutionSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                        </StackPanel>
-
-                                        <!-- Refresh Rate Row -->
-                                        <StackPanel x:Name="ACDCProfileRefreshRateRow" Visibility="Collapsed">
-                                            <Grid Margin="0,8,0,0">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="84"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0" Text="Refresh Rate" FontSize="12" Foreground="#B9C0CC"/>
-                                                <TextBlock Grid.Column="1" x:Name="ACProfileRefreshRateText" Text="Auto" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                <TextBlock Grid.Column="2" x:Name="DCProfileRefreshRateText" Text="Auto" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                            </Grid>
-                                            <Border x:Name="ACDCProfileRefreshRateSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
                                         </StackPanel>
 
                                         <!-- Overlay Level Row -->
@@ -2236,66 +2128,6 @@
                                                 <Border x:Name="GameACDCProfilePowerModeSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
                                             </StackPanel>
 
-                                            <!-- AMD Features Row -->
-                                            <StackPanel x:Name="GameACDCProfileAMDRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="84"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="AMD" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameACProfileAMDText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="2" x:Name="GameDCProfileAMDText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                </Grid>
-                                                <Border x:Name="GameACDCProfileAMDSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
-                                            <!-- HDR Row -->
-                                            <StackPanel x:Name="GameACDCProfileHDRRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="84"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="HDR" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameACProfileHDRText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="2" x:Name="GameDCProfileHDRText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                </Grid>
-                                                <Border x:Name="GameACDCProfileHDRSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
-                                            <!-- Resolution Row -->
-                                            <StackPanel x:Name="GameACDCProfileResolutionRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="84"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="Resolution" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameACProfileResolutionText" Text="Native" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="2" x:Name="GameDCProfileResolutionText" Text="Native" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                </Grid>
-                                                <Border x:Name="GameACDCProfileResolutionSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
-                                            <!-- Refresh Rate Row -->
-                                            <StackPanel x:Name="GameACDCProfileRefreshRateRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="84"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="Refresh Rate" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameACProfileRefreshRateText" Text="Auto" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                    <TextBlock Grid.Column="2" x:Name="GameDCProfileRefreshRateText" Text="Auto" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Center"/>
-                                                </Grid>
-                                                <Border x:Name="GameACDCProfileRefreshRateSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
                                             <!-- Overlay Level Row -->
                                             <StackPanel x:Name="GameACDCProfileOverlayLevelRow" Visibility="Collapsed">
                                                 <Grid Margin="0,8,0,0">
@@ -2448,54 +2280,6 @@
                                                     <TextBlock Grid.Column="1" x:Name="GameProfilePowerModeText" Text="Balanced" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
                                                 </Grid>
                                                 <Border x:Name="GameProfilePowerModeSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
-                                            <StackPanel x:Name="GameProfileAMDRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="AMD" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameProfileAMDText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                                </Grid>
-                                                <Border x:Name="GameProfileAMDSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
-                                            <StackPanel x:Name="GameProfileHDRRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="HDR" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameProfileHDRText" Text="Off" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                                </Grid>
-                                                <Border x:Name="GameProfileHDRSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
-                                            <StackPanel x:Name="GameProfileResolutionRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="Resolution" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameProfileResolutionText" Text="Native" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                                </Grid>
-                                                <Border x:Name="GameProfileResolutionSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
-                                            </StackPanel>
-
-                                            <StackPanel x:Name="GameProfileRefreshRateRow" Visibility="Collapsed">
-                                                <Grid Margin="0,8,0,0">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Grid.Column="0" Text="Refresh Rate" FontSize="12" Foreground="#B9C0CC"/>
-                                                    <TextBlock Grid.Column="1" x:Name="GameProfileRefreshRateText" Text="Auto" FontSize="12" FontWeight="SemiBold" Foreground="#FFFFFF" HorizontalAlignment="Right"/>
-                                                </Grid>
-                                                <Border x:Name="GameProfileRefreshRateSeparator" Height="1" Background="#22FFFFFF" Margin="0,8,0,0"/>
                                             </StackPanel>
 
                                             <StackPanel x:Name="GameProfileOverlayLevelRow" Visibility="Collapsed">

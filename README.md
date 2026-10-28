@@ -70,12 +70,17 @@ upstream, and why.
   (applied through Lenovo WMI), and **Fan Full Speed** is unchanged. TDP is Lenovo WMI only.
 - The **Display** tab (Resolution, Refresh Rate, HDR, Auto SDR, Adaptive Brightness, Color Settings
   and the AMD Radeon toggles: RSR, Fluid Motion Frames, Anti-Lag, Boost, Chill, Image Sharpening)
-  and the matching Quick Settings tiles. Whatever those settings are set to now stays as it is.
-- The **Scale** tab. Lossless Scaling is no longer configured from the widget — the **Lossless**
-  Quick Settings tile (and any controller combo bound to it) still turns scaling on and off.
+  and the matching Quick Settings tiles. The display and Radeon settings keep whatever values they
+  have now; Auto SDR no longer runs. The helper no longer probes the Radeon features at startup
+  (ADLX is still used for GPU metrics and the AMD overlay).
+- The **Scale** tab. Lossless Scaling is no longer configured from the widget (no more settings or
+  per-game profile syncing) — the **Lossless** Quick Settings tile (and any controller combo bound to
+  it) still turns scaling on and off, launching Lossless Scaling first if needed.
 - On the Legion tab: **Per-Game Controller Profile** (controller settings are always global now,
   so the _Remap_ tile went too), **Nintendo Layout**, and the Labs cards **Disable Legion Space
-  Service** and **Fix Task View Bug**. If you had either Labs option switched on, it stays as it was.
+  Service** and **Fix Task View Bug**. If Legion Space's service was disabled it stays disabled (the
+  uninstaller still restores it); the once-per-boot Task View fix no longer runs. The helper still
+  power-cycles the controller's USB port on its own when the controller stops responding.
 
 > **Why:** a smaller, more predictable surface with fewer background systems that can silently
 > fight your settings.

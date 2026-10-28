@@ -2413,13 +2413,12 @@ namespace XboxGamingBarHelper.Labs
 
             // Escalation for a WEDGED composite: CreateFile/SetupDi reconnect attempts (above)
             // can only recover a staled handle — they can't fix the USB\VID_17EF&PID_61EB
-            // composite itself latching a bad USB state (the same class of bug the Labs
-            // "Fix Task View Bug" feature works around; see TaskViewFixManager for the full
+            // composite itself latching a bad USB state (see LegionUsbPortCycler for the full
             // writeup — PnP disable/restart/remove all veto on this hardware, only a real
             // port power-cycle or a reboot clears it). This is the concrete fix for
             // "controller status is hit-or-miss and only a full reboot brings it back" —
             // after a sustained run of failed reconnects we now escalate to the same
-            // IOCTL_USB_HUB_CYCLE_PORT the Task View fix already uses. CyclePort() is a safe
+            // IOCTL_USB_HUB_CYCLE_PORT (LegionUsbPortCycler). CyclePort() is a safe
             // no-op if the composite isn't present (e.g. controller genuinely off/out of
             // range), so this doesn't misfire when there's really nothing to reconnect to.
             int failedReconnectAttempts = 0;
@@ -2467,7 +2466,7 @@ namespace XboxGamingBarHelper.Labs
                                     lastPortCycleAttempt = DateTime.Now;
                                     failedReconnectAttempts = 0;
                                     Logger.Warn($"LegionButtonMonitor: {FAILED_ATTEMPTS_BEFORE_PORT_CYCLE} consecutive reconnect failures — escalating to a USB port cycle of the Legion composite.");
-                                    bool cycled = TaskViewFixManager.CyclePort();
+                                    bool cycled = LegionUsbPortCycler.CyclePort();
                                     Logger.Info(cycled
                                         ? "LegionButtonMonitor: port cycle succeeded, controller re-enumerating — retrying shortly."
                                         : "LegionButtonMonitor: port cycle was a no-op (composite not present or IOCTL refused) — continuing normal backoff.");

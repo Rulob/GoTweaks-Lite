@@ -1,18 +1,14 @@
 using System;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using NLog;
-using XboxGamingBarHelper.Settings;
 
 namespace XboxGamingBarHelper.Labs
 {
     /// <summary>
-    /// Optional Labs fix for the "Task View pops up whenever the desktop gains focus (with a
-    /// controller vibration)" bug seen on some Legion Go / Go 2 setups that boot with a USB hub
-    /// attached. Root cause: at boot the Legion controller composite latches a stale USB state,
-    /// and Windows then re-opens Task View every time the desktop gets foreground. Physically
-    /// re-plugging ANY USB device (a controller, the hub) clears it — and so does this: a software
-    /// USB port power-cycle of the Legion composite via IOCTL_USB_HUB_CYCLE_PORT.
+    /// Software unplug/replug of the Legion controller's USB composite: a USB port power-cycle
+    /// of the VID_17EF&amp;PID_61EB composite via IOCTL_USB_HUB_CYCLE_PORT. LegionButtonMonitor
+    /// escalates to it when the composite latches a bad USB state and plain reconnects keep
+    /// failing (only a real port power-cycle or a reboot clears that).
     ///
     /// Why the port-cycle and not Disable/pnputil restart: the composite contains a HID keyboard
     /// child (a boot/system device) that vetoes any PnP disable/remove, so those all defer to a
@@ -20,95 +16,14 @@ namespace XboxGamingBarHelper.Labs
     /// a hardware surprise-remove + re-arrival, exactly like pulling and reinserting the
     /// connector — which bypasses that veto.
     ///
-    /// Persisted helper-side (LocalSettingsHelper). When enabled, the cycle runs once per boot
-    /// (first helper start after boot). LegionGo2-only in practice: CyclePort no-ops if the
-    /// VID_17EF&amp;PID_61EB composite isn't present.
+    /// (This used to also back the opt-in Labs "Fix Task View Bug", which ran it once per boot;
+    /// that option was removed.)
     /// </summary>
-    internal static class TaskViewFixManager
+    internal static class LegionUsbPortCycler
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        private const string EnabledKey = "TaskViewFixEnabled";
-        private const string LastRunBootKey = "TaskViewFixLastRunBoot";
         private const string LegionCompositePrefix = @"USB\VID_17EF&PID_61EB\";
-
-        public static bool IsEnabled()
-        {
-            return LocalSettingsHelper.TryGetValue<bool>(EnabledKey, out bool v) && v;
-        }
-
-        public static void SetEnabled(bool enabled)
-        {
-            LocalSettingsHelper.SetValue(EnabledKey, enabled);
-            Logger.Info($"TaskViewFix: enabled = {enabled}");
-        }
-
-        /// <summary>0 = disabled, 1 = enabled. Mirrors the DAService status contract.</summary>
-        public static int GetStatus() => IsEnabled() ? 1 : 0;
-
-        /// <summary>action: 0 = disable, 1 = enable, 2 = run once now (doesn't change the toggle).</summary>
-        public static void Control(int action)
-        {
-            if (action == 2) { RunNow(); return; }
-            SetEnabled(action == 1);
-        }
-
-        /// <summary>One-time, on-demand port cycle (the "Run now" button). Returns success.</summary>
-        public static bool RunNow()
-        {
-            Logger.Info("TaskViewFix: manual run-now requested.");
-            return CyclePort();
-        }
-
-        /// <summary>
-        /// Called once at helper startup. If enabled and not already run this boot, cycles the
-        /// controller port a few seconds later (letting USB settle first), then records the boot
-        /// so later helper restarts within the same session don't cycle again.
-        /// </summary>
-        public static void RunOncePerBootIfEnabled()
-        {
-            try
-            {
-                if (!IsEnabled()) return;
-
-                string boot = GetBootId();
-                if (LocalSettingsHelper.TryGetValue<string>(LastRunBootKey, out string last)
-                    && string.Equals(last, boot, StringComparison.Ordinal))
-                {
-                    Logger.Info("TaskViewFix: already ran this boot — skipping.");
-                    return;
-                }
-
-                Task.Run(async () =>
-                {
-                    // Let USB enumeration settle after logon before we cycle the port.
-                    await Task.Delay(5000).ConfigureAwait(false);
-                    bool ok = CyclePort();
-                    if (ok)
-                        LocalSettingsHelper.SetValue(LastRunBootKey, boot);
-                    else
-                        Logger.Warn("TaskViewFix: startup cycle did not complete (controller not present?) — will retry next helper start.");
-                });
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"TaskViewFix: RunOncePerBootIfEnabled failed: {ex.Message}");
-            }
-        }
-
-        // Stable-per-boot id: boot wall-clock (now - uptime) quantized to the minute. GetTickCount64
-        // is monotonic from boot, so this is stable across helper restarts within one boot and
-        // changes on the next boot.
-        private static string GetBootId()
-        {
-            try
-            {
-                ulong uptimeMs = GetTickCount64();
-                DateTime bootUtc = DateTime.UtcNow - TimeSpan.FromMilliseconds(uptimeMs);
-                return bootUtc.ToString("yyyyMMddHHmm");
-            }
-            catch { return "unknown"; }
-        }
 
         // ---------------------------------------------------------------------------------------
         // The actual work: find the Legion composite -> its parent hub + port -> IOCTL cycle port.
@@ -126,29 +41,29 @@ namespace XboxGamingBarHelper.Labs
                 string compositeId = FindLegionComposite();
                 if (compositeId == null)
                 {
-                    Logger.Info("TaskViewFix: Legion composite (USB\\VID_17EF&PID_61EB\\...) not present — nothing to cycle.");
+                    Logger.Info("PortCycle: Legion composite (USB\\VID_17EF&PID_61EB\\...) not present — nothing to cycle.");
                     return false;
                 }
 
                 if (CM_Locate_DevNodeW(out uint devInst, compositeId, CM_LOCATE_DEVNODE_NORMAL) != CR_SUCCESS)
-                { Logger.Warn("TaskViewFix: CM_Locate_DevNode failed."); return false; }
+                { Logger.Warn("PortCycle: CM_Locate_DevNode failed."); return false; }
 
                 if (CM_Get_Parent(out uint hubInst, devInst, 0) != CR_SUCCESS)
-                { Logger.Warn("TaskViewFix: CM_Get_Parent failed."); return false; }
+                { Logger.Warn("PortCycle: CM_Get_Parent failed."); return false; }
 
                 string hubId = GetDeviceId(hubInst);
                 if (!GetPortNumber(devInst, out uint port))
-                { Logger.Warn("TaskViewFix: could not read the port number (DEVPKEY_Device_Address)."); return false; }
+                { Logger.Warn("PortCycle: could not read the port number (DEVPKEY_Device_Address)."); return false; }
 
                 string hubPath = GetHubInterfacePath(hubId);
                 if (hubPath == null)
-                { Logger.Warn("TaskViewFix: could not resolve the parent hub's device interface path."); return false; }
+                { Logger.Warn("PortCycle: could not resolve the parent hub's device interface path."); return false; }
 
-                Logger.Info($"TaskViewFix: cycling port {port} on hub '{hubId}' (composite '{compositeId}').");
+                Logger.Info($"PortCycle: cycling port {port} on hub '{hubId}' (composite '{compositeId}').");
 
                 IntPtr h = CreateFileW(hubPath, GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
                 if (h == IntPtr.Zero || h == new IntPtr(-1))
-                { Logger.Warn($"TaskViewFix: CreateFile(hub) failed, err={Marshal.GetLastWin32Error()}."); return false; }
+                { Logger.Warn($"PortCycle: CreateFile(hub) failed, err={Marshal.GetLastWin32Error()}."); return false; }
 
                 try
                 {
@@ -157,17 +72,17 @@ namespace XboxGamingBarHelper.Labs
                     bool ok = DeviceIoControl(h, IOCTL_USB_HUB_CYCLE_PORT, ref p, size, ref p, size, out uint _, IntPtr.Zero);
                     if (!ok)
                     {
-                        Logger.Warn($"TaskViewFix: IOCTL_USB_HUB_CYCLE_PORT failed, err={Marshal.GetLastWin32Error()} (StatusReturned={p.StatusReturned}).");
+                        Logger.Warn($"PortCycle: IOCTL_USB_HUB_CYCLE_PORT failed, err={Marshal.GetLastWin32Error()} (StatusReturned={p.StatusReturned}).");
                         return false;
                     }
-                    Logger.Info($"TaskViewFix: port cycled OK (StatusReturned={p.StatusReturned}). Controllers re-enumerating.");
+                    Logger.Info($"PortCycle: port cycled OK (StatusReturned={p.StatusReturned}). Controllers re-enumerating.");
                     return true;
                 }
                 finally { CloseHandle(h); }
             }
             catch (Exception ex)
             {
-                Logger.Error($"TaskViewFix: CyclePort threw: {ex.Message}");
+                Logger.Error($"PortCycle: CyclePort threw: {ex.Message}");
                 return false;
             }
         }
@@ -277,7 +192,5 @@ namespace XboxGamingBarHelper.Labs
         private static extern bool DeviceIoControl(IntPtr h, uint code, ref USB_CYCLE_PORT_PARAMS inBuf, uint inSize, ref USB_CYCLE_PORT_PARAMS outBuf, uint outSize, out uint returned, IntPtr overlapped);
         [DllImport("kernel32.dll", SetLastError = true)]
         private static extern bool CloseHandle(IntPtr h);
-        [DllImport("kernel32.dll")]
-        private static extern ulong GetTickCount64();
     }
 }

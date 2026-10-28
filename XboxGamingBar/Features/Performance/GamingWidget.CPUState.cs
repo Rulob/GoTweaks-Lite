@@ -190,22 +190,5 @@ namespace XboxGamingBar
             }
         }
 
-        /// <summary>
-        /// Gets a short string representation of enabled AMD features for display in profile cards
-        /// </summary>
-        private static string GetAMDFeaturesShortString(PerformanceProfile profile)
-        {
-            var features = new List<string>();
-
-            if (profile.FluidMotionFrames) features.Add("AFMF");
-            if (profile.RadeonSuperResolution) features.Add("RSR");
-            if (profile.ImageSharpening) features.Add("RIS");
-            if (profile.RadeonAntiLag) features.Add("AL");
-            if (profile.RadeonBoost) features.Add("Boost");
-            if (profile.RadeonChill) features.Add("Chill");
-
-            return string.Join(",", features);
-        }
-
     }
 }

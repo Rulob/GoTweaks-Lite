@@ -55,17 +55,6 @@ namespace XboxGamingBar
         public double CPUEPP { get; set; } = 0;
         public int MaxCPUState { get; set; } = 100;
         public int MinCPUState { get; set; } = 5;
-        public bool FluidMotionFrames { get; set; } = false;
-        public bool RadeonSuperResolution { get; set; } = false;
-        public double RadeonSuperResolutionSharpness { get; set; } = 80;
-        public bool ImageSharpening { get; set; } = false;
-        public double ImageSharpeningSharpness { get; set; } = 80;
-        public bool RadeonAntiLag { get; set; } = false;
-        public bool RadeonBoost { get; set; } = false;
-        public double RadeonBoostResolution { get; set; } = 0;
-        public bool RadeonChill { get; set; } = false;
-        public double RadeonChillMinFPS { get; set; } = 30;
-        public double RadeonChillMaxFPS { get; set; } = 60;
         // FPS Limit settings
         public bool FPSLimitEnabled { get; set; } = false;
         public int FPSLimitValue { get; set; } = 60;
@@ -76,10 +65,6 @@ namespace XboxGamingBar
         // TDP Mode Index in the TDPModeComboBox (for user-made presets)
         // -1 means use LegionPerformanceMode to determine index (backwards compatibility)
         public int TDPModeIndex { get; set; } = -1;
-        // HDR and Resolution settings (per-profile)
-        public bool HDREnabled { get; set; } = false;
-        public string Resolution { get; set; } = "";
-        public int? RefreshRate { get; set; } = null;
         // Overlay Level (0=Off, 1-4 for RTSS/AMD)
         public int OverlayLevel { get; set; } = 0;
         // CPU Affinity as "pCores,eCores" string
@@ -102,25 +87,11 @@ namespace XboxGamingBar
                 CPUEPP = this.CPUEPP,
                 MaxCPUState = this.MaxCPUState,
                 MinCPUState = this.MinCPUState,
-                FluidMotionFrames = this.FluidMotionFrames,
-                RadeonSuperResolution = this.RadeonSuperResolution,
-                RadeonSuperResolutionSharpness = this.RadeonSuperResolutionSharpness,
-                ImageSharpening = this.ImageSharpening,
-                ImageSharpeningSharpness = this.ImageSharpeningSharpness,
-                RadeonAntiLag = this.RadeonAntiLag,
-                RadeonBoost = this.RadeonBoost,
-                RadeonBoostResolution = this.RadeonBoostResolution,
-                RadeonChill = this.RadeonChill,
-                RadeonChillMinFPS = this.RadeonChillMinFPS,
-                RadeonChillMaxFPS = this.RadeonChillMaxFPS,
                 FPSLimitEnabled = this.FPSLimitEnabled,
                 FPSLimitValue = this.FPSLimitValue,
                 OSPowerMode = this.OSPowerMode,
                 LegionPerformanceMode = this.LegionPerformanceMode,
                 TDPModeIndex = this.TDPModeIndex,
-                HDREnabled = this.HDREnabled,
-                Resolution = this.Resolution,
-                RefreshRate = this.RefreshRate,
                 OverlayLevel = this.OverlayLevel,
                 CPUAffinity = this.CPUAffinity,
                 AutoTDPEnabled = this.AutoTDPEnabled,
@@ -358,7 +329,6 @@ namespace XboxGamingBar
         public ButtonMapping ButtonM3 { get; set; } = new ButtonMapping();
         public ButtonMapping ButtonDesktop { get; set; } = new ButtonMapping();
         public ButtonMapping ButtonPage { get; set; } = new ButtonMapping();
-        public bool NintendoLayout { get; set; } = false;
         public int VibrationLevel { get; set; } = 2;  // Medium
         public int VibrationMode { get; set; } = 1;   // FPS
 
@@ -418,7 +388,6 @@ namespace XboxGamingBar
                 ButtonM3 = this.ButtonM3.Clone(),
                 ButtonDesktop = this.ButtonDesktop.Clone(),
                 ButtonPage = this.ButtonPage.Clone(),
-                NintendoLayout = this.NintendoLayout,
                 VibrationLevel = this.VibrationLevel,
                 VibrationMode = this.VibrationMode,
                 // Gyro settings
@@ -628,9 +597,7 @@ namespace XboxGamingBar
         private readonly LegionButtonM3Property legionButtonM3;
         private readonly LegionButtonDesktopProperty legionButtonDesktop;
         private readonly LegionButtonPageProperty legionButtonPage;
-        private readonly LegionNintendoLayoutProperty legionNintendoLayout;
         private readonly LegionVibrationModeProperty legionVibrationMode;
-        private readonly LegionControllerProfileProperty legionControllerProfile;
 
         // Gyro properties
         private readonly LegionGyroTargetProperty legionGyroTarget;
@@ -980,37 +947,20 @@ namespace XboxGamingBar
         private bool _saveCPUBoost = true;
         private bool _saveCPUEPP = true;
         private bool _saveCPUState = true;
-        private bool _saveAMDFeatures = false;
         private bool _saveFPSLimit = true;
         private bool _saveOSPowerMode = true;
-        private bool _saveHDR = false;
-        private bool _saveResolution = false;
-        private bool _saveRefreshRate = false;
         private bool _saveOverlayLevel = false;
-        // Legion device-wide settings default to false so they behave as global device
-        // settings rather than per-game; the helper routes writes to GlobalProfile when these
-        // are false and still applies from the game profile only when the game stored a value.
-        private bool _saveNintendoLayout = false;
-        private bool _saveVibration = false;
-        private bool _saveLighting = false;
-        private bool _saveButtonMappings = false;
-        private bool _saveGyroSettings = false;
+        // Legion controller settings (lighting, vibration, button mappings, gyro) have no save
+        // flags any more: they are always global. The helper's flags for them stay at their
+        // default (false), which routes writes to GlobalProfile.
 
         private bool SaveTDP => _saveTDP;
         private bool SaveCPUBoost => _saveCPUBoost;
         private bool SaveCPUEPP => _saveCPUEPP;
         private bool SaveCPUState => _saveCPUState;
-        private bool SaveAMDFeatures => _saveAMDFeatures;
         private bool SaveFPSLimit => _saveFPSLimit;
         private bool SaveOSPowerMode => _saveOSPowerMode;
-        private bool SaveHDR => _saveHDR;
-        private bool SaveResolution => _saveResolution;
-        private bool SaveRefreshRate => _saveRefreshRate;
         private bool SaveOverlayLevel => _saveOverlayLevel;
-        private bool SaveNintendoLayout => _saveNintendoLayout;
-        private bool SaveVibration => _saveVibration;
-        private bool SaveLighting => _saveLighting;
-        private bool SaveButtonMappings => _saveButtonMappings;
 
         private bool isLoadingProfileSettings = false;
 
@@ -1170,9 +1120,7 @@ namespace XboxGamingBar
             legionButtonM3 = new LegionButtonM3Property(LegionButtonM3ComboBox, this);
             legionButtonDesktop = new LegionButtonDesktopProperty(LegionButtonDesktopComboBox, this);
             legionButtonPage = new LegionButtonPageProperty(LegionButtonPageComboBox, this);
-            legionNintendoLayout = new LegionNintendoLayoutProperty(null, this);  // headless: the Nintendo Layout card was removed, stays off
             legionVibrationMode = new LegionVibrationModeProperty(LegionVibrationModeComboBox, this);
-            legionControllerProfile = new LegionControllerProfileProperty(null, this);  // headless: per-game controller profiles were removed, stays off
 
             // Gyro properties
             legionGyroTarget = new LegionGyroTargetProperty(LegionGyroTargetComboBox, this);
@@ -1373,8 +1321,6 @@ namespace XboxGamingBar
                 legionPowerLight,
                 legionChargeLimit,
                 legionTouchpadVibration,
-                legionNintendoLayout,
-                legionControllerProfile,
                 legionGamepadMapping,
                 legionButtonY1,
                 legionButtonY2,

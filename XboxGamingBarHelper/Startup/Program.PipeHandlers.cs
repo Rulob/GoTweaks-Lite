@@ -158,18 +158,6 @@ namespace XboxGamingBarHelper
                     return;
                 }
 
-                // Handle Auto SDR curve export/import (Go2HDR-compatible JSON)
-                if (pipeMsg.Extra.ContainsKey("ExportAutoSdrCurve"))
-                {
-                    HandleExportAutoSdrCurve(pipeMsg);
-                    return;
-                }
-                if (pipeMsg.Extra.ContainsKey("ImportAutoSdrCurve"))
-                {
-                    HandleImportAutoSdrCurve(pipeMsg);
-                    return;
-                }
-
                 // Handle Lenovo driver-update check. Widget button fires this, helper
                 // resolves the machine type + BIOS version via WMI and best-effort-fetches
                 // the live driver list from Lenovo's public pcsupport API. Response is
@@ -585,78 +573,7 @@ namespace XboxGamingBarHelper
             }
         }
 
-        // ExportAutoSdrCurve: write the currently active Auto SDR curve (whichever preset) to
-        // a Go2HDR-compatible JSON file at the widget-picked path.
-        private static void HandleExportAutoSdrCurve(Shared.IPC.PipeMessage pipeMsg)
-        {
-            Logger.Info("Pipe: ExportAutoSdrCurve request received");
-            var response = new global::Windows.Foundation.Collections.ValueSet();
-            try
-            {
-                var exportPath = pipeMsg.Extra["ExportAutoSdrCurve"] as string;
-                if (string.IsNullOrEmpty(exportPath))
-                    throw new Exception("No export path provided");
 
-                if (systemManager.ExportAutoSdrCurve(exportPath, out var error))
-                {
-                    response.Add("Success", true);
-                    response.Add("Path", exportPath);
-                }
-                else
-                {
-                    throw new Exception(error ?? "Unknown error");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Pipe: Failed to export Auto SDR curve: {ex.Message}");
-                response.Add("Success", false);
-                response.Add("Error", ex.Message);
-            }
-
-            if (pipeServer != null && pipeServer.IsConnected)
-            {
-                var responseMsg = Shared.IPC.PipeMessage.FromValueSet(response);
-                responseMsg.RequestId = pipeMsg.RequestId;
-                pipeServer.SendMessage(responseMsg.ToJson());
-            }
-        }
-
-        // ImportAutoSdrCurve: read a Go2HDR-compatible curve JSON file from the widget-picked
-        // path, apply it as the Custom curve, and switch to the Custom preset.
-        private static void HandleImportAutoSdrCurve(Shared.IPC.PipeMessage pipeMsg)
-        {
-            Logger.Info("Pipe: ImportAutoSdrCurve request received");
-            var response = new global::Windows.Foundation.Collections.ValueSet();
-            try
-            {
-                var importPath = pipeMsg.Extra["ImportAutoSdrCurve"] as string;
-                if (string.IsNullOrEmpty(importPath) || !File.Exists(importPath))
-                    throw new Exception($"Import file not found: {importPath}");
-
-                if (systemManager.ImportAutoSdrCurve(importPath, out var error))
-                {
-                    response.Add("Success", true);
-                }
-                else
-                {
-                    throw new Exception(error ?? "Unknown error");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Pipe: Failed to import Auto SDR curve: {ex.Message}");
-                response.Add("Success", false);
-                response.Add("Error", ex.Message);
-            }
-
-            if (pipeServer != null && pipeServer.IsConnected)
-            {
-                var responseMsg = Shared.IPC.PipeMessage.FromValueSet(response);
-                responseMsg.RequestId = pipeMsg.RequestId;
-                pipeServer.SendMessage(responseMsg.ToJson());
-            }
-        }
 
         // ImportProfiles: restore global + per-game profiles from an export file.
         private static void HandleImportProfiles(Shared.IPC.PipeMessage pipeMsg)
@@ -1221,28 +1138,8 @@ namespace XboxGamingBarHelper
                 // Handle special functions that are not in FunctionalProperties
                 int functionValue = (int)request.Function;
 
-                // Labs: DAService Status request
-                if (functionValue == (int)Function.Labs_DAServiceStatus)
-                {
-                    response = HandleLabsDAServiceStatus(request);
-                }
-                // Labs: DAService Control request (Start/Stop)
-                else if (functionValue == (int)Function.Labs_DAServiceControl)
-                {
-                    response = HandleLabsDAServiceControl(request);
-                }
-                // Labs: Task View fix status request
-                else if (functionValue == (int)Function.Labs_TaskViewFixStatus)
-                {
-                    response = HandleLabsTaskViewFixStatus(request);
-                }
-                // Labs: Task View fix control (enable/disable/run-now)
-                else if (functionValue == (int)Function.Labs_TaskViewFixControl)
-                {
-                    response = HandleLabsTaskViewFixControl(request);
-                }
                 // Labs: Legion Button Remap
-                else if (functionValue == (int)Function.Labs_LegionButtonRemap)
+                if (functionValue == (int)Function.Labs_LegionButtonRemap)
                 {
                     response = HandleLabsLegionButtonRemap(request);
                 }
@@ -1365,71 +1262,6 @@ namespace XboxGamingBarHelper
         // Extracted verbatim from the former if/else-if chain — behaviour is
         // unchanged; the dispatcher applies the same Function match per branch.
         // ====================================================================
-
-        // Labs: DAService Status request
-        private static global::Windows.Foundation.Collections.ValueSet HandleLabsDAServiceStatus(Shared.IPC.PipeMessage request)
-        {
-            global::Windows.Foundation.Collections.ValueSet response = null;
-            int functionValue = (int)request.Function;
-            int status = GetDAServiceStatus();
-            response = new global::Windows.Foundation.Collections.ValueSet();
-            response.Add(nameof(Function), functionValue);
-            response.Add("Content", status);
-            response.Add("UpdatedTime", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-            Logger.Info($"Pipe: Labs DAService status = {status}");
-            return response;
-        }
-
-        // Labs: DAService Control request (Start/Stop)
-        private static global::Windows.Foundation.Collections.ValueSet HandleLabsDAServiceControl(Shared.IPC.PipeMessage request)
-        {
-            global::Windows.Foundation.Collections.ValueSet response = null;
-            if (request.Content != null)
-            {
-                int action = Convert.ToInt32(request.Content);
-                ControlDAService(action);
-                // No sleep needed: ControlDAService applies the permanent startup-type change
-                // synchronously (the background task only handles the slow stop/start), and
-                // GetDAServiceStatus reports that StartType — so it's already accurate here.
-                int status = GetDAServiceStatus();
-                response = new global::Windows.Foundation.Collections.ValueSet();
-                response.Add(nameof(Function), (int)Function.Labs_DAServiceStatus);
-                response.Add("Content", status);
-                response.Add("UpdatedTime", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-                Logger.Info($"Pipe: Labs DAService control action={action}, new status={status}");
-            }
-            return response;
-        }
-
-        // Labs: Task View fix status request
-        private static global::Windows.Foundation.Collections.ValueSet HandleLabsTaskViewFixStatus(Shared.IPC.PipeMessage request)
-        {
-            int status = Labs.TaskViewFixManager.GetStatus();
-            var response = new global::Windows.Foundation.Collections.ValueSet();
-            response.Add(nameof(Function), (int)Function.Labs_TaskViewFixStatus);
-            response.Add("Content", status);
-            response.Add("UpdatedTime", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-            Logger.Info($"Pipe: Labs TaskViewFix status = {status}");
-            return response;
-        }
-
-        // Labs: Task View fix control — Content 0 = disable, 1 = enable, 2 = run once now.
-        private static global::Windows.Foundation.Collections.ValueSet HandleLabsTaskViewFixControl(Shared.IPC.PipeMessage request)
-        {
-            global::Windows.Foundation.Collections.ValueSet response = null;
-            if (request.Content != null)
-            {
-                int action = Convert.ToInt32(request.Content);
-                Labs.TaskViewFixManager.Control(action);
-                int status = Labs.TaskViewFixManager.GetStatus();
-                response = new global::Windows.Foundation.Collections.ValueSet();
-                response.Add(nameof(Function), (int)Function.Labs_TaskViewFixStatus);
-                response.Add("Content", status);
-                response.Add("UpdatedTime", DateTimeOffset.Now.ToUnixTimeMilliseconds());
-                Logger.Info($"Pipe: Labs TaskViewFix control action={action}, status={status}");
-            }
-            return response;
-        }
 
         // Labs: Legion Button Remap
         private static global::Windows.Foundation.Collections.ValueSet HandleLabsLegionButtonRemap(Shared.IPC.PipeMessage request)

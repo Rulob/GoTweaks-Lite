@@ -267,12 +267,8 @@ namespace XboxGamingBarHelper
                 legionManager.LegionGamepadMapping.SetValue(profile.LegionGamepadMapping);
             }
 
-            // Other controller settings
-            if (profile.LegionNintendoLayout.HasValue)
-            {
-                Logger.Debug($"Applying LegionNintendoLayout: {profile.LegionNintendoLayout.Value}");
-                legionManager.LegionNintendoLayout.SetValue(profile.LegionNintendoLayout.Value);
-            }
+            // Other controller settings. (The Nintendo Layout option was removed from the widget,
+            // so a value saved in an old profile is no longer applied.)
             if (profile.LegionVibration.HasValue)
             {
                 Logger.Debug($"Applying LegionVibration: {profile.LegionVibration.Value}");
@@ -764,25 +760,11 @@ namespace XboxGamingBarHelper
                         Logger.Info($"Previous game had per-game profile active, restoring global profile for {systemManager.RunningGame.GameId}");
                         RestoreGlobalProfileSettings();
                     }
-
-                    // Switch Lossless Scaling profile for the detected game
-                    if (losslessScalingManager.LosslessScalingInstalled.Value)
-                    {
-                        var gameName = systemManager.RunningGame.Value.GameId.Name;
-                        var gamePath = systemManager.RunningGame.Value.GameId.Path;
-                        losslessScalingManager.SetCurrentGame(gameName, gamePath);
-                    }
                 }
                 else
                 {
                     Logger.Info($"Stopped playing game, use global profile instead.");
                     RestoreGlobalProfileSettings();
-
-                    // Reset Lossless Scaling to Default profile when game stops
-                    if (losslessScalingManager.LosslessScalingInstalled.Value)
-                    {
-                        losslessScalingManager.SetCurrentGame("Default", "");
-                    }
                 }
             }
             finally

@@ -121,18 +121,9 @@ namespace XboxGamingBar
                 jsonObj["CPUBoost"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveCPUBoost);
                 jsonObj["CPUEPP"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveCPUEPP);
                 jsonObj["CPUState"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveCPUState);
-                jsonObj["AMDFeatures"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveAMDFeatures);
                 jsonObj["FPSLimit"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveFPSLimit);
                 jsonObj["OSPowerMode"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveOSPowerMode);
-                jsonObj["HDR"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveHDR);
-                jsonObj["Resolution"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveResolution);
-                jsonObj["RefreshRate"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveRefreshRate);
                 jsonObj["OverlayLevel"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveOverlayLevel);
-                jsonObj["NintendoLayout"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveNintendoLayout);
-                jsonObj["Vibration"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveVibration);
-                jsonObj["Lighting"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveLighting);
-                jsonObj["ButtonMappings"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveButtonMappings);
-                jsonObj["GyroSettings"] = Windows.Data.Json.JsonValue.CreateBooleanValue(_saveGyroSettings);
 
                 var request = new Windows.Foundation.Collections.ValueSet
                 {

@@ -56,10 +56,6 @@ namespace XboxGamingBar
             var cpuStateVisibility = SaveCPUState ? Visibility.Visible : Visibility.Collapsed;
             var fpsLimitVisibility = SaveFPSLimit ? Visibility.Visible : Visibility.Collapsed;
             var powerModeVisibility = SaveOSPowerMode ? Visibility.Visible : Visibility.Collapsed;
-            var amdVisibility = SaveAMDFeatures ? Visibility.Visible : Visibility.Collapsed;
-            var hdrVisibility = SaveHDR ? Visibility.Visible : Visibility.Collapsed;
-            var resolutionVisibility = SaveResolution ? Visibility.Visible : Visibility.Collapsed;
-            var refreshRateVisibility = SaveRefreshRate ? Visibility.Visible : Visibility.Collapsed;
             var overlayLevelVisibility = SaveOverlayLevel ? Visibility.Visible : Visibility.Collapsed;
 
             // Update Global profile display (simple mode)
@@ -84,19 +80,6 @@ namespace XboxGamingBar
             GlobalProfilePowerModeRow.Visibility = powerModeVisibility;
             GlobalProfilePowerModeText.Text = GetPowerModeShortName(globalProfile.OSPowerMode);
 
-            GlobalProfileAMDRow.Visibility = amdVisibility;
-            var globalAmdFeatures = GetAMDFeaturesShortString(globalProfile);
-            GlobalProfileAMDText.Text = string.IsNullOrEmpty(globalAmdFeatures) ? "Off" : globalAmdFeatures;
-
-            GlobalProfileHDRRow.Visibility = hdrVisibility;
-            GlobalProfileHDRText.Text = globalProfile.HDREnabled ? "On" : "Off";
-
-            GlobalProfileResolutionRow.Visibility = resolutionVisibility;
-            GlobalProfileResolutionText.Text = string.IsNullOrEmpty(globalProfile.Resolution) ? "Native" : globalProfile.Resolution;
-
-            GlobalProfileRefreshRateRow.Visibility = refreshRateVisibility;
-            GlobalProfileRefreshRateText.Text = GetRefreshRateShortString(globalProfile);
-
             GlobalProfileOverlayLevelRow.Visibility = overlayLevelVisibility;
             GlobalProfileOverlayLevelText.Text = GetOverlayLevelShortName(globalProfile.OverlayLevel);
 
@@ -108,10 +91,6 @@ namespace XboxGamingBar
                 (GlobalProfileCPUStateRow, GlobalProfileCPUStateSeparator),
                 (GlobalProfileFPSLimitRow, GlobalProfileFPSLimitSeparator),
                 (GlobalProfilePowerModeRow, GlobalProfilePowerModeSeparator),
-                (GlobalProfileAMDRow, GlobalProfileAMDSeparator),
-                (GlobalProfileHDRRow, GlobalProfileHDRSeparator),
-                (GlobalProfileResolutionRow, GlobalProfileResolutionSeparator),
-                (GlobalProfileRefreshRateRow, GlobalProfileRefreshRateSeparator),
                 (GlobalProfileOverlayLevelRow, GlobalProfileOverlayLevelSeparator));
 
             // Update AC/DC profile display
@@ -143,24 +122,6 @@ namespace XboxGamingBar
             ACProfilePowerModeText.Text = GetPowerModeShortName(acProfile.OSPowerMode);
             DCProfilePowerModeText.Text = GetPowerModeShortName(dcProfile.OSPowerMode);
 
-            ACDCProfileAMDRow.Visibility = amdVisibility;
-            var acAmdFeatures = GetAMDFeaturesShortString(acProfile);
-            var dcAmdFeatures = GetAMDFeaturesShortString(dcProfile);
-            ACProfileAMDText.Text = string.IsNullOrEmpty(acAmdFeatures) ? "Off" : acAmdFeatures;
-            DCProfileAMDText.Text = string.IsNullOrEmpty(dcAmdFeatures) ? "Off" : dcAmdFeatures;
-
-            ACDCProfileHDRRow.Visibility = hdrVisibility;
-            ACProfileHDRText.Text = acProfile.HDREnabled ? "On" : "Off";
-            DCProfileHDRText.Text = dcProfile.HDREnabled ? "On" : "Off";
-
-            ACDCProfileResolutionRow.Visibility = resolutionVisibility;
-            ACProfileResolutionText.Text = string.IsNullOrEmpty(acProfile.Resolution) ? "Native" : acProfile.Resolution;
-            DCProfileResolutionText.Text = string.IsNullOrEmpty(dcProfile.Resolution) ? "Native" : dcProfile.Resolution;
-
-            ACDCProfileRefreshRateRow.Visibility = refreshRateVisibility;
-            ACProfileRefreshRateText.Text = GetRefreshRateShortString(acProfile);
-            DCProfileRefreshRateText.Text = GetRefreshRateShortString(dcProfile);
-
             ACDCProfileOverlayLevelRow.Visibility = overlayLevelVisibility;
             ACProfileOverlayLevelText.Text = GetOverlayLevelShortName(acProfile.OverlayLevel);
             DCProfileOverlayLevelText.Text = GetOverlayLevelShortName(dcProfile.OverlayLevel);
@@ -173,10 +134,6 @@ namespace XboxGamingBar
                 (ACDCProfileCPUStateRow, ACDCProfileCPUStateSeparator),
                 (ACDCProfileFPSLimitRow, ACDCProfileFPSLimitSeparator),
                 (ACDCProfilePowerModeRow, ACDCProfilePowerModeSeparator),
-                (ACDCProfileAMDRow, ACDCProfileAMDSeparator),
-                (ACDCProfileHDRRow, ACDCProfileHDRSeparator),
-                (ACDCProfileResolutionRow, ACDCProfileResolutionSeparator),
-                (ACDCProfileRefreshRateRow, ACDCProfileRefreshRateSeparator),
                 (ACDCProfileOverlayLevelRow, ACDCProfileOverlayLevelSeparator));
 
             // Update game profile display (if game is running)
@@ -219,28 +176,6 @@ namespace XboxGamingBar
                     GameACProfilePowerModeText.Text = GetPowerModeShortName(gameACProfile.OSPowerMode);
                     GameDCProfilePowerModeText.Text = GetPowerModeShortName(gameDCProfile.OSPowerMode);
 
-                    // AMD Features
-                    GameACDCProfileAMDRow.Visibility = amdVisibility;
-                    var gameACAmdFeatures = GetAMDFeaturesShortString(gameACProfile);
-                    var gameDCAmdFeatures = GetAMDFeaturesShortString(gameDCProfile);
-                    GameACProfileAMDText.Text = string.IsNullOrEmpty(gameACAmdFeatures) ? "Off" : gameACAmdFeatures;
-                    GameDCProfileAMDText.Text = string.IsNullOrEmpty(gameDCAmdFeatures) ? "Off" : gameDCAmdFeatures;
-
-                    // HDR
-                    GameACDCProfileHDRRow.Visibility = hdrVisibility;
-                    GameACProfileHDRText.Text = gameACProfile.HDREnabled ? "On" : "Off";
-                    GameDCProfileHDRText.Text = gameDCProfile.HDREnabled ? "On" : "Off";
-
-                    // Resolution
-                    GameACDCProfileResolutionRow.Visibility = resolutionVisibility;
-                    GameACProfileResolutionText.Text = string.IsNullOrEmpty(gameACProfile.Resolution) ? "Native" : gameACProfile.Resolution;
-                    GameDCProfileResolutionText.Text = string.IsNullOrEmpty(gameDCProfile.Resolution) ? "Native" : gameDCProfile.Resolution;
-
-                    // Refresh Rate
-                    GameACDCProfileRefreshRateRow.Visibility = refreshRateVisibility;
-                    GameACProfileRefreshRateText.Text = GetRefreshRateShortString(gameACProfile);
-                    GameDCProfileRefreshRateText.Text = GetRefreshRateShortString(gameDCProfile);
-
                     // Overlay Level
                     GameACDCProfileOverlayLevelRow.Visibility = overlayLevelVisibility;
                     GameACProfileOverlayLevelText.Text = GetOverlayLevelShortName(gameACProfile.OverlayLevel);
@@ -254,10 +189,6 @@ namespace XboxGamingBar
                         (GameACDCProfileCPUStateRow, GameACDCProfileCPUStateSeparator),
                         (GameACDCProfileFPSLimitRow, GameACDCProfileFPSLimitSeparator),
                         (GameACDCProfilePowerModeRow, GameACDCProfilePowerModeSeparator),
-                        (GameACDCProfileAMDRow, GameACDCProfileAMDSeparator),
-                        (GameACDCProfileHDRRow, GameACDCProfileHDRSeparator),
-                        (GameACDCProfileResolutionRow, GameACDCProfileResolutionSeparator),
-                        (GameACDCProfileRefreshRateRow, GameACDCProfileRefreshRateSeparator),
                         (GameACDCProfileOverlayLevelRow, GameACDCProfileOverlayLevelSeparator));
                 }
                 else
@@ -290,23 +221,6 @@ namespace XboxGamingBar
                     GameProfilePowerModeRow.Visibility = powerModeVisibility;
                     GameProfilePowerModeText.Text = GetPowerModeShortName(gameProfile.OSPowerMode);
 
-                    // AMD Features
-                    GameProfileAMDRow.Visibility = amdVisibility;
-                    var gameAmdFeatures = GetAMDFeaturesShortString(gameProfile);
-                    GameProfileAMDText.Text = string.IsNullOrEmpty(gameAmdFeatures) ? "Off" : gameAmdFeatures;
-
-                    // HDR
-                    GameProfileHDRRow.Visibility = hdrVisibility;
-                    GameProfileHDRText.Text = gameProfile.HDREnabled ? "On" : "Off";
-
-                    // Resolution
-                    GameProfileResolutionRow.Visibility = resolutionVisibility;
-                    GameProfileResolutionText.Text = string.IsNullOrEmpty(gameProfile.Resolution) ? "Native" : gameProfile.Resolution;
-
-                    // Refresh Rate
-                    GameProfileRefreshRateRow.Visibility = refreshRateVisibility;
-                    GameProfileRefreshRateText.Text = GetRefreshRateShortString(gameProfile);
-
                     // Overlay Level
                     GameProfileOverlayLevelRow.Visibility = overlayLevelVisibility;
                     GameProfileOverlayLevelText.Text = GetOverlayLevelShortName(gameProfile.OverlayLevel);
@@ -319,10 +233,6 @@ namespace XboxGamingBar
                         (GameProfileCPUStateRow, GameProfileCPUStateSeparator),
                         (GameProfileFPSLimitRow, GameProfileFPSLimitSeparator),
                         (GameProfilePowerModeRow, GameProfilePowerModeSeparator),
-                        (GameProfileAMDRow, GameProfileAMDSeparator),
-                        (GameProfileHDRRow, GameProfileHDRSeparator),
-                        (GameProfileResolutionRow, GameProfileResolutionSeparator),
-                        (GameProfileRefreshRateRow, GameProfileRefreshRateSeparator),
                         (GameProfileOverlayLevelRow, GameProfileOverlayLevelSeparator));
                 }
             }
@@ -363,11 +273,6 @@ namespace XboxGamingBar
                 case 2: return "Performance";
                 default: return "Balanced";
             }
-        }
-
-        private static string GetRefreshRateShortString(PerformanceProfile profile)
-        {
-            return profile.RefreshRate.HasValue ? $"{profile.RefreshRate.Value} Hz" : "Auto";
         }
 
         private static string GetOverlayLevelShortName(int level)

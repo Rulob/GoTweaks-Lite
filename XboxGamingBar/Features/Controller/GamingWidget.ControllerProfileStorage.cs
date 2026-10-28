@@ -68,7 +68,6 @@ namespace XboxGamingBar
             container.Values["ButtonDesktop"] = desktopJson;
             container.Values["ButtonPage"] = profile.ButtonPage.ToJson();
             Logger.Info($"SaveControllerProfile: {profileName} ButtonY1={y1Json}, ButtonY2={y2Json}, ButtonDesktop={desktopJson}");
-            container.Values["NintendoLayout"] = profile.NintendoLayout;
             container.Values["VibrationLevel"] = profile.VibrationLevel;
             container.Values["VibrationMode"] = profile.VibrationMode;
 
@@ -178,7 +177,6 @@ namespace XboxGamingBar
                 profile.ButtonPage = LoadButtonMapping(container, "ButtonPage");
 
                 Logger.Info($"LoadControllerProfile: {profileName} parsed: Y1={FormatButtonMapping(profile.ButtonY1)}, Y2={FormatButtonMapping(profile.ButtonY2)}, Desktop={FormatButtonMapping(profile.ButtonDesktop)}");
-                profile.NintendoLayout = container.Values.ContainsKey("NintendoLayout") ? (bool)container.Values["NintendoLayout"] : false;
                 profile.VibrationLevel = container.Values.ContainsKey("VibrationLevel") ? (int)container.Values["VibrationLevel"] : 2;
                 profile.VibrationMode = container.Values.ContainsKey("VibrationMode") ? (int)container.Values["VibrationMode"] : 1;
 
@@ -1428,7 +1426,7 @@ namespace XboxGamingBar
                     LegionPowerLightToggle.IsOn = profile.PowerLight;
                 }
 
-                Logger.Info($"Applied controller profile: Y1={FormatButtonMapping(profile.ButtonY1)}, Y2={FormatButtonMapping(profile.ButtonY2)}, Y3={FormatButtonMapping(profile.ButtonY3)}, M1={FormatButtonMapping(profile.ButtonM1)}, M2={FormatButtonMapping(profile.ButtonM2)}, M3={FormatButtonMapping(profile.ButtonM3)}, Nintendo={profile.NintendoLayout}, Vib={profile.VibrationLevel}, VibMode={profile.VibrationMode}, GyroTarget={profile.GyroTarget}, LDZ={profile.LeftStickDeadzone}, RDZ={profile.RightStickDeadzone}, GamepadMappings={profile.GamepadButtonMappings?.Count ?? 0}, DesktopControls={profile.DesktopControlsEnabled}, LightMode={profile.LightMode}");
+                Logger.Info($"Applied controller profile: Y1={FormatButtonMapping(profile.ButtonY1)}, Y2={FormatButtonMapping(profile.ButtonY2)}, Y3={FormatButtonMapping(profile.ButtonY3)}, M1={FormatButtonMapping(profile.ButtonM1)}, M2={FormatButtonMapping(profile.ButtonM2)}, M3={FormatButtonMapping(profile.ButtonM3)}, Vib={profile.VibrationLevel}, VibMode={profile.VibrationMode}, GyroTarget={profile.GyroTarget}, LDZ={profile.LeftStickDeadzone}, RDZ={profile.RightStickDeadzone}, GamepadMappings={profile.GamepadButtonMappings?.Count ?? 0}, DesktopControls={profile.DesktopControlsEnabled}, LightMode={profile.LightMode}");
 
                 // Set timestamp BEFORE sending to prevent any queued events from causing duplicate sends
                 // Use 2 second window since HID commands take ~1.5s to complete (50ms per button × ~30 buttons)
@@ -1475,7 +1473,6 @@ namespace XboxGamingBar
                 ButtonM3 = GetButtonMappingFromUI("M3"),
                 ButtonDesktop = GetButtonMappingFromUI("Desktop"),
                 ButtonPage = GetButtonMappingFromUI("Page"),
-                NintendoLayout = false, // option removed
                 VibrationLevel = LegionVibrationComboBox?.SelectedIndex ?? 2,
                 VibrationMode = (LegionVibrationModeComboBox?.SelectedIndex ?? 0) + 1, // Index is 0-based, mode is 1-based
                 // Gyro settings

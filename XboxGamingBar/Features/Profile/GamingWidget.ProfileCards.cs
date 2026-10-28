@@ -795,40 +795,6 @@ namespace XboxGamingBar
                         rowIndex++;
                     }
 
-                    // AMD Features (if enabled)
-                    if (SaveAMDFeatures)
-                    {
-                        // Build AMD features string for AC profile
-                        var acAmdFeatures = GetAMDFeaturesShortString(gameAC);
-                        var dcAmdFeatures = GetAMDFeaturesShortString(gameDC);
-
-                        if (!string.IsNullOrEmpty(acAmdFeatures) || !string.IsNullOrEmpty(dcAmdFeatures))
-                        {
-                            AddTextBlock(acDcGrid, rowIndex, 0, "AMD", 10, "#AAAAAA", margin: new Thickness(0, 3, 8, 0));
-                            AddTextBlock(acDcGrid, rowIndex, 1, string.IsNullOrEmpty(acAmdFeatures) ? "Off" : acAmdFeatures, 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
-                            AddTextBlock(acDcGrid, rowIndex, 2, string.IsNullOrEmpty(dcAmdFeatures) ? "Off" : dcAmdFeatures, 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
-                            rowIndex++;
-                        }
-                    }
-
-                    // HDR (if enabled)
-                    if (SaveHDR)
-                    {
-                        AddTextBlock(acDcGrid, rowIndex, 0, "HDR", 10, "#AAAAAA", margin: new Thickness(0, 3, 8, 0));
-                        AddTextBlock(acDcGrid, rowIndex, 1, gameAC.HDREnabled ? "On" : "Off", 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
-                        AddTextBlock(acDcGrid, rowIndex, 2, gameDC.HDREnabled ? "On" : "Off", 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
-                        rowIndex++;
-                    }
-
-                    // Resolution (if enabled)
-                    if (SaveResolution && (!string.IsNullOrEmpty(gameAC.Resolution) || !string.IsNullOrEmpty(gameDC.Resolution)))
-                    {
-                        AddTextBlock(acDcGrid, rowIndex, 0, "Res", 10, "#AAAAAA", margin: new Thickness(0, 3, 8, 0));
-                        AddTextBlock(acDcGrid, rowIndex, 1, string.IsNullOrEmpty(gameAC.Resolution) ? "-" : gameAC.Resolution, 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
-                        AddTextBlock(acDcGrid, rowIndex, 2, string.IsNullOrEmpty(gameDC.Resolution) ? "-" : gameDC.Resolution, 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
-                        rowIndex++;
-                    }
-
                     stackPanel.Children.Add(acDcGrid);
                 }
                 else
@@ -916,31 +882,6 @@ namespace XboxGamingBar
                     {
                         AddTextBlock(singleGrid, rowIndex, 0, "Power Mode", 10, "#AAAAAA", margin: new Thickness(0, 3, 0, 0));
                         AddTextBlock(singleGrid, rowIndex, 1, GetPowerModeShortName(game.OSPowerMode), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
-                        rowIndex++;
-                    }
-
-                    // AMD Features (if enabled)
-                    if (SaveAMDFeatures)
-                    {
-                        var amdFeatures = GetAMDFeaturesShortString(game);
-                        AddTextBlock(singleGrid, rowIndex, 0, "AMD", 10, "#AAAAAA", margin: new Thickness(0, 3, 0, 0));
-                        AddTextBlock(singleGrid, rowIndex, 1, string.IsNullOrEmpty(amdFeatures) ? "Off" : amdFeatures, 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
-                        rowIndex++;
-                    }
-
-                    // HDR (if enabled)
-                    if (SaveHDR)
-                    {
-                        AddTextBlock(singleGrid, rowIndex, 0, "HDR", 10, "#AAAAAA", margin: new Thickness(0, 3, 0, 0));
-                        AddTextBlock(singleGrid, rowIndex, 1, game.HDREnabled ? "On" : "Off", 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
-                        rowIndex++;
-                    }
-
-                    // Resolution (if enabled)
-                    if (SaveResolution && !string.IsNullOrEmpty(game.Resolution))
-                    {
-                        AddTextBlock(singleGrid, rowIndex, 0, "Resolution", 10, "#AAAAAA", margin: new Thickness(0, 3, 0, 0));
-                        AddTextBlock(singleGrid, rowIndex, 1, game.Resolution, 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
                         rowIndex++;
                     }
 
