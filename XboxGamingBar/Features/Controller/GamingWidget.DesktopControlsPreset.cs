@@ -82,18 +82,9 @@ namespace XboxGamingBar
             // Save the updated profile
             if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
             {
-                if (LegionControllerProfileToggle?.IsOn == true && HasValidGame(currentGameName))
-                {
-                    gameControllerProfile = GetCurrentControllerProfileFromUI();
-                    SaveControllerProfileToStorage($"Game_{currentGameName}", gameControllerProfile);
-                    Logger.Info($"Saved Desktop Controls state to game profile: {currentGameName}");
-                }
-                else
-                {
-                    globalControllerProfile = GetCurrentControllerProfileFromUI();
-                    SaveControllerProfileToStorage("Global", globalControllerProfile);
-                    Logger.Info("Saved Desktop Controls state to global profile");
-                }
+                globalControllerProfile = GetCurrentControllerProfileFromUI();
+                SaveControllerProfileToStorage("Global", globalControllerProfile);
+                Logger.Info("Saved Desktop Controls state to global profile");
             }
         }
 

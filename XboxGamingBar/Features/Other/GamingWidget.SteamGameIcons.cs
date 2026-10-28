@@ -292,11 +292,6 @@ namespace XboxGamingBar
                         CurrentGameIcon.Source = null;
                         CurrentGameIcon.Visibility = Visibility.Collapsed;
                     }
-                    if (LegionControllerProfileGameIcon != null)
-                    {
-                        LegionControllerProfileGameIcon.Source = null;
-                        LegionControllerProfileGameIcon.Visibility = Visibility.Collapsed;
-                    }
                 });
                 return;
             }
@@ -338,11 +333,6 @@ namespace XboxGamingBar
                             CurrentGameIcon.Source = null;
                             CurrentGameIcon.Visibility = Visibility.Collapsed;
                         }
-                        if (LegionControllerProfileGameIcon != null)
-                        {
-                            LegionControllerProfileGameIcon.Source = null;
-                            LegionControllerProfileGameIcon.Visibility = Visibility.Collapsed;
-                        }
                     });
                     return;
                 }
@@ -363,11 +353,6 @@ namespace XboxGamingBar
                                 CurrentGameIcon.Source = bitmapImage;
                                 CurrentGameIcon.Visibility = Visibility.Visible;
                             }
-                            if (LegionControllerProfileGameIcon != null)
-                            {
-                                LegionControllerProfileGameIcon.Source = bitmapImage;
-                                LegionControllerProfileGameIcon.Visibility = Visibility.Visible;
-                            }
                             Logger.Info($"LoadCurrentGameIcon: Icon loaded successfully");
                         }
                     }
@@ -378,11 +363,6 @@ namespace XboxGamingBar
                         {
                             CurrentGameIcon.Source = null;
                             CurrentGameIcon.Visibility = Visibility.Collapsed;
-                        }
-                        if (LegionControllerProfileGameIcon != null)
-                        {
-                            LegionControllerProfileGameIcon.Source = null;
-                            LegionControllerProfileGameIcon.Visibility = Visibility.Collapsed;
                         }
                     }
                 });
@@ -500,5 +480,64 @@ namespace XboxGamingBar
             }
         }
 
+
+        private void RunningGame_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            try
+            {
+                if (runningGame?.Value != null && runningGame.Value.IsValid())
+                {
+                    string exePath = runningGame.Value.GameId.Path;
+                    string iconPath = runningGame.Value.GameId.IconPath;
+
+                    if (!string.IsNullOrEmpty(exePath))
+                    {
+                        // Check if this is the same game (preserve cached icon path if new one is empty)
+                        bool isSameGame = exePath.Equals(currentGameExePath, StringComparison.OrdinalIgnoreCase);
+
+                        if (!string.IsNullOrEmpty(iconPath))
+                        {
+                            // New icon path provided - cache it
+                            currentGameIconPath = iconPath;
+                        }
+                        else if (isSameGame && !string.IsNullOrEmpty(currentGameIconPath))
+                        {
+                            // Same game but no icon path in update - use cached path
+                            iconPath = currentGameIconPath;
+                            Logger.Info($"Using cached icon path for {exePath}");
+                        }
+
+                        currentGameExePath = exePath;
+                        Logger.Info($"Updated currentGameExePath: {currentGameExePath}");
+
+                        // Load the game icon for the Profiles tab
+                        // Use helper-extracted icon if available, otherwise fall back to Steam lookup
+                        LoadCurrentGameIcon(exePath, iconPath);
+                    }
+                    else
+                    {
+                        currentGameExePath = "";
+                        currentGameIconPath = "";
+                        Logger.Info("Cleared currentGameExePath (no path in RunningGame)");
+
+                        // Clear the game icon
+                        LoadCurrentGameIcon(null, null);
+                    }
+                }
+                else
+                {
+                    currentGameExePath = "";
+                    currentGameIconPath = "";
+                    Logger.Info("Cleared currentGameExePath (no running game)");
+
+                    // Clear the game icon
+                    LoadCurrentGameIcon(null, null);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error in RunningGame_PropertyChanged: {ex.Message}");
+            }
+        }
     }
 }

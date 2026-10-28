@@ -43,4 +43,20 @@ namespace XboxGamingBar.Data
         {
         }
     }
+
+    // SPPT / FPPT offsets AutoTDP adds on top of the wattage it picks. The widget owns them (they
+    // are the Custom card's boost sliders) and pushes them; the helper's values are never shown.
+    internal class AutoTDPSpptBoostProperty : WidgetProperty<int>
+    {
+        public AutoTDPSpptBoostProperty(int inValue) : base(inValue, null, Function.AutoTDPSpptBoost)
+        {
+        }
+    }
+
+    internal class AutoTDPFpptBoostProperty : WidgetProperty<int>
+    {
+        public AutoTDPFpptBoostProperty(int inValue) : base(inValue, null, Function.AutoTDPFpptBoost)
+        {
+        }
+    }
 }

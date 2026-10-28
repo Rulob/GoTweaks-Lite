@@ -106,11 +106,8 @@ namespace XboxGamingBar
         private bool isOSDCustomizeExpanded = false;
         private bool isProfileDetectionExpanded = false;
         private bool isProfileSettingsExpanded = false;
-        private bool isColorSettingsExpanded = false;
         private bool isButtonRemappingExpanded = false;
         private bool isGyroSettingsExpanded = false;
-        private bool isSavedProfilesExpanded = false;
-        private bool isProfileSaveCategoriesExpanded = false;
         private bool isSpecialRemappingExpanded = false;
         private bool isStickDeadzonesExpanded = false;
         private bool isTouchpadVibrationExpanded = false;
@@ -851,28 +848,14 @@ namespace XboxGamingBar
 
 
 
-        private void ColorSettingsExpandButton_Click(object sender, RoutedEventArgs e)
-        {
-            isColorSettingsExpanded = !isColorSettingsExpanded;
-
-            if (ColorSettingsContent != null)
-            {
-                ColorSettingsContent.Visibility = isColorSettingsExpanded ? Visibility.Visible : Visibility.Collapsed;
-            }
-
-            if (ColorSettingsExpandButton != null)
-            {
-                // E70D = ChevronDown, E70E = ChevronUp
-                ColorSettingsExpandButton.Content = isColorSettingsExpanded ? "\uE70E" : "\uE70D";
-            }
-        }
-
         private void ApplyTDPLimits()
         {
             // Master TDP slider removed — the Custom power-limit sliders use fixed ranges
             // (TDP 5-35W, boosts +0..+10 / +0..+15), so device min/max no longer reshapes a slider.
             // Still inform the helper of the device limits (used for OSD / clamping).
             SendTDPLimitsToHelper();
+            // AutoTDP's Min / Max TDP sliders stay inside the device's range.
+            ApplyAutoTDPSliderRange();
         }
 
         private void SendTDPLimitsToHelper()

@@ -189,17 +189,12 @@ namespace XboxGamingBar
                 QuickSettingsScrollViewer.Visibility = Visibility.Collapsed;
                 PerformanceScrollViewer.Visibility = Visibility.Collapsed;
                 GameScrollViewer.Visibility = Visibility.Collapsed;
-                AMDScrollViewer.Visibility = Visibility.Collapsed;
-                ScalingScrollViewer.Visibility = Visibility.Collapsed;
                 LegionScrollViewer.Visibility = Visibility.Collapsed;
                 GPDScrollViewer.Visibility = Visibility.Collapsed;
                 SystemScrollViewer.Visibility = Visibility.Collapsed;
 
                 // Stop fan curve updates when leaving Legion tab (will be re-enabled if Legion is selected)
                 legionFanCurveVisible?.SetVisible(false);
-
-                // Stop DAService status polling when leaving Legion tab
-                daServiceStatusTimer?.Stop();
 
                 // Show selected section and scroll to top
                 switch (tag)
@@ -218,28 +213,11 @@ namespace XboxGamingBar
                         GameScrollViewer.Visibility = Visibility.Visible;
                         GameScrollViewer.ChangeView(null, 0, null, true);
                         break;
-                    case "AMD":
-                        AMDScrollViewer.Visibility = Visibility.Visible;
-                        AMDScrollViewer.ChangeView(null, 0, null, true);
-                        break;
-                    case "Scaling":
-                        ScalingScrollViewer.Visibility = Visibility.Visible;
-                        ScalingScrollViewer.ChangeView(null, 0, null, true);
-                        UpdateLosslessScalingStatus();
-                        break;
                     case "Legion":
                         LegionScrollViewer.Visibility = Visibility.Visible;
                         LegionScrollViewer.ChangeView(null, 0, null, true);
                         // Update fan curve visibility when switching to Legion tab
                         legionFanCurveVisible?.SetVisible(isFanCurveExpanded);
-                        // Start DAService status polling when on Legion tab
-                        if (daServiceStatusTimer != null)
-                        {
-                            UpdateDAServiceStatus(); // Immediate update
-                            daServiceStatusTimer.Start();
-                        }
-                        // Reflect the persisted Task View fix state (Labs)
-                        UpdateTaskViewFixStatus();
                         // Force remap UI refresh when Legion tab becomes active.
                         RefreshLegionEnhancedRemapUi();
                         break;
@@ -351,8 +329,6 @@ namespace XboxGamingBar
             if (QuickNavItem.FocusState != FocusState.Unfocused) return true;
             if (PerformanceNavItem.FocusState != FocusState.Unfocused) return true;
             if (ProfilesNavItem.FocusState != FocusState.Unfocused) return true;
-            if (GraphicsNavItem.FocusState != FocusState.Unfocused) return true;
-            if (ScalingNavItem.FocusState != FocusState.Unfocused) return true;
             if (LegionNavItem.FocusState != FocusState.Unfocused) return true;
             if (GPDNavItem.FocusState != FocusState.Unfocused) return true;
             if (SystemNavItem.FocusState != FocusState.Unfocused) return true;
@@ -422,8 +398,6 @@ namespace XboxGamingBar
                 case "Quick": return QuickSettingsScrollViewer;
                 case "Performance": return PerformanceScrollViewer;
                 case "Game": return GameScrollViewer;
-                case "AMD": return AMDScrollViewer;
-                case "Scaling": return ScalingScrollViewer;
                 case "Legion": return LegionScrollViewer;
                 case "GPD": return GPDScrollViewer;
                 case "System": return SystemScrollViewer;

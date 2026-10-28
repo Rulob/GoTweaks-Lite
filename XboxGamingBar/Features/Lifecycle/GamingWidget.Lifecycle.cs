@@ -199,8 +199,9 @@ namespace XboxGamingBar
         /// can drop its link to an already-open widget window: the window still draws and still
         /// receives helper pushes but never hears a Game Bar event or input again (the widget opens
         /// but nothing in it responds). Ask Game Bar to close this window so the next open is a
-        /// clean launch. Skipped when the window is visible, was created after the wake, or the
-        /// signal is stale. Everything is logged so a failure shows up in the widget log.
+        /// clean launch. Skipped when the window is visible, pinned (a close would unpin it), was
+        /// created after the wake, or the signal is stale. Everything is logged so a failure shows
+        /// up in the widget log.
         /// </summary>
         private async Task HandleSystemResumedAsync(long resumedUtcTicks)
         {
@@ -255,7 +256,19 @@ namespace XboxGamingBar
                             return;
                         }
 
-                        Logger.Info("Resume recycle: asking Game Bar to close this widget window so the next open starts fresh.");
+                        // Closing a window takes the widget out of Game Bar's layout, and the API
+                        // has no way to pin it again (Pinned is read-only), so a pinned widget
+                        // would come back unpinned after every wake. Leave those alone.
+                        bool pinned = false;
+                        try { pinned = widget.Pinned; }
+                        catch (Exception ex) { Logger.Warn($"Resume recycle: could not read Pinned state: {ex.Message}"); }
+                        if (pinned)
+                        {
+                            Logger.Info("Resume recycle skipped: the widget is pinned (closing it would unpin it).");
+                            return;
+                        }
+
+                        Logger.Info("Resume recycle: asking Game Bar to close this widget window so the next open starts fresh (pinned=False).");
                         var widgetControl = new XboxGameBarWidgetControl(widget);
                         var closeTask = widgetControl.CloseAsync("GamingWidget").AsTask();
                         var finished = await Task.WhenAny(closeTask, Task.Delay(5000));
@@ -309,7 +322,6 @@ namespace XboxGamingBar
             }
         }
 
-        private bool chillFPSHandlersRegistered = false;
 
     }
 }

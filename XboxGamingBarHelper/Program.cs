@@ -1171,6 +1171,8 @@ namespace XboxGamingBarHelper
                 autoTDPManager.MinTDP,
                 autoTDPManager.MaxTDP,
                 autoTDPManager.PauseWhenUnfocused,
+                autoTDPManager.SpptBoost,
+                autoTDPManager.FpptBoost,
                 profileManager.PerGameProfile,
                 profileManager.DeleteGameProfile,
                 powerManager.CPUBoost,
@@ -1491,6 +1493,9 @@ namespace XboxGamingBarHelper
             autoTDPManager.MinTDP.PropertyChanged += AutoTDPSetting_PropertyChanged;
             autoTDPManager.MaxTDP.PropertyChanged += AutoTDPSetting_PropertyChanged;
             autoTDPManager.PauseWhenUnfocused.PropertyChanged += AutoTDPSetting_PropertyChanged;
+
+            // AutoTDP paces itself on its own thread (see AutoTDPManager.RunLoop), not the main loop.
+            autoTDPManager.Start();
 
 
             initTimer.Stop();

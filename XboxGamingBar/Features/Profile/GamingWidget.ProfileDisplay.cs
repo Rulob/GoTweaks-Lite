@@ -404,6 +404,11 @@ namespace XboxGamingBar
         /// </summary>
         private string GetProfileTDPText(PerformanceProfile profile)
         {
+            // AutoTDP picks the wattage itself, so show its target instead of a fixed TDP.
+            if (legionGoDetected?.Value == true && profile.AutoTDPEnabled == true)
+            {
+                return $"Auto {profile.AutoTDPTargetFPS} FPS";
+            }
             if (legionGoDetected?.Value == true)
             {
                 int modeIndex = Array.IndexOf(DefaultLegionModes, profile.LegionPerformanceMode);

@@ -539,30 +539,6 @@ namespace XboxGamingBar
                     fpsLimitTile.TileButton.Background = limit > 0 ? tileOnBrush : tileOffBrush;
                 }
 
-                // Resolution tile - blocked (whole tile dimmed + disabled) when only an external
-                // monitor is active, since the resolution override only applies to the built-in panel.
-                if (qsTileMap.TryGetValue("Resolution", out var resTile) && resTile.TileButton != null)
-                {
-                    string currentRes = resolution?.Value ?? "1920x1080";
-                    resTile.StateText.Text = _internalPanelActive ? currentRes : "Built-in Only";
-                    resTile.StateText.Foreground = _internalPanelActive ? accentForeground : offForeground;
-                    SetTileAccentBar(resTile, _internalPanelActive);
-                    resTile.TileButton.Background = tileOffBrush;
-                    ApplyPanelGateVisual(resTile, _internalPanelActive);
-                }
-
-                // Refresh Rate tile - blocked (whole tile dimmed + disabled) when only an external
-                // monitor is active, same reasoning as the Resolution tile above.
-                if (qsTileMap.TryGetValue("RefreshRate", out var refreshRateTile) && refreshRateTile.TileButton != null)
-                {
-                    int currentRate = refreshRate?.Value ?? 60;
-                    refreshRateTile.StateText.Text = _internalPanelActive ? $"{currentRate} Hz" : "Built-in Only";
-                    refreshRateTile.StateText.Foreground = _internalPanelActive ? accentForeground : offForeground;
-                    SetTileAccentBar(refreshRateTile, _internalPanelActive);
-                    refreshRateTile.TileButton.Background = tileOffBrush;
-                    ApplyPanelGateVisual(refreshRateTile, _internalPanelActive);
-                }
-
                 // Rotation tile - blocked (whole tile dimmed + disabled) when only an external
                 // monitor is active, since display rotation only applies to the built-in panel.
                 if (qsTileMap.TryGetValue("Rotation", out var rotationTile) && rotationTile.TileButton != null)
@@ -586,17 +562,6 @@ namespace XboxGamingBar
                     ApplyPanelGateVisual(rotationTile, _internalPanelActive);
                 }
 
-                // HDR tile
-                if (qsTileMap.TryGetValue("HDR", out var hdrTile) && hdrTile.TileButton != null)
-                {
-                    bool supported = hdrSupported?.Value ?? false;
-                    bool enabled = hdrEnabled?.Value ?? false;
-                    hdrTile.StateText.Text = !supported ? "N/A" : (enabled ? "On" : "Off");
-                    hdrTile.StateText.Foreground = enabled ? accentForeground : offForeground;
-                    SetTileAccentBar(hdrTile, enabled);
-                    hdrTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                }
-
                 // Lossless Scaling tile
                 if (qsTileMap.TryGetValue("LosslessScaling", out var lsTile) && lsTile.TileButton != null)
                 {
@@ -605,63 +570,6 @@ namespace XboxGamingBar
                     lsTile.StateText.Foreground = enabled ? accentForeground : offForeground;
                     SetTileAccentBar(lsTile, enabled);
                     lsTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                }
-
-                // RIS (Radeon Image Sharpening) tile - AMD features use a fixed red accent
-                // (tileSeverityRedBrush), not the live Windows accent, so they read as a
-                // distinct "AMD driver feature" group regardless of the user's chosen accent.
-                if (qsTileMap.TryGetValue("RIS", out var risTile) && risTile.TileButton != null)
-                {
-                    bool supported = amdImageSharpeningSupported?.Value ?? false;
-                    bool enabled = amdImageSharpeningEnabled?.Value ?? false;
-                    risTile.StateText.Text = !supported ? "N/A" : (enabled ? "On" : "Off");
-                    risTile.StateText.Foreground = enabled ? tileSeverityRedBrush : offForeground;
-                    if (risTile.AccentBar != null) risTile.AccentBar.Background = enabled ? tileSeverityRedBrush : tileBarOffBrush;
-                    risTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                }
-
-                // AFMF tile
-                if (qsTileMap.TryGetValue("AFMF", out var afmfTile) && afmfTile.TileButton != null)
-                {
-                    bool supported = amdFluidMotionFrameSupported?.Value ?? false;
-                    bool enabled = amdFluidMotionFrameEnabled?.Value ?? false;
-                    afmfTile.StateText.Text = !supported ? "N/A" : (enabled ? "On" : "Off");
-                    afmfTile.StateText.Foreground = enabled ? tileSeverityRedBrush : offForeground;
-                    if (afmfTile.AccentBar != null) afmfTile.AccentBar.Background = enabled ? tileSeverityRedBrush : tileBarOffBrush;
-                    afmfTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                }
-
-                // RSR tile
-                if (qsTileMap.TryGetValue("RSR", out var rsrTile) && rsrTile.TileButton != null)
-                {
-                    bool supported = amdRadeonSuperResolutionSupported?.Value ?? false;
-                    bool enabled = amdRadeonSuperResolutionEnabled?.Value ?? false;
-                    rsrTile.StateText.Text = !supported ? "N/A" : (enabled ? "On" : "Off");
-                    rsrTile.StateText.Foreground = enabled ? tileSeverityRedBrush : offForeground;
-                    if (rsrTile.AccentBar != null) rsrTile.AccentBar.Background = enabled ? tileSeverityRedBrush : tileBarOffBrush;
-                    rsrTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                }
-
-                // Anti-Lag tile
-                if (qsTileMap.TryGetValue("AntiLag", out var antiLagTile) && antiLagTile.TileButton != null)
-                {
-                    bool supported = amdRadeonAntiLagSupported?.Value ?? false;
-                    bool enabled = amdRadeonAntiLagEnabled?.Value ?? false;
-                    antiLagTile.StateText.Text = !supported ? "N/A" : (enabled ? "On" : "Off");
-                    antiLagTile.StateText.Foreground = enabled ? tileSeverityRedBrush : offForeground;
-                    if (antiLagTile.AccentBar != null) antiLagTile.AccentBar.Background = enabled ? tileSeverityRedBrush : tileBarOffBrush;
-                    antiLagTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                }
-
-                // Radeon Chill tile
-                if (qsTileMap.TryGetValue("RadeonChill", out var chillTile) && chillTile.TileButton != null)
-                {
-                    bool supported = amdRadeonChillSupported?.Value ?? false;
-                    bool enabled = amdRadeonChillEnabled?.Value ?? false;
-                    chillTile.StateText.Text = !supported ? "N/A" : (enabled ? "On" : "Off");
-                    chillTile.StateText.Foreground = enabled ? tileSeverityRedBrush : offForeground;
-                    if (chillTile.AccentBar != null) chillTile.AccentBar.Background = enabled ? tileSeverityRedBrush : tileBarOffBrush;
-                    chillTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
                 }
 
                 // CPU Boost tile
@@ -823,23 +731,6 @@ namespace XboxGamingBar
                         desktopTile.StateText.Foreground = enabled ? accentForeground : offForeground;
                         SetTileAccentBar(desktopTile, enabled);
                         desktopTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                    }
-                }
-
-                // Legion Remap Controls tile
-                if (qsTileMap.TryGetValue("LegionRemapControls", out var remapTile) && remapTile.TileButton != null)
-                {
-                    if (legionGoDetected?.Value == true)
-                    {
-                        bool isGameProfile = LegionControllerProfileToggle?.IsOn == true && HasValidGame(currentGameName);
-                        string profileName = isGameProfile ? currentGameName : "Global";
-                        // Truncate long names
-                        if (profileName.Length > 10)
-                            profileName = profileName.Substring(0, 9) + "…";
-                        remapTile.StateText.Text = profileName;
-                        remapTile.StateText.Foreground = isGameProfile ? accentForeground : offForeground;
-                        SetTileAccentBar(remapTile, isGameProfile);
-                        remapTile.TileButton.Background = isGameProfile ? tileOnBrush : tileOffBrush;
                     }
                 }
 

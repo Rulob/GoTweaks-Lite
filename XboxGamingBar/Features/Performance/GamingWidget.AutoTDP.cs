@@ -21,6 +21,14 @@ namespace XboxGamingBar
         // Custom mode (nothing to restore) or while AutoTDP is off.
         private int? tdpModeIndexBeforeAutoTDP = null;
 
+        // The FPS limit as it was before turning AutoTDP on capped it at the target FPS, so
+        // turning AutoTDP off can put it back. Null when AutoTDP didn't change it.
+        private (bool enabled, int value)? fpsLimitBeforeAutoTDP = null;
+
+        // After AutoTDP is turned off the helper writes its own restore value; re-assert the
+        // Custom card's limits once that has landed.
+        private const int CustomTDPRestoreAfterAutoTDPDelayMs = 1500;
+
         private void AutoTDPToggle_Toggled(object sender, RoutedEventArgs e)
         {
             if (AutoTDPToggle == null) return;
@@ -59,7 +67,244 @@ namespace XboxGamingBar
 
             UpdateAutoTDPToggleUI(isOn);
 
+            if (isOn)
+            {
+                // Boosts first, so AutoTDP's very first write already carries them.
+                SendAutoTDPBoostsToHelper();
+            }
             autoTDPEnabled?.SetValue(isOn);
+
+            ApplyAutoTDPFpsLimit(isOn);
+
+            if (!isOn)
+            {
+                ScheduleCustomTDPRestoreAfterAutoTDP();
+            }
+            else
+            {
+                KeepAutoTDPCardInView();
+            }
+
+            SaveCurrentSettingsToProfile(currentProfileName);
+        }
+
+        /// <summary>
+        /// Turning AutoTDP on switches to Custom mode and caps the FPS limit, which reveals the
+        /// Custom power-limit card and the FPS limit slider above the AutoTDP card. That pushes
+        /// AutoTDP's own settings (which appear at the same moment) down out of view, so it
+        /// looked as if the tab jumped. Once that layout has settled, scroll the AutoTDP card back
+        /// to the top of the view so its settings are visible.
+        /// </summary>
+        private void KeepAutoTDPCardInView()
+        {
+            if (AutoTDPCard == null || PerformanceScrollViewer == null
+                || PerformanceScrollViewer.Visibility != Visibility.Visible) return;
+
+            _ = Dispatcher.RunAsync(CoreDispatcherPriority.Low, () =>
+            {
+                try
+                {
+                    AutoTDPCard.UpdateLayout();
+                    AutoTDPCard.StartBringIntoView(new BringIntoViewOptions
+                    {
+                        AnimationDesired = false,
+                        VerticalAlignmentRatio = 0.0 // card top at the top of the view
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Logger.Debug($"KeepAutoTDPCardInView failed: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Caps the FPS limiter at AutoTDP's target while it runs (no point rendering frames above
+        /// the target - it only burns battery and makes AutoTDP hold a higher wattage), and puts
+        /// the previous limit back when AutoTDP is turned off, unless the user changed it since.
+        /// </summary>
+        private void ApplyAutoTDPFpsLimit(bool isOn)
+        {
+            // Disabled toggle = RTSS isn't available, so there is no limiter to drive.
+            if (FPSLimitToggle == null || FPSLimitSlider == null || !FPSLimitToggle.IsEnabled) return;
+
+            int target = AutoTDPTargetFPSSlider != null ? (int)Math.Round(AutoTDPTargetFPSSlider.Value) : 60;
+
+            if (isOn)
+            {
+                fpsLimitBeforeAutoTDP = (FPSLimitToggle.IsOn, (int)FPSLimitSlider.Value);
+                Logger.Info($"AutoTDP: capping FPS limit at the target ({target} FPS); was {(FPSLimitToggle.IsOn ? $"{(int)FPSLimitSlider.Value} FPS" : "off")}");
+                SetFpsLimitValue(target);
+            }
+            else if (fpsLimitBeforeAutoTDP.HasValue)
+            {
+                var before = fpsLimitBeforeAutoTDP.Value;
+                fpsLimitBeforeAutoTDP = null;
+
+                if (!FPSLimitToggle.IsOn || (int)FPSLimitSlider.Value != target)
+                {
+                    Logger.Info("AutoTDP: FPS limit was changed while AutoTDP ran - leaving it as it is");
+                    return;
+                }
+
+                Logger.Info($"AutoTDP: restoring FPS limit to {(before.enabled ? $"{before.value} FPS" : "off")}");
+                if (before.enabled)
+                {
+                    FPSLimitSlider.Value = before.value; // toggle stays on; the slider's debounce applies it
+                }
+                else
+                {
+                    FPSLimitToggle.IsOn = false;         // sends "unlimited"
+                    FPSLimitSlider.Value = before.value; // toggle is off, so this only restores the slider
+                }
+            }
+        }
+
+        /// <summary>Turns the FPS limiter on at <paramref name="fps"/> through its normal controls.</summary>
+        private void SetFpsLimitValue(int fps)
+        {
+            if (FPSLimitToggle == null || FPSLimitSlider == null) return;
+            FPSLimitSlider.Value = fps;          // with the toggle on, the slider's debounce sends it
+            if (!FPSLimitToggle.IsOn)
+            {
+                FPSLimitToggle.IsOn = true;      // Toggled sends the slider value
+            }
+        }
+
+        /// <summary>
+        /// While AutoTDP runs it owns SPL/SPPT/FPPT; when it stops the helper writes the profile's
+        /// flat TDP. If the device is still in Custom mode, put the Custom card's own limits back
+        /// once that write has landed, so the sliders and the hardware agree again.
+        /// </summary>
+        private async void ScheduleCustomTDPRestoreAfterAutoTDP()
+        {
+            try
+            {
+                await System.Threading.Tasks.Task.Delay(CustomTDPRestoreAfterAutoTDPDelayMs);
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    if (AutoTDPToggle?.IsOn == true) return;
+                    if (legionGoDetected?.Value != true || !IsCustomTdpModeSelected()) return;
+                    Logger.Info("AutoTDP off: re-applying the Custom card's power limits");
+                    ApplyCustomTDPSlidersToHelper(force: true);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Custom TDP restore after AutoTDP failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Sends the Custom card's SPPT / FPPT Boost sliders to the helper, which adds them on top
+        /// of every wattage AutoTDP writes (so SPPT/FPPT keep their offsets instead of being
+        /// flattened to the AutoTDP value).
+        /// </summary>
+        private void SendAutoTDPBoostsToHelper(bool force = false)
+        {
+            if (CustomTDPFastSlider == null || CustomTDPPeakSlider == null) return;
+            int fppt = (int)CustomTDPPeakSlider.Value;
+            int sppt = Math.Min((int)CustomTDPFastSlider.Value, fppt);
+            if (force)
+            {
+                autoTDPSpptBoost?.ForceSetValue(sppt);
+                autoTDPFpptBoost?.ForceSetValue(fppt);
+            }
+            else
+            {
+                autoTDPSpptBoost?.SetValue(sppt);
+                autoTDPFpptBoost?.SetValue(fppt);
+            }
+        }
+
+        /// <summary>
+        /// Applies a profile's saved AutoTDP setup to the controls, and to the helper for profiles
+        /// the widget switches itself (game profiles are applied by the helper from its own copy;
+        /// the post-switch reconcile pushes ours). Profiles saved before AutoTDP was stored leave
+        /// AutoTDP alone.
+        /// </summary>
+        private void ApplyAutoTDPFromProfile(PerformanceProfile profile, string profileName)
+        {
+            if (!profile.AutoTDPEnabled.HasValue || legionGoDetected?.Value != true || isInitialSync) return;
+
+            bool on = profile.AutoTDPEnabled.Value;
+            bool helperDrivenSwitch = isApplyingHelperUpdate;
+
+            isApplyingHelperUpdate = true;
+            try
+            {
+                SetAutoTDPSlidersSilent(profile.AutoTDPTargetFPS, profile.AutoTDPMinTDP, profile.AutoTDPMaxTDP);
+                if (AutoTDPToggle != null && AutoTDPToggle.IsOn != on)
+                {
+                    AutoTDPToggle.IsOn = on;
+                }
+            }
+            finally
+            {
+                isApplyingHelperUpdate = helperDrivenSwitch;
+            }
+
+            // The profile now decides the mode; there is nothing to restore when AutoTDP goes off.
+            tdpModeIndexBeforeAutoTDP = null;
+            fpsLimitBeforeAutoTDP = null;
+            UpdateAutoTDPToggleUI(on);
+            Logger.Info($"Applied profile AutoTDP for {profileName}: {(on ? "On" : "Off")}, target={profile.AutoTDPTargetFPS} FPS, {profile.AutoTDPMinTDP}-{profile.AutoTDPMaxTDP}W");
+
+            if (!profileName.StartsWith("Game_") && !helperDrivenSwitch)
+            {
+                PushAutoTDPSettingsToHelper(profile);
+            }
+        }
+
+        /// <summary>Sends a profile's AutoTDP setup to the helper (settings first, then on/off).</summary>
+        private void PushAutoTDPSettingsToHelper(PerformanceProfile profile)
+        {
+            if (!profile.AutoTDPEnabled.HasValue) return;
+            SendAutoTDPBoostsToHelper();
+            autoTDPTargetFPS?.SetValue(profile.AutoTDPTargetFPS);
+            autoTDPMinTDP?.SetValue(profile.AutoTDPMinTDP);
+            autoTDPMaxTDP?.SetValue(profile.AutoTDPMaxTDP);
+            autoTDPEnabled?.SetValue(profile.AutoTDPEnabled.Value);
+        }
+
+        /// <summary>Sets the AutoTDP sliders and labels without sending anything.</summary>
+        private void SetAutoTDPSlidersSilent(int targetFps, int minTdp, int maxTdp)
+        {
+            if (AutoTDPMinSlider != null) AutoTDPMinSlider.Value = minTdp;
+            if (AutoTDPMaxSlider != null) AutoTDPMaxSlider.Value = maxTdp;
+            if (AutoTDPTargetFPSSlider != null) AutoTDPTargetFPSSlider.Value = targetFps;
+            if (AutoTDPTargetFPSValue != null) AutoTDPTargetFPSValue.Text = $"{targetFps} FPS";
+            // Labels show the values the sliders actually took (clamped to the device range).
+            if (AutoTDPMinValue != null) AutoTDPMinValue.Text = $"{(int)(AutoTDPMinSlider?.Value ?? minTdp)}W";
+            if (AutoTDPMaxValue != null) AutoTDPMaxValue.Text = $"{(int)(AutoTDPMaxSlider?.Value ?? maxTdp)}W";
+        }
+
+        /// <summary>
+        /// Gives the Min / Max TDP sliders the device's TDP range (the same limits the rest of the
+        /// widget uses) instead of a fixed 4-85 W. Both sliders always share the same range, so
+        /// moving one never shifts the other's handle.
+        /// </summary>
+        private void ApplyAutoTDPSliderRange()
+        {
+            if (AutoTDPMinSlider == null || AutoTDPMaxSlider == null) return;
+            int min = Math.Max(4, deviceTDPMin);
+            int max = Math.Max(min + 1, deviceTDPMax);
+
+            bool prev = isApplyingHelperUpdate;
+            isApplyingHelperUpdate = true; // clamping a value here must not send or save anything
+            try
+            {
+                AutoTDPMinSlider.Minimum = min;
+                AutoTDPMinSlider.Maximum = max;
+                AutoTDPMaxSlider.Minimum = min;
+                AutoTDPMaxSlider.Maximum = max;
+            }
+            finally
+            {
+                isApplyingHelperUpdate = prev;
+            }
+            if (AutoTDPMinValue != null) AutoTDPMinValue.Text = $"{(int)AutoTDPMinSlider.Value}W";
+            if (AutoTDPMaxValue != null) AutoTDPMaxValue.Text = $"{(int)AutoTDPMaxSlider.Value}W";
         }
 
         /// <summary>
@@ -76,15 +321,17 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Disables the manual Custom TDP sliders while AutoTDP is managing TDP; re-enables them
-        /// when it's off. Call whenever AutoTDPToggle's state changes or the Custom card is shown.
+        /// Disables the manual TDP (SPL) slider while AutoTDP is managing TDP; re-enables it when
+        /// it's off. The SPPT / FPPT Boost sliders stay usable: AutoTDP adds those boosts on top of
+        /// every wattage it picks. Call whenever AutoTDPToggle's state changes or the Custom card
+        /// is shown.
         /// </summary>
         private void UpdateCustomTDPSlidersEnabledForAutoTDP()
         {
             bool autoTDPOwnsTDP = AutoTDPToggle?.IsOn == true;
             if (CustomTDPSlowSlider != null) CustomTDPSlowSlider.IsEnabled = !autoTDPOwnsTDP;
-            if (CustomTDPFastSlider != null) CustomTDPFastSlider.IsEnabled = !autoTDPOwnsTDP;
-            if (CustomTDPPeakSlider != null) CustomTDPPeakSlider.IsEnabled = !autoTDPOwnsTDP;
+            if (CustomTDPFastSlider != null) CustomTDPFastSlider.IsEnabled = true;
+            if (CustomTDPPeakSlider != null) CustomTDPPeakSlider.IsEnabled = true;
         }
 
         private void AutoTDPTargetFPSSlider_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
@@ -115,7 +362,19 @@ namespace XboxGamingBar
         {
             autoTDPTargetFPSDebounceTimer.Stop();
             Logger.Info($"AutoTDP target FPS changed to: {pendingAutoTDPTargetFPS} (debounced)");
+
+            // If the FPS limit is the cap AutoTDP set (still at the old target), move it with
+            // the target.
+            int oldTarget = autoTDPTargetFPS?.Value ?? 0;
+            if (AutoTDPToggle?.IsOn == true && FPSLimitToggle?.IsOn == true && FPSLimitSlider != null
+                && (int)FPSLimitSlider.Value == oldTarget && oldTarget != pendingAutoTDPTargetFPS)
+            {
+                Logger.Info($"AutoTDP: moving FPS limit with the target ({oldTarget} -> {pendingAutoTDPTargetFPS} FPS)");
+                SetFpsLimitValue(pendingAutoTDPTargetFPS);
+            }
+
             autoTDPTargetFPS?.SetValue(pendingAutoTDPTargetFPS);
+            SaveCurrentSettingsToProfile(currentProfileName);
         }
 
         private void AutoTDPMinSlider_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
@@ -125,13 +384,11 @@ namespace XboxGamingBar
 
             int minTDP = (int)Math.Round(e.NewValue);
 
-            // Keep Max from being dragged below Min by raising its floor, instead of snapping
-            // Min back with a `.Value =` write-back - reassigning Value mid-drag re-fires this
-            // same event and can retrigger the ScrollViewer's "bring focused element into view"
-            // on every correction, which is what made the whole card jump while dragging.
-            if (AutoTDPMaxSlider != null && AutoTDPMaxSlider.Minimum != minTDP)
+            // Min dragged above Max: carry Max up with it (a real value change, shown and sent).
+            // Raising Max's range floor instead moved Max's handle without changing its value.
+            if (AutoTDPMaxSlider != null && AutoTDPMaxSlider.Value < minTDP)
             {
-                AutoTDPMaxSlider.Minimum = minTDP;
+                AutoTDPMaxSlider.Value = minTDP; // fires AutoTDPMaxSlider_ValueChanged, which sends it
             }
 
             if (AutoTDPMinValue != null)
@@ -156,6 +413,7 @@ namespace XboxGamingBar
             autoTDPMinDebounceTimer.Stop();
             Logger.Info($"AutoTDP min TDP changed to: {pendingAutoTDPMinTDP}W (debounced)");
             autoTDPMinTDP?.SetValue(pendingAutoTDPMinTDP);
+            SaveCurrentSettingsToProfile(currentProfileName);
         }
 
         private void AutoTDPMaxSlider_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
@@ -165,10 +423,10 @@ namespace XboxGamingBar
 
             int maxTDP = (int)Math.Round(e.NewValue);
 
-            // Mirror of the Min handler above: lower Min's ceiling instead of snapping Max back.
-            if (AutoTDPMinSlider != null && AutoTDPMinSlider.Maximum != maxTDP)
+            // Mirror of the Min handler above: Max dragged below Min carries Min down with it.
+            if (AutoTDPMinSlider != null && AutoTDPMinSlider.Value > maxTDP)
             {
-                AutoTDPMinSlider.Maximum = maxTDP;
+                AutoTDPMinSlider.Value = maxTDP; // fires AutoTDPMinSlider_ValueChanged, which sends it
             }
 
             if (AutoTDPMaxValue != null)
@@ -193,6 +451,7 @@ namespace XboxGamingBar
             autoTDPMaxDebounceTimer.Stop();
             Logger.Info($"AutoTDP max TDP changed to: {pendingAutoTDPMaxTDP}W (debounced)");
             autoTDPMaxTDP?.SetValue(pendingAutoTDPMaxTDP);
+            SaveCurrentSettingsToProfile(currentProfileName);
         }
 
         private void AutoTDPPauseWhenUnfocusedToggle_Toggled(object sender, RoutedEventArgs e)
@@ -273,7 +532,6 @@ namespace XboxGamingBar
                 isApplyingHelperUpdate = true;
                 try
                 {
-                    if (AutoTDPMaxSlider != null) AutoTDPMaxSlider.Minimum = autoTDPMinTDP.Value;
                     if (AutoTDPMinSlider != null && (int)AutoTDPMinSlider.Value != autoTDPMinTDP.Value)
                     {
                         AutoTDPMinSlider.Value = autoTDPMinTDP.Value;
@@ -298,7 +556,6 @@ namespace XboxGamingBar
                 isApplyingHelperUpdate = true;
                 try
                 {
-                    if (AutoTDPMinSlider != null) AutoTDPMinSlider.Maximum = autoTDPMaxTDP.Value;
                     if (AutoTDPMaxSlider != null && (int)AutoTDPMaxSlider.Value != autoTDPMaxTDP.Value)
                     {
                         AutoTDPMaxSlider.Value = autoTDPMaxTDP.Value;

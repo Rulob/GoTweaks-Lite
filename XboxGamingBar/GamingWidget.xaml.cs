@@ -84,6 +84,12 @@ namespace XboxGamingBar
         public int OverlayLevel { get; set; } = 0;
         // CPU Affinity as "pCores,eCores" string
         public string CPUAffinity { get; set; } = "";
+        // AutoTDP. AutoTDPEnabled is null for a profile saved before AutoTDP was stored here:
+        // loading such a profile leaves AutoTDP as it is instead of switching it off.
+        public bool? AutoTDPEnabled { get; set; } = null;
+        public int AutoTDPTargetFPS { get; set; } = 60;
+        public int AutoTDPMinTDP { get; set; } = 8;
+        public int AutoTDPMaxTDP { get; set; } = 30;
 
         public PerformanceProfile Clone()
         {
@@ -116,7 +122,11 @@ namespace XboxGamingBar
                 Resolution = this.Resolution,
                 RefreshRate = this.RefreshRate,
                 OverlayLevel = this.OverlayLevel,
-                CPUAffinity = this.CPUAffinity
+                CPUAffinity = this.CPUAffinity,
+                AutoTDPEnabled = this.AutoTDPEnabled,
+                AutoTDPTargetFPS = this.AutoTDPTargetFPS,
+                AutoTDPMinTDP = this.AutoTDPMinTDP,
+                AutoTDPMaxTDP = this.AutoTDPMaxTDP
             };
         }
     }
@@ -198,37 +208,6 @@ namespace XboxGamingBar
         CtrlAltDel = 8,
         TaskManager = 9,
         FocusGoTweaks = 10
-    }
-
-    /// <summary>
-    /// View model for saved controller profile display
-    /// </summary>
-    public class SavedProfileInfo : System.ComponentModel.INotifyPropertyChanged
-    {
-        public string ProfileKey { get; set; }
-        public string GameName { get; set; }
-        public string SettingsSummary { get; set; }
-        public bool IsGlobal { get; set; }
-        public Windows.UI.Xaml.Visibility CanDelete => IsGlobal ? Windows.UI.Xaml.Visibility.Collapsed : Windows.UI.Xaml.Visibility.Visible;
-
-        // Game exe path for icon loading
-        public string GameExePath { get; set; }
-
-        // Game icon support
-        private Windows.UI.Xaml.Media.ImageSource _iconSource;
-        public Windows.UI.Xaml.Media.ImageSource IconSource
-        {
-            get => _iconSource;
-            set
-            {
-                _iconSource = value;
-                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IconSource)));
-                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(IconVisibility)));
-            }
-        }
-        public Windows.UI.Xaml.Visibility IconVisibility => IconSource != null ? Windows.UI.Xaml.Visibility.Visible : Windows.UI.Xaml.Visibility.Collapsed;
-
-        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
     }
 
     /// <summary>
@@ -527,13 +506,8 @@ namespace XboxGamingBar
         // Power source change TDP reapply timer
         private DispatcherTimer powerSourceTdpReapplyTimer = null;
 
-        // Labs section - DAService status timer
-        private DispatcherTimer daServiceStatusTimer = null;
-        private bool daServiceIsRunning = false;
+        // Labs section (Legion L/R + scroll wheel remaps, brightness gesture)
         private bool labsSectionInitialized = false;
-
-        // Labs section - Task View bug fix (USB phantom-input re-plug) enabled state
-        private bool taskViewFixEnabled = false;
 
         // Update check
         private string _pendingUpdateZipUrl = null;
@@ -587,6 +561,8 @@ namespace XboxGamingBar
         private readonly XboxGamingBar.Data.AutoTDPMinTDPProperty autoTDPMinTDP;
         private readonly XboxGamingBar.Data.AutoTDPMaxTDPProperty autoTDPMaxTDP;
         private readonly XboxGamingBar.Data.AutoTDPPauseWhenUnfocusedProperty autoTDPPauseWhenUnfocused;
+        private readonly XboxGamingBar.Data.AutoTDPSpptBoostProperty autoTDPSpptBoost;
+        private readonly XboxGamingBar.Data.AutoTDPFpptBoostProperty autoTDPFpptBoost;
         private readonly RunningGameProperty runningGame;
         private readonly PerGameProfileProperty perGameProfile;
         private readonly DeleteGameProfileProperty deleteGameProfile;
@@ -599,95 +575,23 @@ namespace XboxGamingBar
         //private readonly GPUClockMinProperty gpuClockMin;
         //private readonly GPUClockMaxProperty gpuClockMax;
         private readonly RefreshRatesProperty refreshRates;
-        private readonly RefreshRateProperty refreshRate;
-        private readonly ResolutionsProperty resolutions;
         private readonly ResolutionProperty resolution;
         private readonly DisplayOrientationProperty displayOrientation;
-        private readonly HDRSupportedProperty hdrSupported;
-        private readonly HDREnabledProperty hdrEnabled;
-        private readonly AutoSdrEnabledProperty autoSdrEnabled;
-        private readonly XboxGamingBar.Data.AutoSdrPresetProperty autoSdrPreset;
-        private readonly XboxGamingBar.Data.AutoSdrCustomCurveProperty autoSdrCustomCurve;
         private readonly TouchscreenEnabledProperty touchscreenEnabled;
-        private readonly AdaptiveBrightnessModeProperty adaptiveBrightnessMode;
         private readonly TrackedGameProperty trackedGame;
         private readonly RTSSInstalledProperty rtssInstalled;
         private readonly IsForegroundProperty isForeground;
 
         // AMD properties
-        private readonly AMDRadeonSuperResolutionEnabledProperty amdRadeonSuperResolutionEnabled;
-        private readonly AMDRadeonSuperResolutionSupportedProperty amdRadeonSuperResolutionSupported;
-        private readonly AMDRadeonSuperResolutionSharpnessProperty amdRadeonSuperResolutionSharpness;
-        private readonly AMDFluidMotionFrameEnabledProperty amdFluidMotionFrameEnabled;
-        private readonly AMDFluidMotionFrameSupportedProperty amdFluidMotionFrameSupported;
-        private readonly AMDFluidMotionFrameComboProperty amdFluidMotionFrameAlgorithm;
-        private readonly AMDFluidMotionFrameComboProperty amdFluidMotionFrameSearchMode;
-        private readonly AMDFluidMotionFrameComboProperty amdFluidMotionFramePerformanceMode;
-        private readonly AMDFluidMotionFrameComboProperty amdFluidMotionFrameFastMotionResponse;
-        private readonly AMDFluidMotionFrameV1SupportedProperty amdFluidMotionFrameV1Supported;
-        private readonly AMDRadeonAntiLagEnabledProperty amdRadeonAntiLagEnabled;
-        private readonly AMDRadeonAntiLagSupportedProperty amdRadeonAntiLagSupported;
-        private readonly AMDRadeonBoostEnabledProperty amdRadeonBoostEnabled;
-        private readonly AMDRadeonBoostSupportedProperty amdRadeonBoostSupported;
-        private readonly AMDRadeonBoostResolutionProperty amdRadeonBoostResolution;
-        private readonly AMDRadeonChillEnabledProperty amdRadeonChillEnabled;
-        private readonly AMDRadeonChillSupportedProperty amdRadeonChillSupported;
-        private readonly AMDRadeonChillMinFPSProperty amdRadeonChillMinFPSProperty;
-        private readonly AMDRadeonChillMaxFPSProperty amdRadeonChillMaxFPSProperty;
-        private readonly AMDImageSharpeningEnabledProperty amdImageSharpeningEnabled;
-        private readonly AMDImageSharpeningSupportedProperty amdImageSharpeningSupported;
-        private readonly AMDImageSharpeningSharpnessProperty amdImageSharpeningSharpness;
-        private readonly AMDDisplayBrightnessSupportedProperty amdDisplayBrightnessSupported;
-        private readonly AMDDisplayBrightnessProperty amdDisplayBrightness;
         private readonly PanelBrightnessProperty panelBrightness;
         private readonly PanelBrightnessSupportedProperty panelBrightnessSupported;
         private readonly InternalPanelActiveProperty internalPanelActive;
-        private readonly XboxGamingBar.Data.DeviceTypeProperty deviceTypeProperty;
-        private readonly AMDDisplayContrastSupportedProperty amdDisplayContrastSupported;
-        private readonly AMDDisplayContrastProperty amdDisplayContrast;
-        private readonly AMDDisplaySaturationSupportedProperty amdDisplaySaturationSupported;
-        private readonly AMDDisplaySaturationProperty amdDisplaySaturation;
-        private readonly AMDDisplayTemperatureSupportedProperty amdDisplayTemperatureSupported;
-        private readonly AMDDisplayTemperatureProperty amdDisplayTemperature;
 
         // Lossless Scaling properties
         private readonly LosslessScalingInstalledProperty losslessScalingInstalled;
         private readonly LosslessScalingRunningProperty losslessScalingRunning;
         private readonly LosslessScalingEnabledProperty losslessScalingEnabled;
-        private readonly LosslessScalingCurrentProfileProperty losslessScalingCurrentProfile;
-        private readonly LosslessScalingScalingTypeProperty losslessScalingScalingType;
-        private readonly LosslessScalingSharpnessProperty losslessScalingSharpness;
-        private readonly LosslessScalingFSROptimizeProperty losslessScalingFSROptimize;
-        private readonly LosslessScalingAnime4KSizeProperty losslessScalingAnime4KSize;
-        private readonly LosslessScalingAnime4KVRSProperty losslessScalingAnime4KVRS;
-        private readonly LosslessScalingScaleModeProperty losslessScalingScaleMode;
-        private readonly LosslessScalingScaleFactorProperty losslessScalingScaleFactor;
-        private readonly LosslessScalingAspectRatioProperty losslessScalingAspectRatio;
-        private readonly LosslessScalingFrameGenTypeProperty losslessScalingFrameGenType;
-        private readonly LosslessScalingLSFG3ModeProperty losslessScalingLSFG3Mode;
-        private readonly LosslessScalingLSFG3MultiplierProperty losslessScalingLSFG3Multiplier;
-        private readonly LosslessScalingLSFG3TargetProperty losslessScalingLSFG3Target;
-        private readonly LosslessScalingLSFG2ModeProperty losslessScalingLSFG2Mode;
-        private readonly LosslessScalingFlowScaleProperty losslessScalingFlowScale;
-        private readonly LosslessScalingSizeProperty losslessScalingSize;
-        private readonly LosslessScalingAutoScaleProperty losslessScalingAutoScale;
-        private readonly LosslessScalingAutoScaleDelayProperty losslessScalingAutoScaleDelay;
-        private readonly LosslessScalingSaveAndRestartProperty losslessScalingSaveAndRestart;
-        private readonly LosslessScalingCreateProfileProperty losslessScalingCreateProfile;
-        private readonly LosslessScalingBringToForegroundProperty losslessScalingBringToForeground;
-        private readonly LosslessScalingLaunchProperty losslessScalingLaunch;
 
-        // Additional Settings.xml-backed LS properties (added 2026-05-01)
-        private readonly LosslessScalingSyncModeProperty losslessScalingSyncMode;
-        private readonly LosslessScalingCaptureApiProperty losslessScalingCaptureApi;
-        private readonly LosslessScalingDrawFpsProperty losslessScalingDrawFps;
-        private readonly LosslessScalingHdrSupportProperty losslessScalingHdrSupport;
-        private readonly LosslessScalingGsyncSupportProperty losslessScalingGsyncSupport;
-        private readonly LosslessScalingResizeBeforeScalingProperty losslessScalingResizeBeforeScaling;
-        private readonly LosslessScalingLS1TypeProperty losslessScalingLS1Type;
-        private readonly LosslessScalingMaxFrameLatencyProperty losslessScalingMaxFrameLatency;
-        private readonly LosslessScalingResetProfileProperty losslessScalingResetProfile;
-        private readonly LosslessScalingLS1SharpnessProperty losslessScalingLS1Sharpness;
 
         // Legion Go properties
         private readonly LegionGoDetectedProperty legionGoDetected;
@@ -1110,28 +1014,6 @@ namespace XboxGamingBar
 
         private bool isLoadingProfileSettings = false;
 
-        private string RadeonChillOnText
-        {
-            get
-            {
-                try
-                {
-                    // Safety check: ensure both properties are initialized before accessing values
-                    if (amdRadeonChillMinFPSProperty == null || amdRadeonChillMaxFPSProperty == null)
-                        return "Enabled";
-
-                    return string.Format("Idle FPS: {0} - Max FPS: {1}",
-                        amdRadeonChillMinFPSProperty.Value,
-                        amdRadeonChillMaxFPSProperty.Value);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Error in RadeonChillOnText getter: {ex.Message}");
-                    return "Enabled";
-                }
-            }
-        }
-
         private readonly WidgetProperties properties;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -1198,6 +1080,8 @@ namespace XboxGamingBar
             autoTDPMinTDP = new XboxGamingBar.Data.AutoTDPMinTDPProperty(8);
             autoTDPMaxTDP = new XboxGamingBar.Data.AutoTDPMaxTDPProperty(30);
             autoTDPPauseWhenUnfocused = new XboxGamingBar.Data.AutoTDPPauseWhenUnfocusedProperty(true);
+            autoTDPSpptBoost = new XboxGamingBar.Data.AutoTDPSpptBoostProperty(2);
+            autoTDPFpptBoost = new XboxGamingBar.Data.AutoTDPFpptBoostProperty(5);
             osd = new OSDProperty(0, PerformanceOverlaySlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, DetectedGameText, this);
             // Callback fires after RunningGameProperty updates DetectedGameText.Text on the
@@ -1219,101 +1103,23 @@ namespace XboxGamingBar
             //limitGPUClock = new LimitGPUClockProperty(LimitGPUClockToggle, this);
             //gpuClockMin = new GPUClockMinProperty(GPUClockMinSlider, this);
             //gpuClockMax = new GPUClockMaxProperty(GPUClockMaxSlider, this);
-            refreshRates = new RefreshRatesProperty(RefreshRatesComboBox, this);
-            refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this);
-            refreshRates.SetRefreshRateProperty(refreshRate); // Wire up for selection restoration on dock/undock
-            resolutions = new ResolutionsProperty(ResolutionComboBox, this);
-            resolution = new ResolutionProperty(ResolutionComboBox, this);
-            resolutions.SetResolutionProperty(resolution); // Wire up for selection restoration on dock/undock
+            refreshRates = new RefreshRatesProperty(null, this);  // headless: the FPS Limit uses the list (max refresh)
+            resolution = new ResolutionProperty(null, this);  // headless: OSD text size is stored per resolution
             displayOrientation = new DisplayOrientationProperty();
-            hdrSupported = new HDRSupportedProperty(HDRToggle, this);
-            hdrEnabled = new HDREnabledProperty(HDRToggle, this);
-            autoSdrEnabled = new AutoSdrEnabledProperty(AutoSdrToggle, this);
-            autoSdrPreset = new XboxGamingBar.Data.AutoSdrPresetProperty(AutoSdrPresetComboBox, this);
-            autoSdrCustomCurve = new XboxGamingBar.Data.AutoSdrCustomCurveProperty("", this);
             touchscreenEnabled = new TouchscreenEnabledProperty();
-            adaptiveBrightnessMode = new AdaptiveBrightnessModeProperty(AdaptiveBrightnessModeComboBox, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
             rtssInstalled = new RTSSInstalledProperty(PerformanceOverlaySlider, this);
             rtssInstalled.SetAdditionalCallback(UpdateFPSLimitControls);
             isForeground = new IsForegroundProperty();
-            amdRadeonSuperResolutionEnabled = new AMDRadeonSuperResolutionEnabledProperty(AMDRadeonSuperResolutionToggle, this);
-            amdRadeonSuperResolutionSupported = new AMDRadeonSuperResolutionSupportedProperty(AMDRadeonSuperResolutionToggle, this);
-            amdRadeonSuperResolutionSharpness = new AMDRadeonSuperResolutionSharpnessProperty(AMDRadeonSuperResolutionSharpnessSlider, this);
-            amdFluidMotionFrameEnabled = new AMDFluidMotionFrameEnabledProperty(AMDFluidMotionFrameToggle, this);
-            amdFluidMotionFrameSupported = new AMDFluidMotionFrameSupportedProperty(AMDFluidMotionFrameToggle, this);
-            amdFluidMotionFrameAlgorithm = new AMDFluidMotionFrameComboProperty(Function.AMDFluidMotionFrameAlgorithm, AMDFluidMotionFrameAlgorithmComboBox, this);
-            amdFluidMotionFrameSearchMode = new AMDFluidMotionFrameComboProperty(Function.AMDFluidMotionFrameSearchMode, AMDFluidMotionFrameSearchModeComboBox, this);
-            amdFluidMotionFramePerformanceMode = new AMDFluidMotionFrameComboProperty(Function.AMDFluidMotionFramePerformanceMode, AMDFluidMotionFramePerformanceModeComboBox, this);
-            amdFluidMotionFrameFastMotionResponse = new AMDFluidMotionFrameComboProperty(Function.AMDFluidMotionFrameFastMotionResponse, AMDFluidMotionFrameFastMotionResponseComboBox, this);
-            amdFluidMotionFrameV1Supported = new AMDFluidMotionFrameV1SupportedProperty(this,
-                AMDFluidMotionFrameAlgorithmComboBox,
-                AMDFluidMotionFrameSearchModeComboBox,
-                AMDFluidMotionFramePerformanceModeComboBox,
-                AMDFluidMotionFrameFastMotionResponseComboBox);
-            amdRadeonAntiLagEnabled = new AMDRadeonAntiLagEnabledProperty(AMDRadeonAntiLagToggle, this);
-            amdRadeonAntiLagSupported = new AMDRadeonAntiLagSupportedProperty(AMDRadeonAntiLagToggle, this);
-            amdRadeonBoostEnabled = new AMDRadeonBoostEnabledProperty(AMDRadeonBoostToggle, this);
-            amdRadeonBoostSupported = new AMDRadeonBoostSupportedProperty(AMDRadeonBoostToggle, this);
-            amdRadeonBoostResolution = new AMDRadeonBoostResolutionProperty(AMDRadeonBoostResolutionSlider, this);
-            amdRadeonChillEnabled = new AMDRadeonChillEnabledProperty(AMDRadeonChillToggle, this);
-            amdRadeonChillSupported = new AMDRadeonChillSupportedProperty(AMDRadeonChillToggle, this);
-            amdRadeonChillMinFPSProperty = new AMDRadeonChillMinFPSProperty(AMDRadeonChillMinFPSSlider, this);
-            amdRadeonChillMaxFPSProperty = new AMDRadeonChillMaxFPSProperty(AMDRadeonChillMaxFPSSlider, this);
-            amdImageSharpeningEnabled = new AMDImageSharpeningEnabledProperty(AMDImageSharpeningToggle, this);
-            amdImageSharpeningSupported = new AMDImageSharpeningSupportedProperty(AMDImageSharpeningToggle, this);
-            amdImageSharpeningSharpness = new AMDImageSharpeningSharpnessProperty(AMDImageSharpeningSlider, this);
-            amdDisplayBrightnessSupported = new AMDDisplayBrightnessSupportedProperty(AMDDisplayBrightnessSlider, this);
-            amdDisplayBrightness = new AMDDisplayBrightnessProperty(AMDDisplayBrightnessSlider, this);
             panelBrightness = new PanelBrightnessProperty(PanelBrightnessSlider, this);
             panelBrightnessSupported = new PanelBrightnessSupportedProperty(PanelBrightnessSlider, PanelBrightnessRow, this);
             internalPanelActive = new InternalPanelActiveProperty(true, this);
-            deviceTypeProperty = new XboxGamingBar.Data.DeviceTypeProperty(0, this);
-            amdDisplayContrastSupported = new AMDDisplayContrastSupportedProperty(AMDDisplayContrastSlider, this);
-            amdDisplayContrast = new AMDDisplayContrastProperty(AMDDisplayContrastSlider, this);
-            amdDisplaySaturationSupported = new AMDDisplaySaturationSupportedProperty(AMDDisplaySaturationSlider, this);
-            amdDisplaySaturation = new AMDDisplaySaturationProperty(AMDDisplaySaturationSlider, this);
-            amdDisplayTemperatureSupported = new AMDDisplayTemperatureSupportedProperty(AMDDisplayTemperatureSlider, this);
-            amdDisplayTemperature = new AMDDisplayTemperatureProperty(AMDDisplayTemperatureSlider, this);
 
             // Lossless Scaling properties
             losslessScalingInstalled = new LosslessScalingInstalledProperty(this);
             losslessScalingRunning = new LosslessScalingRunningProperty();
-            losslessScalingEnabled = new LosslessScalingEnabledProperty(LosslessScalingEnabledToggle, this);
-            losslessScalingCurrentProfile = new LosslessScalingCurrentProfileProperty();
-            losslessScalingScalingType = new LosslessScalingScalingTypeProperty(LosslessScalingScalingTypeComboBox, this);
-            losslessScalingSharpness = new LosslessScalingSharpnessProperty(50, LosslessScalingSharpnessSlider, this);
-            losslessScalingFSROptimize = new LosslessScalingFSROptimizeProperty(LosslessScalingFSROptimizeToggle, this);
-            losslessScalingAnime4KSize = new LosslessScalingAnime4KSizeProperty(LosslessScalingAnime4KSizeComboBox, this);
-            losslessScalingAnime4KVRS = new LosslessScalingAnime4KVRSProperty(LosslessScalingAnime4KVRSToggle, this);
-            losslessScalingScaleMode = new LosslessScalingScaleModeProperty(LosslessScalingScaleModeComboBox, this);
-            losslessScalingScaleFactor = new LosslessScalingScaleFactorProperty(2, LosslessScalingScaleFactorSlider, this);
-            losslessScalingAspectRatio = new LosslessScalingAspectRatioProperty(LosslessScalingAspectRatioComboBox, this);
-            losslessScalingFrameGenType = new LosslessScalingFrameGenTypeProperty(LosslessScalingFrameGenTypeComboBox, this);
-            losslessScalingLSFG3Mode = new LosslessScalingLSFG3ModeProperty(LosslessScalingLSFG3ModeComboBox, this);
-            losslessScalingLSFG3Multiplier = new LosslessScalingLSFG3MultiplierProperty(LosslessScalingLSFG3MultiplierComboBox, this);
-            losslessScalingLSFG3Target = new LosslessScalingLSFG3TargetProperty(120, LosslessScalingLSFG3TargetSlider, this);
-            losslessScalingLSFG2Mode = new LosslessScalingLSFG2ModeProperty(LosslessScalingLSFG2ModeComboBox, this);
-            losslessScalingFlowScale = new LosslessScalingFlowScaleProperty(50, LosslessScalingFlowScaleSlider, this);
-            losslessScalingSize = new LosslessScalingSizeProperty(LosslessScalingSizeToggle, this);
-            losslessScalingAutoScale = new LosslessScalingAutoScaleProperty(LosslessScalingAutoScaleToggle, this);
-            losslessScalingAutoScaleDelay = new LosslessScalingAutoScaleDelayProperty(0, LosslessScalingAutoScaleDelaySlider, this);
-            losslessScalingSaveAndRestart = new LosslessScalingSaveAndRestartProperty();
-            losslessScalingCreateProfile = new LosslessScalingCreateProfileProperty();
-            losslessScalingBringToForeground = new LosslessScalingBringToForegroundProperty();
-            losslessScalingLaunch = new LosslessScalingLaunchProperty();
+            losslessScalingEnabled = new LosslessScalingEnabledProperty(null, this);  // driven by the Quick Settings tile
 
-            // Additional Settings.xml-backed LS properties (added 2026-05-01)
-            losslessScalingSyncMode = new LosslessScalingSyncModeProperty(LosslessScalingSyncModeComboBox, this);
-            losslessScalingCaptureApi = new LosslessScalingCaptureApiProperty(LosslessScalingCaptureApiComboBox, this);
-            losslessScalingDrawFps = new LosslessScalingDrawFpsProperty(LosslessScalingDrawFpsToggle, this);
-            losslessScalingHdrSupport = new LosslessScalingHdrSupportProperty(LosslessScalingHdrSupportToggle, this);
-            losslessScalingGsyncSupport = new LosslessScalingGsyncSupportProperty(LosslessScalingGsyncSupportToggle, this);
-            losslessScalingResizeBeforeScaling = new LosslessScalingResizeBeforeScalingProperty(LosslessScalingResizeBeforeToggle, this);
-            losslessScalingLS1Type = new LosslessScalingLS1TypeProperty(LosslessScalingLS1TypeComboBox, this);
-            losslessScalingMaxFrameLatency = new LosslessScalingMaxFrameLatencyProperty(1, LosslessScalingMaxFrameLatencySlider, this);
-            losslessScalingResetProfile = new LosslessScalingResetProfileProperty();
-            losslessScalingLS1Sharpness = new LosslessScalingLS1SharpnessProperty(1, LosslessScalingLS1SharpnessSlider, this);
 
             // Legion Go properties
             legionGoDetected = new LegionGoDetectedProperty(this);
@@ -1364,9 +1170,9 @@ namespace XboxGamingBar
             legionButtonM3 = new LegionButtonM3Property(LegionButtonM3ComboBox, this);
             legionButtonDesktop = new LegionButtonDesktopProperty(LegionButtonDesktopComboBox, this);
             legionButtonPage = new LegionButtonPageProperty(LegionButtonPageComboBox, this);
-            legionNintendoLayout = new LegionNintendoLayoutProperty(LegionNintendoLayoutToggle, this);
+            legionNintendoLayout = new LegionNintendoLayoutProperty(null, this);  // headless: the Nintendo Layout card was removed, stays off
             legionVibrationMode = new LegionVibrationModeProperty(LegionVibrationModeComboBox, this);
-            legionControllerProfile = new LegionControllerProfileProperty(LegionControllerProfileToggle, this);
+            legionControllerProfile = new LegionControllerProfileProperty(null, this);  // headless: per-game controller profiles were removed, stays off
 
             // Gyro properties
             legionGyroTarget = new LegionGyroTargetProperty(LegionGyroTargetComboBox, this);
@@ -1481,8 +1287,8 @@ namespace XboxGamingBar
             // Set up Legion tab visibility callback
             legionGoDetected.SetVisibilityCallback(SetLegionTabVisibility);
 
-            // Set up Scale tab visibility callback (hide when Lossless Scaling not installed)
-            losslessScalingInstalled.SetVisibilityCallback(SetScaleTabVisibility);
+            // Show the Lossless Scaling Quick tile only when Lossless Scaling is installed
+            losslessScalingInstalled.SetVisibilityCallback(SetLosslessScalingTileVisibility);
 
             // Set up custom TDP visibility callback
             legionPerformanceMode.SetCustomTDPVisibilityCallback(SetCustomTDPVisibility);
@@ -1504,10 +1310,6 @@ namespace XboxGamingBar
             gpdFanRPM.SetRPMCallback(UpdateGPDFanRPM);
             gpdFanMode.SetModeCallback(UpdateGPDFanMode);
 
-            // NOTE: Event handlers for Chill FPS will be registered AFTER first sync
-            // to avoid crash when binding evaluates RadeonChillOnText before both values are ready
-            // See RegisterChillFPSHandlers() called after sync completes
-
             propertiesTimer.Stop();
             Logger.Info($"[TIMING] Property creation: {propertiesTimer.ElapsedMilliseconds}ms");
 
@@ -1527,88 +1329,18 @@ namespace XboxGamingBar
                 //gpuClockMin,
                 //gpuClockMax,
                 refreshRates,
-                refreshRate,
-                resolutions,
                 resolution,
                 displayOrientation,
-                hdrSupported,
-                hdrEnabled,
-                autoSdrEnabled,
-                autoSdrPreset,
-                autoSdrCustomCurve,
                 touchscreenEnabled,
-                adaptiveBrightnessMode,
                 trackedGame,
                 rtssInstalled,
                 isForeground,
-                amdRadeonSuperResolutionEnabled,
-                amdRadeonSuperResolutionSupported,
-                amdRadeonSuperResolutionSharpness,
-                amdFluidMotionFrameEnabled,
-                amdFluidMotionFrameSupported,
-                amdFluidMotionFrameAlgorithm,
-                amdFluidMotionFrameSearchMode,
-                amdFluidMotionFramePerformanceMode,
-                amdFluidMotionFrameFastMotionResponse,
-                amdFluidMotionFrameV1Supported,
-                amdRadeonAntiLagEnabled,
-                amdRadeonAntiLagSupported,
-                amdRadeonBoostEnabled,
-                amdRadeonBoostSupported,
-                amdRadeonBoostResolution,
-                amdRadeonChillEnabled,
-                amdRadeonChillSupported,
-                amdRadeonChillMinFPSProperty,
-                amdRadeonChillMaxFPSProperty,
-                amdImageSharpeningEnabled,
-                amdImageSharpeningSupported,
-                amdImageSharpeningSharpness,
-                amdDisplayBrightnessSupported,
-                amdDisplayBrightness,
                 panelBrightness,
                 panelBrightnessSupported,
                 internalPanelActive,
-                deviceTypeProperty,
-                amdDisplayContrastSupported,
-                amdDisplayContrast,
-                amdDisplaySaturationSupported,
-                amdDisplaySaturation,
-                amdDisplayTemperatureSupported,
-                amdDisplayTemperature,
                 losslessScalingInstalled,
                 losslessScalingRunning,
                 losslessScalingEnabled,
-                losslessScalingCurrentProfile,
-                losslessScalingScalingType,
-                losslessScalingSharpness,
-                losslessScalingFSROptimize,
-                losslessScalingAnime4KSize,
-                losslessScalingAnime4KVRS,
-                losslessScalingScaleMode,
-                losslessScalingScaleFactor,
-                losslessScalingAspectRatio,
-                losslessScalingFrameGenType,
-                losslessScalingLSFG3Mode,
-                losslessScalingLSFG3Multiplier,
-                losslessScalingLSFG3Target,
-                losslessScalingLSFG2Mode,
-                losslessScalingFlowScale,
-                losslessScalingSize,
-                losslessScalingAutoScale,
-                losslessScalingAutoScaleDelay,
-                losslessScalingSaveAndRestart,
-                losslessScalingCreateProfile,
-                // Additional Settings.xml-backed LS properties (added 2026-05-01)
-                losslessScalingSyncMode,
-                losslessScalingCaptureApi,
-                losslessScalingDrawFps,
-                losslessScalingHdrSupport,
-                losslessScalingGsyncSupport,
-                losslessScalingResizeBeforeScaling,
-                losslessScalingLS1Type,
-                losslessScalingMaxFrameLatency,
-                losslessScalingResetProfile,
-                losslessScalingLS1Sharpness,
                 currentTdp,
                 autoTDPEnabled,
                 autoTDPTargetFPS,
@@ -1616,6 +1348,8 @@ namespace XboxGamingBar
                 autoTDPMinTDP,
                 autoTDPMaxTDP,
                 autoTDPPauseWhenUnfocused,
+                autoTDPSpptBoost,
+                autoTDPFpptBoost,
                 legionGoDetected,
                 legionTouchpadEnabled,
                 legionLightMode,
@@ -1819,19 +1553,13 @@ namespace XboxGamingBar
             // Subscribe to per-game profile toggle changes
             PerGameProfileToggle.Toggled += PerGameProfileToggle_Changed;
 
-            // Subscribe to Lossless Scaling FrameGenType ComboBox for showing/hiding LSFG settings
-            LosslessScalingFrameGenTypeComboBox.SelectionChanged += LosslessScalingFrameGenTypeComboBox_SelectionChanged;
-            AMDFluidMotionFrameToggle.Toggled += AMDFluidMotionFrameToggle_Toggled;
-
             // Subscribe to Lossless Scaling property changes for status updates
             if (losslessScalingInstalled != null)
                 losslessScalingInstalled.PropertyChanged += LosslessScalingStatus_PropertyChanged;
             if (losslessScalingRunning != null)
                 losslessScalingRunning.PropertyChanged += LosslessScalingStatus_PropertyChanged;
-            if (losslessScalingCurrentProfile != null)
-                losslessScalingCurrentProfile.PropertyChanged += LosslessScalingCurrentProfile_PropertyChanged;
 
-            // Subscribe to running game changes to get exe path for Lossless Scaling profiles
+            // Subscribe to running game changes to load the game icon for the Profiles tab
             if (runningGame != null)
                 runningGame.PropertyChanged += RunningGame_PropertyChanged;
 
@@ -1902,41 +1630,10 @@ namespace XboxGamingBar
                 autoTDPMaxTDP.PropertyChanged += AutoTDPMaxTDP_PropertyChanged;
                 autoTDPPauseWhenUnfocused.PropertyChanged += AutoTDPPauseWhenUnfocused_PropertyChanged;
             }
-            if (hdrEnabled != null)
-                hdrEnabled.PropertyChanged += QuickSettingsProperty_Changed;
-            if (hdrSupported != null)
-                hdrSupported.PropertyChanged += QuickSettingsProperty_Changed;
             if (displayOrientation != null)
                 displayOrientation.PropertyChanged += QuickSettingsProperty_Changed;
             if (losslessScalingEnabled != null)
                 losslessScalingEnabled.PropertyChanged += QuickSettingsProperty_Changed;
-            if (amdFluidMotionFrameEnabled != null)
-            {
-                amdFluidMotionFrameEnabled.PropertyChanged += QuickSettingsProperty_Changed;
-                amdFluidMotionFrameEnabled.PropertyChanged += AMDFeatureProperty_ChangedResyncProfile;
-            }
-            if (amdRadeonSuperResolutionEnabled != null)
-            {
-                amdRadeonSuperResolutionEnabled.PropertyChanged += QuickSettingsProperty_Changed;
-                amdRadeonSuperResolutionEnabled.PropertyChanged += AMDFeatureProperty_ChangedResyncProfile;
-            }
-            if (amdRadeonAntiLagEnabled != null)
-            {
-                amdRadeonAntiLagEnabled.PropertyChanged += QuickSettingsProperty_Changed;
-                amdRadeonAntiLagEnabled.PropertyChanged += AMDFeatureProperty_ChangedResyncProfile;
-            }
-            if (amdRadeonChillEnabled != null)
-            {
-                amdRadeonChillEnabled.PropertyChanged += QuickSettingsProperty_Changed;
-                amdRadeonChillEnabled.PropertyChanged += AMDFeatureProperty_ChangedResyncProfile;
-            }
-            if (amdRadeonBoostEnabled != null)
-            {
-                amdRadeonBoostEnabled.PropertyChanged += QuickSettingsProperty_Changed;
-                amdRadeonBoostEnabled.PropertyChanged += AMDFeatureProperty_ChangedResyncProfile;
-            }
-            if (amdImageSharpeningEnabled != null)
-                amdImageSharpeningEnabled.PropertyChanged += AMDFeatureProperty_ChangedResyncProfile;
 
             // Controller battery properties - update tile when battery status changes
             if (controllerBatteryLeft != null)
@@ -2462,16 +2159,6 @@ namespace XboxGamingBar
                 // Update game profile card visibility and display
                 UpdateGameProfileCardVisibility();
                 UpdateProfileDisplay();
-
-                // Update Lossless Scaling Create Profile button state
-                if (LosslessScalingCreateProfileButton != null)
-                {
-                    bool isInstalled = losslessScalingInstalled?.Value ?? false;
-                    LosslessScalingCreateProfileButton.IsEnabled = isInstalled && HasValidGame(currentGameName);
-                }
-
-                // Update controller profile toggle and game name display
-                UpdateControllerProfileForGameChange(newGameName);
             }
         }
 
@@ -2508,105 +2195,6 @@ namespace XboxGamingBar
             catch (Exception ex)
             {
                 Logger.Debug($"Failed to show profile notification: {ex.Message}");
-            }
-        }
-
-        private void UpdateControllerProfileForGameChange(string newGameName)
-        {
-            // Update the game name display in controller profile card
-            if (LegionControllerProfileGameText != null)
-            {
-                LegionControllerProfileGameText.Text = HasValidGame(newGameName) ? newGameName : "No game detected";
-            }
-
-            // Enable/disable the toggle based on game detection
-            if (LegionControllerProfileToggle != null)
-            {
-                LegionControllerProfileToggle.IsEnabled = HasValidGame(newGameName);
-
-                if (!HasValidGame(newGameName))
-                {
-                    // No valid game, turn off and disable toggle, switch to global profile
-                    if (LegionControllerProfileToggle.IsOn)
-                    {
-                        isSwitchingControllerProfile = true;
-                        try
-                        {
-                            LegionControllerProfileToggle.IsOn = false;
-                            LoadControllerProfileFromStorage("Global", globalControllerProfile);
-                            ApplyControllerProfile(globalControllerProfile);
-                            Logger.Info("Game closed - switched to global controller profile");
-                        }
-                        finally
-                        {
-                            isSwitchingControllerProfile = false;
-                        }
-                    }
-                }
-                else
-                {
-                    // Valid game detected - check for existing controller profile
-                    var settings = ApplicationData.Current.LocalSettings;
-                    bool hasExistingControllerProfile = settings.Containers.ContainsKey($"ControllerProfile_Game_{newGameName}");
-
-                    // Check if user explicitly disabled controller profile for this game
-                    string disabledKey = $"ControllerProfileDisabled_{newGameName}";
-                    bool userDisabledProfile = settings.Values.ContainsKey(disabledKey) && (bool)settings.Values[disabledKey];
-
-                    // Auto-enable if profile exists and user hasn't disabled it
-                    if (hasExistingControllerProfile && !userDisabledProfile)
-                    {
-                        if (!LegionControllerProfileToggle.IsOn)
-                        {
-                            // Setting toggle to true triggers LegionControllerProfileToggle_Toggled
-                            // which handles loading and applying the profile
-                            LegionControllerProfileToggle.IsOn = true;
-                            Logger.Info($"Auto-enabled controller profile for {newGameName}");
-                        }
-                        else
-                        {
-                            // Toggle already on, need to switch to new game's profile
-                            isSwitchingControllerProfile = true;
-                            try
-                            {
-                                LoadControllerProfileFromStorage($"Game_{newGameName}", gameControllerProfile);
-                                ApplyControllerProfile(gameControllerProfile);
-                                Logger.Info($"Switched to controller profile for {newGameName}");
-                            }
-                            finally
-                            {
-                                isSwitchingControllerProfile = false;
-                            }
-                        }
-                    }
-                    else if (LegionControllerProfileToggle.IsOn)
-                    {
-                        // Toggle was on for previous game - only keep it on if new game has existing profile
-                        if (!hasExistingControllerProfile)
-                        {
-                            // No profile for new game - turn off toggle instead of auto-creating
-                            // Setting toggle to false triggers LegionControllerProfileToggle_Toggled
-                            // which handles switching to global profile
-                            LegionControllerProfileToggle.IsOn = false;
-                            Logger.Info($"Disabled controller profile toggle for {newGameName} (no existing profile)");
-                        }
-                        else
-                        {
-                            // Profile exists, switch to it
-                            isSwitchingControllerProfile = true;
-                            try
-                            {
-                                LoadControllerProfileFromStorage($"Game_{newGameName}", gameControllerProfile);
-                                ApplyControllerProfile(gameControllerProfile);
-                                Logger.Info($"Switched to controller profile for {newGameName}");
-                            }
-                            finally
-                            {
-                                isSwitchingControllerProfile = false;
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -2998,9 +2586,6 @@ namespace XboxGamingBar
 
                         // Update FPS Limit controls based on RTSS installed status
                         UpdateFPSLimitControls();
-
-                        // Register Chill FPS handlers after first sync to prevent crash
-                        RegisterChillFPSHandlers();
                     }
                     finally
                     {
@@ -3295,8 +2880,6 @@ namespace XboxGamingBar
 
                 await properties.Sync();
                 Logger.Info("Property sync via pipe completed successfully.");
-
-                RegisterChillFPSHandlers();
             }
             catch (Exception ex)
             {
@@ -3356,6 +2939,8 @@ namespace XboxGamingBar
                 SendScreenSaverEnabledToHelper();
                 SendProfileSaveFlagsToHelper();
                 SendPowerSourceProfileValuesToHelper();
+                // AutoTDP's SPPT/FPPT boosts live on the Custom card's sliders (widget-owned).
+                _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => SendAutoTDPBoostsToHelper(force: true));
                 // Without this, the helper's ControllerHotkeyMonitor only learns the
                 // widget's View+ABXY / Menu+DPad bindings on the next dropdown change.
                 // Before that, helper-side detection sits at the default-all-disabled

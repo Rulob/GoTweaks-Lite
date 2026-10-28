@@ -191,11 +191,6 @@ namespace XboxGamingBar
                         Logger.Info($"Deleted profile for current game {gameName}, disabling per-game toggle");
                         PerGameProfileToggle.IsOn = false;
                     }
-                    if (LegionControllerProfileToggle?.IsOn == true)
-                    {
-                        Logger.Info($"Deleted controller profile for current game {gameName}, disabling per-game controller toggle");
-                        LegionControllerProfileToggle.IsOn = false;
-                    }
 
                     // The controller toggle-off handler re-writes the "disabled" preference;
                     // remove it again so a deleted game returns to a pristine (global) state.
@@ -205,12 +200,8 @@ namespace XboxGamingBar
                     }
                 }
 
-                // Refresh the display and the saved-controller-profiles list (if expanded).
+                // Refresh the profile display.
                 UpdateProfileDisplay();
-                if (isSavedProfilesExpanded)
-                {
-                    RefreshSavedProfilesList();
-                }
             }
         }
 

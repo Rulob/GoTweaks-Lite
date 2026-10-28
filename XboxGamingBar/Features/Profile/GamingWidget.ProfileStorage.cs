@@ -87,6 +87,13 @@ namespace XboxGamingBar
                 container.Values.Remove("RefreshRate");
             container.Values["OverlayLevel"] = profile.OverlayLevel;
             container.Values["CPUAffinity"] = profile.CPUAffinity;
+            if (profile.AutoTDPEnabled.HasValue)
+            {
+                container.Values["AutoTDPEnabled"] = profile.AutoTDPEnabled.Value;
+                container.Values["AutoTDPTargetFPS"] = profile.AutoTDPTargetFPS;
+                container.Values["AutoTDPMinTDP"] = profile.AutoTDPMinTDP;
+                container.Values["AutoTDPMaxTDP"] = profile.AutoTDPMaxTDP;
+            }
             // Last-saved timestamp drives the "modified Nm/h/d ago" line on the profile
             // card and the "Last Modified" sort option in the Profiles tab. Stored as
             // UTC ticks so it survives timezone changes.
@@ -141,6 +148,10 @@ namespace XboxGamingBar
                 profile.RefreshRate = container.Values.ContainsKey("RefreshRate") ? (int?)container.Values["RefreshRate"] : null;
                 profile.OverlayLevel = container.Values.ContainsKey("OverlayLevel") ? (int)container.Values["OverlayLevel"] : 0;
                 profile.CPUAffinity = container.Values.ContainsKey("CPUAffinity") ? (string)container.Values["CPUAffinity"] : "";
+                profile.AutoTDPEnabled = container.Values.ContainsKey("AutoTDPEnabled") ? (bool?)(bool)container.Values["AutoTDPEnabled"] : null;
+                profile.AutoTDPTargetFPS = container.Values.ContainsKey("AutoTDPTargetFPS") ? (int)container.Values["AutoTDPTargetFPS"] : 60;
+                profile.AutoTDPMinTDP = container.Values.ContainsKey("AutoTDPMinTDP") ? (int)container.Values["AutoTDPMinTDP"] : 8;
+                profile.AutoTDPMaxTDP = container.Values.ContainsKey("AutoTDPMaxTDP") ? (int)container.Values["AutoTDPMaxTDP"] : 30;
 
                 Logger.Info($"Loaded {profileName} profile from storage");
             }

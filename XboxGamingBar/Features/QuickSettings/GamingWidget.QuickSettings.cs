@@ -276,23 +276,13 @@ namespace XboxGamingBar
             // Row 2 - Performance Fine-tuning
             AddTileDefinition("EPP", "EPP", "\uE9E9", order: order++); // Equalizer
             AddTileDefinition("FPSLimit", "FPS Limit", "\uE916", order: order++);
-            AddTileDefinition("RadeonChill", "Chill", "\uE9CA", order: order++);
             AddTileDefinition("Profile", "Profile", "\uE77B", order: order++);
 
-            // Row 3 - Display
-            AddTileDefinition("Resolution", "Resolution", "\uE7F8", order: order++);
-            AddTileDefinition("RefreshRate", "Refresh Rate", "\uE72C", order: order++); // Refresh
+            // Row 3 - Screen
             AddTileDefinition("Rotation", "Rotation", "\uE7AD", order: order++);
-            AddTileDefinition("HDR", "HDR", "\uE706", order: order++);
             AddTileDefinition("Fullscreen", "Fullscreen", "\uE740", order: order++);
 
-            // Row 4 - AMD Graphics Features
-            AddTileDefinition("RSR", "RSR", "\uEE71", order: order++); // ImageExport
-            AddTileDefinition("RIS", "RIS", "\uE71E", order: order++); // Zoom
-            AddTileDefinition("AFMF", "AFMF", "\uEB9D", order: order++); // FastForward
-            AddTileDefinition("AntiLag", "Anti-Lag", "\uF42F", order: order++); // SpeedHigh2
-
-            // Row 5 - Scaling/Quality
+            // Row 4 - Scaling/Quality
             AddTileDefinition("LosslessScaling", "Lossless", "\uEA5F", order: order++); // ResizeMouseMediumMirrored
             AddTileDefinition("Overlay", "Overlay", "\uE9D9", order: order++); // Diagnostic
 
@@ -301,7 +291,6 @@ namespace XboxGamingBar
             AddTileDefinition("Keyboard", "Keyboard", "\uE765", isTrigger: true, order: order++);
             AddTileDefinition("LegionTouchpad", "Touchpad", "\uE962", order: order++);
             AddTileDefinition("Touchscreen", "Touchscreen", "\uE815", order: order++);
-            AddTileDefinition("LegionRemapControls", "Remap", "\uE7FC", order: order++);
             AddTileDefinition("LegionDesktopControls", "Desktop", "\uE7F4", order: order++);
             // Legion Space style X-Input / D-Input switch; state text shows the active mode.
             AddTileDefinition("LegionControllerMode", "Input Mode", "\uE7FC", order: order++);

@@ -208,6 +208,9 @@ namespace XboxGamingBarHelper.Performance
         /// </summary>
         public bool IsAutoTDPActive { get; set; }
 
+        // Matches the widget's CustomTDPCeilingW: AutoTDP's SPPT/FPPT boosts never push past it.
+        private const int AutoTDPLimitCeilingW = 50;
+
         // Quick Metrics push (bundled sensor data sent to widget when enabled).
         // Previously driven by a dedicated 1Hz timer which duplicated the main-loop
         // sensor refresh — now piggy-backs on the main loop's Update() tick so we only
@@ -1037,16 +1040,22 @@ namespace XboxGamingBarHelper.Performance
         /// ApplyTDPInternal/ReassertCustomTDP shortcut that re-pushes the cached triplet instead
         /// of a new value (that shortcut exists to stop OTHER master-TDP callers — AC/DC switch,
         /// profile apply — from flattening the independent SPL/SPPT/FPPT sliders; AutoTDP's whole
-        /// point is to drive a single live wattage, so it writes SPL=SPPT=FPPT=tdp directly).
+        /// point is to drive a single live wattage, so it writes SPL=tdp directly, with SPPT/FPPT
+        /// riding on top at the user's Custom-mode boosts).
         /// </summary>
-        public void SetAutoTDP(int tdp)
+        public void SetAutoTDP(int tdp, int spptBoost = 0, int fpptBoost = 0)
         {
             lock (tdpLock)
             {
                 bool legionDetected = legionManager?.LegionGoDetected?.Value ?? false;
                 if (legionDetected && legionManager != null && legionManager.IsInCustomMode)
                 {
-                    legionManager.SetCustomTDP(tdp, tdp, tdp);
+                    // Same rules as the widget's Custom sliders: SPPT <= FPPT, neither above the
+                    // 50 W ceiling (unless SPL itself is set higher).
+                    int ceiling = Math.Max(AutoTDPLimitCeilingW, tdp);
+                    int fppt = Math.Min(tdp + Math.Max(0, fpptBoost), ceiling);
+                    int sppt = Math.Min(tdp + Math.Max(0, spptBoost), fppt);
+                    legionManager.SetCustomTDP(tdp, sppt, fppt);
                     ScheduleVerificationRead();
                     return;
                 }

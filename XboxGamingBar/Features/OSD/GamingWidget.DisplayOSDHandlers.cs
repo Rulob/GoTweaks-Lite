@@ -43,27 +43,7 @@ namespace XboxGamingBar
 {
     public sealed partial class GamingWidget
     {
-        private async void AdaptiveBrightnessToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            if (isLoadingOLEDSettings) return;
-            adaptiveBrightnessEnabled = AdaptiveBrightnessToggle.IsOn;
-            SaveDisplayOSDSettingsToStorage();
-            await SendDisplayOSDConfigToHelper();
-        }
 
-        // Chevron expander for the Adaptive Brightness card — keeps the card compact
-        // by default; the mode combo + description live inside.
-        // Chevron glyph: E70D = down (collapsed), E70E = up (expanded).
-        private void AdaptiveBrightnessExpanderToggle_Click(object sender, RoutedEventArgs e)
-        {
-            if (AdaptiveBrightnessPanel == null || AdaptiveBrightnessExpanderToggle == null) return;
-            bool open = AdaptiveBrightnessExpanderToggle.IsChecked == true;
-            AdaptiveBrightnessPanel.Visibility = open ? Visibility.Visible : Visibility.Collapsed;
-            if (AdaptiveBrightnessExpanderIcon != null)
-            {
-                AdaptiveBrightnessExpanderIcon.Glyph = open ? "\uE70E" : "\uE70D";
-            }
-        }
 
         private async void OSDPositionShiftToggle_Toggled(object sender, RoutedEventArgs e)
         {
@@ -110,7 +90,6 @@ namespace XboxGamingBar
                     osdOpacity = op;
 
                 // Update UI
-                if (AdaptiveBrightnessToggle != null) AdaptiveBrightnessToggle.IsOn = adaptiveBrightnessEnabled;
                 if (OSDPositionShiftToggle != null) OSDPositionShiftToggle.IsOn = osdPositionShiftEnabled;
                 if (OSDOpacitySlider != null) OSDOpacitySlider.Value = osdOpacity;
                 if (OSDOpacityValue != null) OSDOpacityValue.Text = $"{osdOpacity}%";

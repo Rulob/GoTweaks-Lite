@@ -89,25 +89,6 @@
     <Compile Include="Converter\InverseBooleanToVisibilityConverter.cs" />
     <Compile Include="Converter\RadeonBoostResolutionStringConverter.cs" />
     <Compile Include="Converter\SharpnessPercentStringConverter.cs" />
-    <Compile Include="Data\AMD\AMDRadeonAntiLagEnabledProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonAntiLagSupportedProperty.cs" />
-    <Compile Include="Data\AMD\AMDFluidMotionFrameEnabledProperty.cs" />
-    <Compile Include="Data\AMD\AMDFluidMotionFrameSupportedProperty.cs" />
-    <Compile Include="Data\AMD\AMDFluidMotionFrameComboProperty.cs" />
-    <Compile Include="Data\AMD\AMDFluidMotionFrameV1SupportedProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonBoostEnabledProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonBoostResolutionProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonBoostSupportedProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonChillEnabledProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonChillMaxFPSProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonChillMinFPSProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonChillSupportedProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonSuperResolutionEnabledProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonSuperResolutionSharpnessProperty.cs" />
-    <Compile Include="Data\AMD\AMDImageSharpeningEnabledProperty.cs" />
-    <Compile Include="Data\AMD\AMDImageSharpeningSupportedProperty.cs" />
-    <Compile Include="Data\AMD\AMDImageSharpeningSharpnessProperty.cs" />
-    <Compile Include="Data\AMD\AMDDisplayColorProperties.cs" />
     <Compile Include="Data\AutoStartRTSSProperty.cs" />
     <Compile Include="Data\Profile\DeleteGameProfileProperty.cs" />
     <Compile Include="Data\Profile\ProfileMatchByExeProperty.cs" />
@@ -126,38 +107,6 @@
     <Compile Include="Data\LosslessScaling\LosslessScalingInstalledProperty.cs" />
     <Compile Include="Data\LosslessScaling\LosslessScalingRunningProperty.cs" />
     <Compile Include="Data\LosslessScaling\LosslessScalingEnabledProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingScalingTypeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingSharpnessProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingFSROptimizeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingAnime4KSizeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingAnime4KVRSProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingScaleModeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingScaleFactorProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingAspectRatioProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingFrameGenTypeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingLSFG3ModeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingLSFG3MultiplierProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingLSFG3TargetProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingLSFG2ModeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingFlowScaleProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingSizeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingCurrentProfileProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingAutoScaleProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingAutoScaleDelayProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingSaveAndRestartProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingCreateProfileProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingBringToForegroundProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingLaunchProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingSyncModeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingCaptureApiProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingDrawFpsProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingHdrSupportProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingGsyncSupportProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingResizeBeforeScalingProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingLS1TypeProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingMaxFrameLatencyProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingLS1SharpnessProperty.cs" />
-    <Compile Include="Data\LosslessScaling\LosslessScalingResetProfileProperty.cs" />
     <Compile Include="Data\Legion\LegionGoDetectedProperty.cs" />
     <Compile Include="Data\GPD\GPDDetectedProperty.cs" />
     <Compile Include="Data\GPD\GPDWin5ConnectedProperty.cs" />
@@ -236,23 +185,13 @@
     <Compile Include="Data\AutoTDP\AutoTDPProperties.cs" />
     <Compile Include="Data\PerGameProfileProperty.cs" />
     <Compile Include="Data\OSDProperty.cs" />
-    <Compile Include="Data\AMD\AMDRadeonSuperResolutionSupportedProperty.cs" />
-    <Compile Include="Data\RefreshRateProperty.cs" />
     <Compile Include="Data\RefreshRatesProperty.cs" />
     <Compile Include="Data\ResolutionProperty.cs" />
-    <Compile Include="Data\ResolutionsProperty.cs" />
     <Compile Include="Data\DisplayOrientationProperty.cs" />
-    <Compile Include="Data\HDRSupportedProperty.cs" />
-    <Compile Include="Data\HDREnabledProperty.cs" />
-    <Compile Include="Data\AutoSdrEnabledProperty.cs" />
     <Compile Include="Data\PanelBrightnessProperty.cs" />
     <Compile Include="Data\TouchscreenEnabledProperty.cs" />
     <Compile Include="Data\PanelBrightnessSupportedProperty.cs" />
     <Compile Include="Data\InternalPanelActiveProperty.cs" />
-    <Compile Include="Data\DeviceTypeProperty.cs" />
-    <Compile Include="Data\AutoSdrPresetProperty.cs" />
-    <Compile Include="Data\AutoSdrCustomCurveProperty.cs" />
-    <Compile Include="Data\AdaptiveBrightnessModeProperty.cs" />
     <Compile Include="Data\RTSSInstalledProperty.cs" />
     <Compile Include="Data\FPSLimitProperty.cs" />
     <Compile Include="Data\OSPowerModeProperty.cs" />
@@ -282,9 +221,6 @@
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Lifecycle\GamingWidget.Lifecycle.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\LosslessScaling\GamingWidget.ChillFPS.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Hotkeys\GamingWidget.HotkeyInit.cs">
@@ -387,9 +323,6 @@
     <Compile Include="Features\Display\GamingWidget.DisplayGating.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\Display\GamingWidget.AutoSdrCurve.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Features\QuickSettings\GamingWidget.QuickSettingsHelpers.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
@@ -415,9 +348,6 @@
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\OSD\GamingWidget.PowerPlans.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\OSD\GamingWidget.SavedProfiles.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\OSD\GamingWidget.PowerPlanApplication.cs">
@@ -463,9 +393,6 @@
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\QuickSettings\GamingWidget.QuickSettings.Metrics.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Scale\GamingWidget.ScaleTab.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Converter\MegahertzStringConverter.cs" />

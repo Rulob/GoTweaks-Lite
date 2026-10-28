@@ -175,6 +175,14 @@ namespace XboxGamingBar
                 SetCustomTDPSlidersSilent(profile.TDP, profile.TDPFast, profile.TDPPeak);
                 ApplyCustomTDPSlidersToHelper(force: true);
             }
+
+            // AutoTDP: the helper switched on its own copy of the game profile; make it match
+            // ours (this also updates that copy).
+            if (legionGoDetected?.Value == true && profile.AutoTDPEnabled.HasValue)
+            {
+                Logger.Info($"Reconciling AutoTDP for '{profileName}': {(profile.AutoTDPEnabled.Value ? "On" : "Off")}, target={profile.AutoTDPTargetFPS} FPS, {profile.AutoTDPMinTDP}-{profile.AutoTDPMaxTDP}W");
+                PushAutoTDPSettingsToHelper(profile);
+            }
         }
 
         private string GetTargetProfileName()
@@ -325,20 +333,6 @@ namespace XboxGamingBar
                 profile.MaxCPUState = GetSelectedCPUStateValue(MaxCPUStateComboBox);
                 profile.MinCPUState = GetSelectedCPUStateValue(MinCPUStateComboBox);
             }
-            if (SaveAMDFeatures && AMDFluidMotionFrameToggle != null)
-            {
-                profile.FluidMotionFrames = AMDFluidMotionFrameToggle.IsOn;
-                profile.RadeonSuperResolution = AMDRadeonSuperResolutionToggle.IsOn;
-                profile.RadeonSuperResolutionSharpness = AMDRadeonSuperResolutionSharpnessSlider.Value;
-                profile.ImageSharpening = AMDImageSharpeningToggle.IsOn;
-                profile.ImageSharpeningSharpness = AMDImageSharpeningSlider.Value;
-                profile.RadeonAntiLag = AMDRadeonAntiLagToggle.IsOn;
-                profile.RadeonBoost = AMDRadeonBoostToggle.IsOn;
-                profile.RadeonBoostResolution = AMDRadeonBoostResolutionSlider.Value;
-                profile.RadeonChill = AMDRadeonChillToggle.IsOn;
-                profile.RadeonChillMinFPS = AMDRadeonChillMinFPSSlider.Value;
-                profile.RadeonChillMaxFPS = AMDRadeonChillMaxFPSSlider.Value;
-            }
             if (SaveFPSLimit && FPSLimitToggle != null && FPSLimitSlider != null)
             {
                 profile.FPSLimitEnabled = FPSLimitToggle.IsOn;
@@ -348,25 +342,19 @@ namespace XboxGamingBar
             {
                 profile.OSPowerMode = OSPowerModeComboBox.SelectedIndex;
             }
-            // HDR
-            if (SaveHDR)
-            {
-                profile.HDREnabled = HDRToggle?.IsOn ?? false;
-            }
-            // Resolution
-            if (SaveResolution)
-            {
-                profile.Resolution = ResolutionComboBox?.SelectedItem?.ToString() ?? "";
-            }
-            // Refresh Rate
-            if (SaveRefreshRate)
-            {
-                profile.RefreshRate = refreshRate?.Value;
-            }
             // Overlay Level
             if (SaveOverlayLevel && PerformanceOverlayToggle != null)
             {
                 profile.OverlayLevel = PerformanceOverlayToggle.IsOn ? 1 : 0;
+            }
+            // AutoTDP (Legion only). Always saved, like the helper's own copy of the profile,
+            // which follows the active profile regardless of the save checkboxes.
+            if (legionGoDetected?.Value == true && AutoTDPToggle != null)
+            {
+                profile.AutoTDPEnabled = AutoTDPToggle.IsOn;
+                if (AutoTDPTargetFPSSlider != null) profile.AutoTDPTargetFPS = (int)Math.Round(AutoTDPTargetFPSSlider.Value);
+                if (AutoTDPMinSlider != null) profile.AutoTDPMinTDP = (int)Math.Round(AutoTDPMinSlider.Value);
+                if (AutoTDPMaxSlider != null) profile.AutoTDPMaxTDP = (int)Math.Round(AutoTDPMaxSlider.Value);
             }
 
             // Persist to storage
@@ -504,55 +492,6 @@ namespace XboxGamingBar
                     // allowAutoDisable:false — don't let a transient/stale combo value stomp the
                     // CPUBoost we just loaded from the profile or push false to the helper (#88 bug #4).
                     UpdateCPUBoostEnabledState(allowAutoDisable: false);
-                }
-                if (SaveAMDFeatures)
-                {
-                    // RSR and RIS are mutually exclusive - if both are enabled in profile, prefer RSR
-                    bool rsrEnabled = profile.RadeonSuperResolution;
-                    bool risEnabled = profile.ImageSharpening;
-                    if (rsrEnabled && risEnabled)
-                    {
-                        Logger.Warn("Profile has both RSR and RIS enabled - disabling RIS (mutually exclusive)");
-                        risEnabled = false;
-                    }
-
-                    // Chill is mutually exclusive with Anti-Lag and Boost - if Chill is enabled, disable the others
-                    bool antiLagEnabled = profile.RadeonAntiLag;
-                    bool boostEnabled = profile.RadeonBoost;
-                    bool chillEnabled = profile.RadeonChill;
-                    if (chillEnabled && (antiLagEnabled || boostEnabled))
-                    {
-                        Logger.Warn("Profile has Chill with Anti-Lag/Boost enabled - disabling Anti-Lag and Boost (mutually exclusive)");
-                        antiLagEnabled = false;
-                        boostEnabled = false;
-                    }
-
-                    AMDFluidMotionFrameToggle.IsOn = profile.FluidMotionFrames;
-                    AMDRadeonSuperResolutionToggle.IsOn = rsrEnabled;
-                    AMDRadeonSuperResolutionSharpnessSlider.Value = profile.RadeonSuperResolutionSharpness;
-                    AMDImageSharpeningToggle.IsOn = risEnabled;
-                    AMDImageSharpeningSlider.Value = profile.ImageSharpeningSharpness;
-                    AMDRadeonAntiLagToggle.IsOn = antiLagEnabled;
-                    AMDRadeonBoostToggle.IsOn = boostEnabled;
-                    AMDRadeonBoostResolutionSlider.Value = profile.RadeonBoostResolution;
-                    AMDRadeonChillToggle.IsOn = chillEnabled;
-                    AMDRadeonChillMinFPSSlider.Value = profile.RadeonChillMinFPS;
-                    AMDRadeonChillMaxFPSSlider.Value = profile.RadeonChillMaxFPS;
-                    // Send to helper explicitly using ForceSetValue to ensure AMD driver state is synchronized
-                    // even if the cached value appears unchanged (driver state may differ from cache)
-                    // Send RIS first (to disable it if needed), then RSR
-                    // Send Anti-Lag and Boost first (to disable them if needed), then Chill
-                    amdFluidMotionFrameEnabled?.ForceSetValue(profile.FluidMotionFrames);
-                    amdImageSharpeningEnabled?.ForceSetValue(risEnabled);
-                    amdImageSharpeningSharpness?.ForceSetValue((int)profile.ImageSharpeningSharpness);
-                    amdRadeonSuperResolutionEnabled?.ForceSetValue(rsrEnabled);
-                    amdRadeonSuperResolutionSharpness?.ForceSetValue((int)profile.RadeonSuperResolutionSharpness);
-                    amdRadeonAntiLagEnabled?.ForceSetValue(antiLagEnabled);
-                    amdRadeonBoostEnabled?.ForceSetValue(boostEnabled);
-                    amdRadeonBoostResolution?.ForceSetValue((int)profile.RadeonBoostResolution);
-                    amdRadeonChillEnabled?.ForceSetValue(chillEnabled);
-                    amdRadeonChillMinFPSProperty?.ForceSetValue((int)profile.RadeonChillMinFPS);
-                    amdRadeonChillMaxFPSProperty?.ForceSetValue((int)profile.RadeonChillMaxFPS);
                 }
                 if (SaveFPSLimit)
                 {
@@ -779,88 +718,6 @@ namespace XboxGamingBar
                     UpdateTDPSliderEnabledState();
                 }
 
-                // HDR
-                if (SaveHDR)
-                {
-                    // Only apply HDR if:
-                    // 1. This is an explicit profile switch (game detected/closed), OR
-                    // 2. No game is currently running (returning to desktop)
-                    bool shouldApplyHDR = isExplicitSwitch || !HasValidGame(currentGameName);
-
-                    if (shouldApplyHDR)
-                    {
-                        if (HDRToggle != null && hdrSupported?.Value == true)
-                        {
-                            HDRToggle.IsOn = profile.HDREnabled;
-                            hdrEnabled?.SetValue(profile.HDREnabled);
-                        }
-                    }
-                    else
-                    {
-                        Logger.Info($"Skipping HDR application - game is running and not an explicit switch");
-                    }
-                }
-
-                // Resolution
-                if (SaveResolution)
-                {
-                    // Only apply Resolution if:
-                    // 1. This is an explicit profile switch (game detected/closed), OR
-                    // 2. No game is currently running (returning to desktop)
-                    bool shouldApplyResolution = isExplicitSwitch || !HasValidGame(currentGameName);
-
-                    if (shouldApplyResolution)
-                    {
-                        if (ResolutionComboBox != null && !string.IsNullOrEmpty(profile.Resolution))
-                        {
-                            // Find and select matching resolution
-                            for (int i = 0; i < ResolutionComboBox.Items.Count; i++)
-                            {
-                                if (ResolutionComboBox.Items[i]?.ToString() == profile.Resolution)
-                                {
-                                    ResolutionComboBox.SelectedIndex = i;
-                                    resolution?.SetValue(profile.Resolution);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Logger.Info($"Skipping Resolution application - game is running and not an explicit switch");
-                    }
-                }
-
-                // Refresh Rate
-                if (SaveRefreshRate)
-                {
-                    // Only apply Refresh Rate if:
-                    // 1. This is an explicit profile switch (game detected/closed), OR
-                    // 2. No game is currently running (returning to desktop)
-                    bool shouldApplyRefreshRate = isExplicitSwitch || !HasValidGame(currentGameName);
-
-                    if (shouldApplyRefreshRate)
-                    {
-                        if (RefreshRatesComboBox != null && profile.RefreshRate.HasValue)
-                        {
-                            // Find and select matching refresh rate
-                            for (int i = 0; i < RefreshRatesComboBox.Items.Count; i++)
-                            {
-                                if (RefreshRatesComboBox.Items[i] is int rate && rate == profile.RefreshRate.Value)
-                                {
-                                    RefreshRatesComboBox.SelectedIndex = i;
-                                    refreshRate?.SetValue(profile.RefreshRate.Value);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Logger.Info($"Skipping RefreshRate application - game is running and not an explicit switch");
-                    }
-                }
-
                 // Overlay Level
                 if (SaveOverlayLevel && PerformanceOverlayToggle != null)
                 {
@@ -878,6 +735,9 @@ namespace XboxGamingBar
                     // click) - push it to the helper directly instead, same as PerformanceOverlayToggle_Toggled would.
                     osd?.SetValue(isOn ? 1 : 0);
                 }
+
+                // AutoTDP - after the TDP Mode above, so the mode lock lands on the right mode.
+                ApplyAutoTDPFromProfile(profile, profileName);
 
                 // Update profile display to show correct TDP mode in Profiles tab
                 UpdateProfileDisplay();

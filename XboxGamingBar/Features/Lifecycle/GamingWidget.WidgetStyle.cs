@@ -67,7 +67,6 @@ namespace XboxGamingBar
             // Update all TextBlocks dynamically based on compact mode
             UpdateTextBlockStyles(PerformanceScrollViewer);
             UpdateTextBlockStyles(GameScrollViewer);
-            UpdateTextBlockStyles(AMDScrollViewer);
             UpdateTextBlockStyles(SystemScrollViewer);
         }
 

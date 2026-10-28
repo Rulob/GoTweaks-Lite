@@ -106,35 +106,11 @@ namespace XboxGamingBar
                             case "FPSLimit":
                                 CycleFPSLimit();
                                 break;
-                            case "Resolution":
-                                CycleResolution();
-                                break;
-                            case "RefreshRate":
-                                CycleRefreshRate();
-                                break;
                             case "Rotation":
                                 CycleRotation();
                                 break;
-                            case "HDR":
-                                ToggleHDR();
-                                break;
                             case "LosslessScaling":
                                 ToggleLosslessScaling();
-                                break;
-                            case "RIS":
-                                ToggleRIS();
-                                break;
-                            case "AFMF":
-                                ToggleAFMF();
-                                break;
-                            case "RSR":
-                                ToggleRSR();
-                                break;
-                            case "AntiLag":
-                                ToggleAntiLag();
-                                break;
-                            case "RadeonChill":
-                                ToggleRadeonChill();
                                 break;
                             case "CPUBoost":
                                 ToggleCPUBoost();
@@ -165,9 +141,6 @@ namespace XboxGamingBar
                                 break;
                             case "LegionDesktopControls":
                                 ToggleLegionDesktopControls();
-                                break;
-                            case "LegionRemapControls":
-                                ToggleRemapControlsProfile();
                                 break;
                             case "LegionChargeLimit":
                                 ToggleLegionChargeLimit();
@@ -491,40 +464,6 @@ namespace XboxGamingBar
             }
         }
 
-        // Resolutions to exclude from quick cycling (odd resolutions that don't scale well)
-        private static readonly HashSet<string> excludedQuickResolutions = new HashSet<string>
-        {
-            "1680x1050"  // Odd 16:10 resolution that doesn't scale cleanly
-        };
-
-        private void CycleResolution()
-        {
-            if (!IsInternalPanelActive) return;
-            if (resolution != null && resolutions?.Value != null && resolutions.Value.Count > 0)
-            {
-                // Filter out excluded resolutions for quick cycling
-                var quickResolutions = resolutions.Value
-                    .Where(r => !excludedQuickResolutions.Contains(r))
-                    .ToList();
-
-                if (quickResolutions.Count == 0)
-                {
-                    quickResolutions = resolutions.Value; // Fallback to all if filter removes everything
-                }
-
-                string currentRes = resolution.Value;
-                int currentIndex = quickResolutions.IndexOf(currentRes);
-
-                // If current resolution is not in quick list, start from first
-                if (currentIndex < 0) currentIndex = -1;
-
-                int nextIndex = (currentIndex + 1) % quickResolutions.Count;
-                string nextRes = quickResolutions[nextIndex];
-                resolution.SetValue(nextRes);
-                Logger.Info($"Resolution cycled from {currentRes} to {nextRes}");
-            }
-        }
-
         /// <summary>
         /// Cycles display orientation between Landscape (0) and Portrait (1).
         /// </summary>
@@ -542,41 +481,6 @@ namespace XboxGamingBar
             }
         }
 
-        private void ToggleHDR()
-        {
-            if (hdrEnabled != null && (hdrSupported?.Value ?? false))
-            {
-                bool newValue = !hdrEnabled.Value;
-                hdrEnabled.SetValue(newValue);
-                // Update the toggle so SettingChanged fires and saves to profile
-                if (HDRToggle != null)
-                    HDRToggle.IsOn = newValue;
-                Logger.Info($"HDR toggled to {newValue}");
-            }
-        }
-
-        /// <summary>
-        /// Cycles the display refresh rate between 60Hz and 120Hz. Only offers a rate if the
-        /// display actually reports it as supported (refreshRates.Value); otherwise no-ops rather
-        /// than requesting a mode the driver would reject or silently ignore.
-        /// </summary>
-        private void CycleRefreshRate()
-        {
-            if (refreshRate == null || !IsInternalPanelActive) return;
-
-            int current = refreshRate.Value;
-            int next = current >= 120 ? 60 : 120;
-
-            if (refreshRates?.Value != null && refreshRates.Value.Count > 0 && !refreshRates.Value.Contains(next))
-            {
-                Logger.Info($"Refresh rate {next}Hz not in supported list, skipping cycle");
-                return;
-            }
-
-            refreshRate.SetValue(next);
-            Logger.Info($"Refresh rate cycled from {current}Hz to {next}Hz");
-        }
-
         private void ToggleLosslessScaling()
         {
             if (losslessScalingEnabled != null)
@@ -584,69 +488,6 @@ namespace XboxGamingBar
                 bool newValue = !losslessScalingEnabled.Value;
                 losslessScalingEnabled.SetValue(newValue);
                 Logger.Info($"Lossless Scaling toggled to {newValue}");
-            }
-        }
-
-        private void ToggleAFMF()
-        {
-            if (amdFluidMotionFrameEnabled != null && (amdFluidMotionFrameSupported?.Value ?? false))
-            {
-                bool newValue = !amdFluidMotionFrameEnabled.Value;
-                amdFluidMotionFrameEnabled.SetValue(newValue);
-                // Update the toggle so SettingChanged fires and saves to profile
-                if (AMDFluidMotionFrameToggle != null)
-                    AMDFluidMotionFrameToggle.IsOn = newValue;
-                Logger.Info($"AFMF toggled to {newValue}");
-            }
-        }
-
-        private void ToggleRSR()
-        {
-            if (amdRadeonSuperResolutionEnabled != null && (amdRadeonSuperResolutionSupported?.Value ?? false))
-            {
-                bool newValue = !amdRadeonSuperResolutionEnabled.Value;
-                amdRadeonSuperResolutionEnabled.SetValue(newValue);
-                // Update the toggle so SettingChanged fires and saves to profile
-                if (AMDRadeonSuperResolutionToggle != null)
-                    AMDRadeonSuperResolutionToggle.IsOn = newValue;
-                Logger.Info($"RSR toggled to {newValue}");
-            }
-        }
-
-        private void ToggleRIS()
-        {
-            if (amdImageSharpeningEnabled != null && (amdImageSharpeningSupported?.Value ?? false))
-            {
-                bool newValue = !amdImageSharpeningEnabled.Value;
-                amdImageSharpeningEnabled.SetValue(newValue);
-                AMDImageSharpeningToggle.IsOn = newValue;
-                Logger.Info($"RIS toggled to {newValue}");
-            }
-        }
-
-        private void ToggleAntiLag()
-        {
-            if (amdRadeonAntiLagEnabled != null && (amdRadeonAntiLagSupported?.Value ?? false))
-            {
-                bool newValue = !amdRadeonAntiLagEnabled.Value;
-                amdRadeonAntiLagEnabled.SetValue(newValue);
-                // Update the toggle so SettingChanged fires and saves to profile
-                if (AMDRadeonAntiLagToggle != null)
-                    AMDRadeonAntiLagToggle.IsOn = newValue;
-                Logger.Info($"Anti-Lag toggled to {newValue}");
-            }
-        }
-
-        private void ToggleRadeonChill()
-        {
-            if (amdRadeonChillEnabled != null && (amdRadeonChillSupported?.Value ?? false))
-            {
-                bool newValue = !amdRadeonChillEnabled.Value;
-                amdRadeonChillEnabled.SetValue(newValue);
-                // Update the toggle so SettingChanged fires and saves to profile
-                if (AMDRadeonChillToggle != null)
-                    AMDRadeonChillToggle.IsOn = newValue;
-                Logger.Info($"Radeon Chill toggled to {newValue}");
             }
         }
 
@@ -908,94 +749,6 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// RSR toggle changed - disable RIS if RSR is enabled (mutually exclusive)
-        /// </summary>
-        private void AMDRadeonSuperResolutionToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            // RSR and RIS are mutually exclusive - enabling one disables the other
-            if (AMDRadeonSuperResolutionToggle.IsOn && AMDImageSharpeningToggle.IsOn && !isLoadingProfile && !isSwitchingProfile && !isApplyingHelperUpdate)
-            {
-                Logger.Info("RSR enabled - disabling RIS (mutually exclusive)");
-                AMDImageSharpeningToggle.IsOn = false;
-            }
-
-            // Call the generic setting changed handler
-            SettingChanged(sender, e);
-        }
-
-        /// <summary>
-        /// RIS toggle changed - disable RSR if RIS is enabled (mutually exclusive)
-        /// </summary>
-        private void AMDImageSharpeningToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            // RSR and RIS are mutually exclusive - enabling one disables the other
-            if (AMDImageSharpeningToggle.IsOn && AMDRadeonSuperResolutionToggle.IsOn && !isLoadingProfile && !isSwitchingProfile && !isApplyingHelperUpdate)
-            {
-                Logger.Info("RIS enabled - disabling RSR (mutually exclusive)");
-                AMDRadeonSuperResolutionToggle.IsOn = false;
-            }
-
-            // Call the generic setting changed handler
-            SettingChanged(sender, e);
-        }
-
-        /// <summary>
-        /// Radeon Anti-Lag toggle changed - disable Chill if Anti-Lag is enabled (mutually exclusive)
-        /// </summary>
-        private void AMDRadeonAntiLagToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            // Anti-Lag and Chill are mutually exclusive
-            if (AMDRadeonAntiLagToggle.IsOn && AMDRadeonChillToggle.IsOn && !isLoadingProfile && !isSwitchingProfile && !isApplyingHelperUpdate)
-            {
-                Logger.Info("Anti-Lag enabled - disabling Chill (mutually exclusive)");
-                AMDRadeonChillToggle.IsOn = false;
-            }
-
-            // Call the generic setting changed handler
-            SettingChanged(sender, e);
-        }
-
-        /// <summary>
-        /// Radeon Boost toggle changed - disable Chill if Boost is enabled (mutually exclusive)
-        /// </summary>
-        private void AMDRadeonBoostToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            // Boost and Chill are mutually exclusive
-            if (AMDRadeonBoostToggle.IsOn && AMDRadeonChillToggle.IsOn && !isLoadingProfile && !isSwitchingProfile && !isApplyingHelperUpdate)
-            {
-                Logger.Info("Boost enabled - disabling Chill (mutually exclusive)");
-                AMDRadeonChillToggle.IsOn = false;
-            }
-
-            // Call the generic setting changed handler
-            SettingChanged(sender, e);
-        }
-
-        /// <summary>
-        /// Radeon Chill toggle changed - disable Anti-Lag and Boost if Chill is enabled (mutually exclusive)
-        /// </summary>
-        private void AMDRadeonChillToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            // Chill is mutually exclusive with Anti-Lag and Boost
-            if (AMDRadeonChillToggle.IsOn && !isLoadingProfile && !isSwitchingProfile && !isApplyingHelperUpdate)
-            {
-                if (AMDRadeonAntiLagToggle.IsOn)
-                {
-                    Logger.Info("Chill enabled - disabling Anti-Lag (mutually exclusive)");
-                    AMDRadeonAntiLagToggle.IsOn = false;
-                }
-                if (AMDRadeonBoostToggle.IsOn)
-                {
-                    Logger.Info("Chill enabled - disabling Boost (mutually exclusive)");
-                    AMDRadeonBoostToggle.IsOn = false;
-                }
-            }
-
-            // Call the generic setting changed handler
-            SettingChanged(sender, e);
-        }
-
-        /// <summary>
         /// FPS Limit slider changed - update FPS limit if toggle is on (with debouncing)
         /// </summary>
         private void FPSLimitSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -1222,22 +975,6 @@ namespace XboxGamingBar
             }
 
             SetLegionControllerMode(current == LegionControllerModeXInput ? LegionControllerModeDInput : LegionControllerModeXInput);
-        }
-
-        private void ToggleRemapControlsProfile()
-        {
-            if (legionGoDetected?.Value != true)
-                return;
-
-            if (LegionControllerProfileToggle == null)
-                return;
-
-            // Toggle the per-game controller profile
-            LegionControllerProfileToggle.IsOn = !LegionControllerProfileToggle.IsOn;
-            Logger.Info($"Toggled per-game controller profile to: {LegionControllerProfileToggle.IsOn}");
-
-            // Update Quick Settings tiles
-            UpdateQuickSettingsTileStates();
         }
 
         /// <summary>

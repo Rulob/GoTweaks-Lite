@@ -68,6 +68,14 @@ upstream, and why.
   _Unlock Fan Curve Override_ (direct EC fan control) and the per-mode fan curves for Quiet /
   Balanced / Performance went with it — the Fan Curve card now edits the **Custom**-mode curve
   (applied through Lenovo WMI), and **Fan Full Speed** is unchanged. TDP is Lenovo WMI only.
+- The **Display** tab (Resolution, Refresh Rate, HDR, Auto SDR, Adaptive Brightness, Color Settings
+  and the AMD Radeon toggles: RSR, Fluid Motion Frames, Anti-Lag, Boost, Chill, Image Sharpening)
+  and the matching Quick Settings tiles. Whatever those settings are set to now stays as it is.
+- The **Scale** tab. Lossless Scaling is no longer configured from the widget — the **Lossless**
+  Quick Settings tile (and any controller combo bound to it) still turns scaling on and off.
+- On the Legion tab: **Per-Game Controller Profile** (controller settings are always global now,
+  so the _Remap_ tile went too), **Nintendo Layout**, and the Labs cards **Disable Legion Space
+  Service** and **Fix Task View Bug**. If you had either Labs option switched on, it stays as it was.
 
 > **Why:** a smaller, more predictable surface with fewer background systems that can silently
 > fight your settings.
@@ -78,12 +86,11 @@ upstream, and why.
   range, and it continuously adjusts TDP live to hit that FPS, backing off gracefully when the
   target is unreachable (CPU-bound games). Works from any TDP Mode — enabling it (from its card or
   the matching Quick Settings tile) automatically switches to and locks Custom mode, and restores
-  your previous mode when turned off. Restored from upstream, trimmed to the rule-based PID
-  controller only (no Q-Learning/SARSA machine-learning modes or per-game learned data).
-- **Auto SDR** — while HDR is on, automatically matches the SDR white level to screen brightness
-  so SDR content (desktop, most games) doesn't look washed out, with a full **curve editor**
-  (Legion Go 2 preset or a custom, import/export-compatible curve). _(Built on the sibling Go2HDR
-  project.)_
+  your previous mode when turned off. While it runs it also caps the FPS limiter at the target
+  (restored afterwards), keeps your Custom-mode SPPT / FPPT boosts on top of the wattage it picks,
+  and is saved with each profile (on/off, target FPS, min/max TDP). Restored from upstream, trimmed
+  to the rule-based PID controller only (no Q-Learning/SARSA machine-learning modes or per-game
+  learned data).
 - **Brightness Gesture** — SteamOS-style brightness control: hold a configurable button and tilt a
   stick to fade the panel brightness up or down.
 - **Power & Sleep card** — power-button behavior, screen-off, and a GoTweaks-owned "hibernate
@@ -92,10 +99,6 @@ upstream, and why.
 - **Controller-combo tile hotkeys** — assign a 2-or-more-button controller combo (including the
   Legion back paddles) to any Quick Settings tile to activate it without touching the widget.
   _(Ported from upstream corando98/GoTweaks.)_
-- **Fix Task View Bug** _(Labs, opt-in)_ — a targeted fix for the Legion Go bug where, after a
-  restart with a USB hub attached, focusing the desktop pops open Task View (Win+Tab) and buzzes
-  the controller. It re-enumerates the controller's USB port once per boot — the software
-  equivalent of physically replugging a pad. Enable it only if you have this bug.
 - **Controller Mode (X-Input / D-Input)** — a Legion Space style switch for the Legion Go / Go 2
   controllers, on the Legion tab and as an _Input Mode_ Quick Settings tile (see
   [Controller Mode](#-controller-mode-x-input--d-input)).
@@ -105,7 +108,7 @@ upstream, and why.
 ### 🔧 Reliability fixes
 
 - Correct **system-tray icon**, fixed **swapped CPU/GPU wattage sensors** on the Legion Go 2 so OSD
-  labels match Adrenalin, more reliable **AFMF toggle**, true-CPU-Tctl **fan-curve temperature**,
+  labels match Adrenalin, true-CPU-Tctl **fan-curve temperature**,
   and a **Fan Full Speed** / custom fan curve that survives sleep/hibernate instead of silently
   stopping.
 - **Controller vibration & lighting persistence** across restarts, a **24-hour OSD clock**, extra
@@ -129,7 +132,8 @@ upstream, and why.
 - **Widget no longer goes deaf after sleep.** Sometimes, after the handheld woke from a long sleep,
   Game Bar would open the widget but nothing inside it responded: the old window was still drawing
   but had lost its link to Game Bar. The helper now tells the widget when the PC wakes, and the
-  widget asks Game Bar to close that stale window so the next open is a clean launch. Closed widget
+  widget asks Game Bar to close that stale window so the next open is a clean launch (pinned
+  widgets are left alone, since closing one would unpin it). Closed widget
   windows are also cleaned up properly now (they used to stay registered and swallow helper
   updates), the controller battery section repaints on every open, and the widget log records
   whether input reaches the widget so any future report is easier to diagnose.
@@ -148,6 +152,10 @@ upstream, and why.
 - **Custom TDP remembers your SPPT / FPPT boosts.** The two boost sliders used to start at their
   maximum (+10 / +15) every time Custom was selected. The widget now remembers the last boosts you
   chose and restores them when you switch to Custom; with nothing stored yet they start at +2 / +5.
+- **AutoTDP reacts faster and its sliders behave.** AutoTDP now runs on its own 250 ms loop instead
+  of the helper's ~1 s main loop, and takes bigger steps when FPS is far below target. The Min /
+  Max TDP sliders stay inside the device's TDP range (no more 85 W), moving one no longer shifts
+  the other's handle, and turning AutoTDP on no longer scrolls its settings out of view.
 
 ---
 
@@ -157,7 +165,7 @@ upstream, and why.
 
 A customizable dashboard of quick-access tiles for your most-used settings.
 
-- One-tap toggles for TDP Mode, Profile, Overlay, Lossless Scaling, AMD features, and more
+- One-tap toggles for TDP Mode, AutoTDP, Profile, Overlay, Lossless Scaling, and more
 - **Assign a controller button combo to any tile** — hold the combo (paddles included) to fire it
   hands-free
 - Custom keyboard-shortcut tiles you can add and remove
@@ -185,11 +193,9 @@ Automatically apply your preferred settings when each game launches.
 
 - Automatic profile switching on game detection
 - Saves all performance settings per game:
-  - TDP (SPL / SPPT / FPPT) and CPU settings
-  - AMD Radeon features
-  - Lossless Scaling configuration
-  - Legion Go controller settings (per-category: lighting, vibration, button mappings, gyro,
-    Nintendo layout)
+  - TDP Mode, TDP (SPL / SPPT / FPPT) and CPU settings
+  - AutoTDP (on/off, target FPS, min/max TDP)
+  - FPS limit and OS power mode
 
 ### 🕹️ Legion Go 2 Support
 
@@ -205,7 +211,6 @@ Deep support for the Legion Go 2 with automatic device detection.
 - **Remap type** — map to keyboard shortcuts, keys, gamepad actions, or mouse buttons
 - **Joystick to Mouse** — emulate a mouse with either stick
 - **Desktop Controls** — map controls to mouse + left/right click, similar to the ROG Ally
-- **Nintendo Layout** — swap the button layout
 - **Stick Deadzones** — adjust left/right stick deadzones (0–50%)
 - **Gyroscope** — enable/disable with target selection, X/Y sensitivity, axis inversion, and
   activation mode (Hold/Toggle) with a button binding
@@ -243,39 +248,9 @@ and emulators prefer).
 - Switching reconnects the controllers for a few seconds. In D-Input the Xbox / Game Bar
   interface may stop reacting to the pads — use the touchscreen to switch back.
 
-### 🔴 AMD Radeon Features
-
-GPU-based enhancements for AMD graphics.
-
-| Category | Feature |
-| --- | --- |
-| **Upscaling & frame gen** | Radeon Super Resolution (RSR) with sharpness · AMD Fluid Motion Frames (AFMF) |
-| **Performance** | Radeon Anti-Lag · Radeon Boost (dynamic resolution) |
-| **Power saving** | Radeon Chill with min/max FPS |
-| **Image quality** | Image Sharpening · display color controls (brightness, contrast, saturation, temperature) |
-
-### 🖼️ Lossless Scaling Integration
-
-Control Lossless Scaling directly from the widget _(the Scale tab appears when Lossless Scaling is
-detected)_.
-
-- Launch and manage Lossless Scaling
-- Configure scaling type and factor
-- Frame-generation modes (LSFG2, LSFG3)
-- Auto-scaling with configurable delay
-- Anime4K and FSR optimization options
-- Per-profile configurations, with a clear "Scale" vs "Apply and Restart" distinction that lights
-  up only when you have unsaved changes
-
-### 🖥️ Graphics Settings
-
-Display and resolution management.
-
-- Resolution and refresh-rate control with auto-detection (clearly gated to the built-in panel
-  when docked to an external monitor)
-- HDR toggle (when supported)
-- **Auto SDR** — match the SDR white level to screen brightness while HDR is active, with an
-  editable curve
+### 🖼️ Lossless Scaling
+ Lossless Scaling is installed, the **Lossless** Quick Settings tile turns scaling on and off
+(bind a controller combo to it for a hands-free toggle). Configure Lossless Scaling itself in its app.
 
 ### 📊 Performance Overlay (OSD)
 
@@ -345,7 +320,7 @@ powershell -ExecutionPolicy Bypass -File ".\Uninstall-GoTweaks.ps1"
 | --- | --- |
 | **OS** | Windows 10 / 11 |
 | **Required** | Xbox Game Bar |
-| **Optional** | [RivaTuner Statistics Server](https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/) (OSD overlay) · AMD GPU (Radeon features) · Legion Go 2 / Legion Go (device features) · Lossless Scaling (scaling integration) |
+| **Optional** | [RivaTuner Statistics Server](https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/) (OSD overlay) · Legion Go 2 / Legion Go (device features) · Lossless Scaling (Quick Settings toggle) |
 
 > [!IMPORTANT]
 > **Smart App Control** may interfere with this application. If it doesn't work correctly, you may

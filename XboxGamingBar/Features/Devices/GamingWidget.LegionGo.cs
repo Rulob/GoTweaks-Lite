@@ -1613,6 +1613,8 @@ namespace XboxGamingBar
             legionCustomTDPSlow?.SetValueSilent(a);
             legionCustomTDPFast?.SetValueSilent(b);
             legionCustomTDPPeak?.SetValueSilent(c);
+            // The loaded profile's boosts also apply to AutoTDP.
+            SendAutoTDPBoostsToHelper();
         }
 
         private static void SetOneSliderClamped(Windows.UI.Xaml.Controls.Slider slider, int value)
@@ -1696,6 +1698,7 @@ namespace XboxGamingBar
                 isUpdatingCustomTDPSliders = prev;
             }
             UpdateCustomTDPValueLabels();
+            SendAutoTDPBoostsToHelper();
             Logger.Info($"Custom TDP: restored remembered boosts SPPT +{(int)CustomTDPFastSlider.Value}W / FPPT +{(int)CustomTDPPeakSlider.Value}W");
         }
 
@@ -1809,10 +1812,16 @@ namespace XboxGamingBar
 
             if (boostChanged) RememberCustomTDPBoosts();
 
+            if (AutoTDPToggle?.IsOn == true)
+            {
+                // AutoTDP owns SPL; it re-applies its current wattage with the new boosts.
+                // Writing the card's own triplet here would fight it.
+                if (boostChanged) SendAutoTDPBoostsToHelper();
+            }
             // Live hardware apply (only meaningful on a Legion in Custom mode; the helper ignores
             // these writes outside Custom mode anyway). Throttled so a fast drag doesn't flood the
             // pipe / WMI — see RequestCustomTDPApply.
-            if (legionGoDetected?.Value == true && IsCustomTdpModeSelected())
+            else if (legionGoDetected?.Value == true && IsCustomTdpModeSelected())
             {
                 RequestCustomTDPApply();
             }

@@ -1227,28 +1227,8 @@ namespace XboxGamingBar
                 ApplyButtonMappingToUI("Desktop", profile.ButtonDesktop);
                 ApplyButtonMappingToUI("Page", profile.ButtonPage);
 
-                // Apply Nintendo layout (with event unsubscription to prevent handler firing)
-                if (LegionNintendoLayoutToggle != null)
-                {
-                    LegionNintendoLayoutToggle.Toggled -= LegionNintendoLayout_Toggled;
-                    try
-                    {
-                        LegionNintendoLayoutToggle.IsOn = profile.NintendoLayout;
-                        // Apply or clear Nintendo layout mappings to match toggle state
-                        if (profile.NintendoLayout)
-                        {
-                            ApplyNintendoLayoutMappings();
-                        }
-                        else
-                        {
-                            ClearNintendoLayoutMappings();
-                        }
-                    }
-                    finally
-                    {
-                        LegionNintendoLayoutToggle.Toggled += LegionNintendoLayout_Toggled;
-                    }
-                }
+                // The Nintendo Layout option was removed: make sure its A/B/X/Y swap isn't left applied.
+                ClearNintendoLayoutMappings();
 
                 // Apply vibration settings
                 if (LegionVibrationComboBox != null)
@@ -1478,9 +1458,7 @@ namespace XboxGamingBar
         {
             // Get the current profile to preserve lighting if color picker isn't available
             // This prevents the color from resetting to white when saving from non-Legion tabs
-            var currentProfile = (LegionControllerProfileToggle?.IsOn == true && HasValidGame(currentGameName))
-                ? gameControllerProfile
-                : globalControllerProfile;
+            var currentProfile = globalControllerProfile;
 
             // Use color picker value if available, otherwise preserve existing color
             byte colorR = LegionColorPicker != null ? LegionColorPicker.Color.R : currentProfile.LightColorR;
@@ -1497,7 +1475,7 @@ namespace XboxGamingBar
                 ButtonM3 = GetButtonMappingFromUI("M3"),
                 ButtonDesktop = GetButtonMappingFromUI("Desktop"),
                 ButtonPage = GetButtonMappingFromUI("Page"),
-                NintendoLayout = LegionNintendoLayoutToggle?.IsOn ?? false,
+                NintendoLayout = false, // option removed
                 VibrationLevel = LegionVibrationComboBox?.SelectedIndex ?? 2,
                 VibrationMode = (LegionVibrationModeComboBox?.SelectedIndex ?? 0) + 1, // Index is 0-based, mode is 1-based
                 // Gyro settings
@@ -1539,82 +1517,6 @@ namespace XboxGamingBar
                 PowerLight = LegionPowerLightToggle?.IsOn ?? currentProfile.PowerLight,
                 HasExplicitLighting = true  // Mark as having explicit lighting since we're capturing from UI
             };
-        }
-
-        private void LegionControllerProfileToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            // Protect entire toggle change sequence
-            isSwitchingControllerProfile = true;
-
-            try
-            {
-                var settings = ApplicationData.Current.LocalSettings;
-
-                if (LegionControllerProfileToggle.IsOn)
-                {
-                    // Per-game controller profiles enabled - only proceed if we have a valid game
-                    if (HasValidGame(currentGameName))
-                    {
-                        // Clear the disabled preference since user is enabling it
-                        string disabledKey = $"ControllerProfileDisabled_{currentGameName}";
-                        if (settings.Values.ContainsKey(disabledKey))
-                        {
-                            settings.Values.Remove(disabledKey);
-                            Logger.Info($"Cleared controller profile disabled preference for {currentGameName}");
-                        }
-
-                        // Load or create game controller profile
-                        string profileKey = $"ControllerProfile_Game_{currentGameName}";
-                        if (!settings.Containers.ContainsKey(profileKey))
-                        {
-                            // Initialize new game controller profile from current UI state (global)
-                            gameControllerProfile = GetCurrentControllerProfileFromUI();
-                            SaveControllerProfileToStorage($"Game_{currentGameName}", gameControllerProfile);
-                            Logger.Info($"Initialized game controller profile for {currentGameName} from current settings");
-
-                            // Refresh saved profiles list if expanded
-                            if (isSavedProfilesExpanded)
-                            {
-                                RefreshSavedProfilesList();
-                            }
-                        }
-                        else
-                        {
-                            // Load existing game controller profile
-                            LoadControllerProfileFromStorage($"Game_{currentGameName}", gameControllerProfile);
-                            ApplyControllerProfile(gameControllerProfile);
-                            Logger.Info($"Loaded existing controller profile for {currentGameName}");
-                        }
-                    }
-                    else
-                    {
-                        // No valid game, turn toggle back off
-                        Logger.Warn($"Cannot enable per-game controller profile without a valid game, forcing toggle OFF");
-                        LegionControllerProfileToggle.IsOn = false;
-                        return;
-                    }
-                }
-                else
-                {
-                    // Toggle is being turned OFF
-                    if (HasValidGame(currentGameName))
-                    {
-                        // Save user's preference to disable per-game controller profile for this game
-                        string disabledKey = $"ControllerProfileDisabled_{currentGameName}";
-                        settings.Values[disabledKey] = true;
-                        Logger.Info($"Saved controller profile disabled preference for {currentGameName}");
-                    }
-
-                    // Switch back to global controller profile
-                    LoadControllerProfileFromStorage("Global", globalControllerProfile);
-                    ApplyControllerProfile(globalControllerProfile);
-                    Logger.Info("Switched to global controller profile");
-                }
-            }
-            finally
-            {
-                isSwitchingControllerProfile = false;
-            }
         }
 
         private void ControllerSettingChanged(object sender, object e)
@@ -1678,20 +1580,10 @@ namespace XboxGamingBar
 
             // Get current profile from UI
             ControllerProfile profile;
-            if (LegionControllerProfileToggle?.IsOn == true && HasValidGame(currentGameName))
-            {
-                // Save to game controller profile
-                gameControllerProfile = GetCurrentControllerProfileFromUI();
-                SaveControllerProfileToStorage($"Game_{currentGameName}", gameControllerProfile);
-                profile = gameControllerProfile;
-            }
-            else
-            {
-                // Save to global controller profile
-                globalControllerProfile = GetCurrentControllerProfileFromUI();
-                SaveControllerProfileToStorage("Global", globalControllerProfile);
-                profile = globalControllerProfile;
-            }
+            // Save to global controller profile
+            globalControllerProfile = GetCurrentControllerProfileFromUI();
+            SaveControllerProfileToStorage("Global", globalControllerProfile);
+            profile = globalControllerProfile;
 
             // Send button mappings to helper
             SendButtonMappingsToHelper(profile);
@@ -1775,9 +1667,7 @@ namespace XboxGamingBar
         {
             try
             {
-                var profile = (LegionControllerProfileToggle?.IsOn == true && HasValidGame(currentGameName))
-                    ? gameControllerProfile
-                    : globalControllerProfile;
+                var profile = globalControllerProfile;
                 if (profile == null) return;
 
                 Logger.Info("Re-pushing active controller profile to helper after pipe connect (recovery from cold-start race)");

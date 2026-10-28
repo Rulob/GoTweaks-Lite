@@ -257,6 +257,13 @@ namespace XboxGamingBarHelper.Profile
 
             var newGameProfilePath = Path.Combine(GetGameProfilesFolder(), $"{Path.GetFileNameWithoutExtension(gameId.Path)}{XML_EXTENSION}");
             var newGameProfile = new GameProfile(gameId.Name, gameId.Path, true, CurrentProfile.TDP, CurrentProfile.CPUBoost, CurrentProfile.CPUEPP, CurrentProfile.MaxCPUState, CurrentProfile.MinCPUState, newGameProfilePath, gameProfiles);
+            // Start from the current AutoTDP setup too. The constructor leaves it at the defaults
+            // (off), so making a game profile while AutoTDP was running used to switch it off.
+            newGameProfile.AutoTDPEnabled = CurrentProfile.AutoTDPEnabled;
+            newGameProfile.AutoTDPTargetFPS = CurrentProfile.AutoTDPTargetFPS;
+            newGameProfile.AutoTDPMinTDP = CurrentProfile.AutoTDPMinTDP;
+            newGameProfile.AutoTDPMaxTDP = CurrentProfile.AutoTDPMaxTDP;
+            newGameProfile.AutoTDPPauseWhenUnfocused = CurrentProfile.AutoTDPPauseWhenUnfocused;
             newGameProfile.Save();
             Logger.Info($"Add new profile for {gameId.Name} at {newGameProfilePath}.");
             return newGameProfile;

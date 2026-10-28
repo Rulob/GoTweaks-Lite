@@ -126,63 +126,12 @@ namespace XboxGamingBar
             PowerSourceProfileToggle.GotFocus += Control_GotFocus;
             PowerSourceProfileToggle.LostFocus += Control_LostFocus;
 
-            // Graphics tab - Resolution card
-            ResolutionComboBox.GotFocus += Control_GotFocus;
-            ResolutionComboBox.LostFocus += Control_LostFocus;
-
-            // Graphics tab - Refresh Rate card
-            RefreshRatesComboBox.GotFocus += Control_GotFocus;
-            RefreshRatesComboBox.LostFocus += Control_LostFocus;
-
-            // Graphics tab - HDR card
-            HDRToggle.GotFocus += Control_GotFocus;
-            HDRToggle.LostFocus += Control_LostFocus;
-
-            // Graphics tab - AMD cards
-            AMDRadeonSuperResolutionToggle.GotFocus += Control_GotFocus;
-            AMDRadeonSuperResolutionToggle.LostFocus += Control_LostFocus;
-            AMDRadeonSuperResolutionSharpnessSlider.GotFocus += Control_GotFocus;
-            AMDRadeonSuperResolutionSharpnessSlider.LostFocus += Control_LostFocus;
-
-            // Graphics tab - Image Sharpening card
-            AMDImageSharpeningToggle.GotFocus += Control_GotFocus;
-            AMDImageSharpeningToggle.LostFocus += Control_LostFocus;
-            AMDImageSharpeningSlider.GotFocus += Control_GotFocus;
-            AMDImageSharpeningSlider.LostFocus += Control_LostFocus;
-
-            // Graphics tab - Color Settings card
-            ColorSettingsExpandButton.GotFocus += Control_GotFocus;
-            ColorSettingsExpandButton.LostFocus += Control_LostFocus;
-            AMDDisplayBrightnessSlider.GotFocus += Control_GotFocus;
-            AMDDisplayBrightnessSlider.LostFocus += Control_LostFocus;
-            AMDDisplayContrastSlider.GotFocus += Control_GotFocus;
-            AMDDisplayContrastSlider.LostFocus += Control_LostFocus;
-            AMDDisplaySaturationSlider.GotFocus += Control_GotFocus;
-            AMDDisplaySaturationSlider.LostFocus += Control_LostFocus;
-            AMDDisplayTemperatureSlider.GotFocus += Control_GotFocus;
-            AMDDisplayTemperatureSlider.LostFocus += Control_LostFocus;
-            AMDFluidMotionFrameToggle.GotFocus += Control_GotFocus;
-            AMDFluidMotionFrameToggle.LostFocus += Control_LostFocus;
-            AMDRadeonAntiLagToggle.GotFocus += Control_GotFocus;
-            AMDRadeonAntiLagToggle.LostFocus += Control_LostFocus;
-            AMDRadeonBoostToggle.GotFocus += Control_GotFocus;
-            AMDRadeonBoostToggle.LostFocus += Control_LostFocus;
-            AMDRadeonBoostResolutionSlider.GotFocus += Control_GotFocus;
-            AMDRadeonBoostResolutionSlider.LostFocus += Control_LostFocus;
-            AMDRadeonChillToggle.GotFocus += Control_GotFocus;
-            AMDRadeonChillToggle.LostFocus += Control_LostFocus;
-            AMDRadeonChillMinFPSSlider.GotFocus += Control_GotFocus;
-            AMDRadeonChillMinFPSSlider.LostFocus += Control_LostFocus;
-            AMDRadeonChillMaxFPSSlider.GotFocus += Control_GotFocus;
-            AMDRadeonChillMaxFPSSlider.LostFocus += Control_LostFocus;
-
             // System tab - Profile Settings card (checkboxes have individual focus, not card focus)
             // These use FocusableCheckBoxStyle which shows its own focus visual
             ProfileSaveTDPCheckBox.GotFocus += StandaloneControl_GotFocus;
             ProfileSaveCPUBoostCheckBox.GotFocus += StandaloneControl_GotFocus;
             ProfileSaveCPUEPPCheckBox.GotFocus += StandaloneControl_GotFocus;
             ProfileSaveCPUStateCheckBox.GotFocus += StandaloneControl_GotFocus;
-            ProfileSaveAMDFeaturesCheckBox.GotFocus += StandaloneControl_GotFocus;
 
             // System tab - Power & Sleep card
             PowerAndSleepExpandButton.GotFocus += Control_GotFocus;
@@ -203,52 +152,6 @@ namespace XboxGamingBar
             // System tab - OSD Customization card
             OSDCustomizeExpandButton.GotFocus += Control_GotFocus;
             OSDCustomizeExpandButton.LostFocus += Control_LostFocus;
-
-            // Scaling tab - Status card buttons
-            ShowLosslessScalingWindowButton.GotFocus += Control_GotFocus;
-            ShowLosslessScalingWindowButton.LostFocus += Control_LostFocus;
-            LaunchLosslessScalingButton.GotFocus += Control_GotFocus;
-            LaunchLosslessScalingButton.LostFocus += Control_LostFocus;
-
-            // Scaling tab - Current Profile card
-            LosslessScalingCreateProfileButton.GotFocus += Control_GotFocus;
-            LosslessScalingCreateProfileButton.LostFocus += Control_LostFocus;
-
-            // Scaling tab - Scale and Save buttons (not in cards, clear focus)
-            LosslessScalingEnabledToggle.GotFocus += StandaloneControl_GotFocus;
-            LosslessScalingSaveSettingsButton.GotFocus += StandaloneControl_GotFocus;
-
-            // Scaling tab - AutoScale card
-            LosslessScalingAutoScaleToggle.GotFocus += Control_GotFocus;
-            LosslessScalingAutoScaleToggle.LostFocus += Control_LostFocus;
-            LosslessScalingAutoScaleDelaySlider.GotFocus += Control_GotFocus;
-            LosslessScalingAutoScaleDelaySlider.LostFocus += Control_LostFocus;
-
-            // Scaling tab - Scaling Type card
-            LosslessScalingScalingTypeComboBox.GotFocus += Control_GotFocus;
-            LosslessScalingScalingTypeComboBox.LostFocus += Control_LostFocus;
-            LosslessScalingSharpnessSlider.GotFocus += Control_GotFocus;
-            LosslessScalingSharpnessSlider.LostFocus += Control_LostFocus;
-            LosslessScalingLS1SharpnessSlider.GotFocus += Control_GotFocus;
-            LosslessScalingLS1SharpnessSlider.LostFocus += Control_LostFocus;
-            LosslessScalingScaleModeComboBox.GotFocus += Control_GotFocus;
-            LosslessScalingScaleModeComboBox.LostFocus += Control_LostFocus;
-            LosslessScalingScaleFactorSlider.GotFocus += Control_GotFocus;
-            LosslessScalingScaleFactorSlider.LostFocus += Control_LostFocus;
-            LosslessScalingFrameGenTypeComboBox.GotFocus += Control_GotFocus;
-            LosslessScalingFrameGenTypeComboBox.LostFocus += Control_LostFocus;
-            LosslessScalingLSFG3ModeComboBox.GotFocus += Control_GotFocus;
-            LosslessScalingLSFG3ModeComboBox.LostFocus += Control_LostFocus;
-            LosslessScalingLSFG3MultiplierComboBox.GotFocus += Control_GotFocus;
-            LosslessScalingLSFG3MultiplierComboBox.LostFocus += Control_LostFocus;
-            LosslessScalingLSFG3TargetSlider.GotFocus += Control_GotFocus;
-            LosslessScalingLSFG3TargetSlider.LostFocus += Control_LostFocus;
-            LosslessScalingFlowScaleSlider.GotFocus += Control_GotFocus;
-            LosslessScalingFlowScaleSlider.LostFocus += Control_LostFocus;
-            LosslessScalingSizeToggle.GotFocus += Control_GotFocus;
-            LosslessScalingSizeToggle.LostFocus += Control_LostFocus;
-            LosslessScalingLSFG2ModeComboBox.GotFocus += Control_GotFocus;
-            LosslessScalingLSFG2ModeComboBox.LostFocus += Control_LostFocus;
 
             // Legion tab - Touchpad card
             LegionTouchpadToggle.GotFocus += Control_GotFocus;

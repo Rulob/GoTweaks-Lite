@@ -106,18 +106,9 @@ namespace XboxGamingBar
 
             // Get current profile
             ControllerProfile currentProfile;
-            if (LegionControllerProfileToggle?.IsOn == true && HasValidGame(currentGameName))
-            {
-                gameControllerProfile = GetCurrentControllerProfileFromUI();
-                SaveControllerProfileToStorage($"Game_{currentGameName}", gameControllerProfile);
-                currentProfile = gameControllerProfile;
-            }
-            else
-            {
-                globalControllerProfile = GetCurrentControllerProfileFromUI();
-                SaveControllerProfileToStorage("Global", globalControllerProfile);
-                currentProfile = globalControllerProfile;
-            }
+            globalControllerProfile = GetCurrentControllerProfileFromUI();
+            SaveControllerProfileToStorage("Global", globalControllerProfile);
+            currentProfile = globalControllerProfile;
 
             // Send to helper
             SendButtonMappingsToHelper(currentProfile);

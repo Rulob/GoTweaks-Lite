@@ -52,6 +52,13 @@ namespace XboxGamingBarHelper.AutoTDP
         private readonly AutoTDPPauseWhenUnfocusedProperty pauseWhenUnfocused;
         public AutoTDPPauseWhenUnfocusedProperty PauseWhenUnfocused => pauseWhenUnfocused;
 
+        // SPPT / FPPT offsets on top of the managed wattage (the Custom card's boost sliders).
+        private readonly AutoTDPSpptBoostProperty spptBoost;
+        public AutoTDPSpptBoostProperty SpptBoost => spptBoost;
+
+        private readonly AutoTDPFpptBoostProperty fpptBoost;
+        public AutoTDPFpptBoostProperty FpptBoost => fpptBoost;
+
         // Controller state
         private double integral = 0;
         private DateTime lastUpdateTime = DateTime.MinValue;
@@ -174,6 +181,8 @@ namespace XboxGamingBarHelper.AutoTDP
             minTDPProperty = new AutoTDPMinTDPProperty(8, this);  // Default 8W
             maxTDPProperty = new AutoTDPMaxTDPProperty(30, this); // Default 30W
             pauseWhenUnfocused = new AutoTDPPauseWhenUnfocusedProperty(true, this);
+            spptBoost = new AutoTDPSpptBoostProperty(2, this);  // Same defaults as the widget's
+            fpptBoost = new AutoTDPFpptBoostProperty(5, this);  // boost sliders (+2 / +5 W)
 
             minTDP = minTDPProperty.Value;
             maxTDP = maxTDPProperty.Value;
@@ -188,21 +197,92 @@ namespace XboxGamingBarHelper.AutoTDP
             if (max > 85) max = 85;
             if (min > max) min = max;
 
-            minTDP = min;
-            maxTDP = max;
+            lock (tickLock)
+            {
+                minTDP = min;
+                maxTDP = max;
 
-            if (lastAppliedTDP < minTDP) lastAppliedTDP = minTDP;
-            if (lastAppliedTDP > maxTDP) lastAppliedTDP = maxTDP;
+                if (lastAppliedTDP < minTDP) lastAppliedTDP = minTDP;
+                if (lastAppliedTDP > maxTDP) lastAppliedTDP = maxTDP;
 
-            ResetCeilingDetectionState(log: true, reason: "TDP limits changed");
+                ResetCeilingDetectionState(log: true, reason: "TDP limits changed");
+            }
 
             Logger.Info($"AutoTDP limits updated: Min={minTDP}W, Max={maxTDP}W");
         }
 
+        /// <summary>Writes a wattage with the current SPPT / FPPT boosts on top.</summary>
+        private void ApplyTDP(int tdp)
+        {
+            performanceManager.SetAutoTDP(tdp, spptBoost.Value, fpptBoost.Value);
+        }
+
+        /// <summary>
+        /// The user moved a boost slider: re-write the current wattage straight away so SPPT /
+        /// FPPT follow without waiting for AutoTDP's next change.
+        /// </summary>
+        public void OnBoostsChanged()
+        {
+            lock (tickLock)
+            {
+                if (wasActivelyManaging && enabled.Value)
+                {
+                    Logger.Info($"AutoTDP: boosts changed, re-applying {lastAppliedTDP}W (+{spptBoost.Value}/+{fpptBoost.Value})");
+                    ApplyTDP(lastAppliedTDP);
+                }
+            }
+        }
+
+        // AutoTDP runs on its own thread. The helper's main loop ticks managers only about once a
+        // second (plus however long the other managers take), so driving AutoTDP from it meant the
+        // 250 ms sampling / 500 ms decision cadence below actually ran at ~1 s / ~2 s, with at
+        // most +1 W per decision - far too slow to catch an FPS drop.
+        private const int LoopIntervalMs = 250;
+        private readonly object tickLock = new object();
+        private volatile bool loopStopped;
+        private System.Threading.Thread loopThread;
+
+        /// <summary>Starts the AutoTDP loop. Call once, after the helper's managers are built.</summary>
+        public void Start()
+        {
+            if (loopThread != null) return;
+            loopThread = new System.Threading.Thread(RunLoop) { IsBackground = true, Name = "AutoTDP" };
+            loopThread.Start();
+            Logger.Info($"AutoTDP loop started ({LoopIntervalMs} ms)");
+        }
+
+        private void RunLoop()
+        {
+            while (!loopStopped)
+            {
+                try
+                {
+                    lock (tickLock)
+                    {
+                        Tick();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"AutoTDP tick threw: {ex.Message}");
+                }
+                System.Threading.Thread.Sleep(LoopIntervalMs);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            loopStopped = true;
+            base.Dispose(disposing);
+        }
+
+        // The main-loop tick is not used: see RunLoop.
         public override void Update()
         {
-            base.Update();
+        }
 
+        private void Tick()
+        {
             if (!enabled.Value)
             {
                 RestoreProfileTDPIfActive("AutoTDP disabled");
@@ -311,7 +391,8 @@ namespace XboxGamingBarHelper.AutoTDP
             if (lastUpdateTime != DateTime.MinValue)
             {
                 var elapsed = (now - lastUpdateTime).TotalMilliseconds;
-                if (elapsed < SampleIntervalMs)
+                // Small slack so loop jitter (a tick landing at 249 ms) doesn't skip a sample.
+                if (elapsed < SampleIntervalMs - 50)
                 {
                     return;
                 }
@@ -440,7 +521,7 @@ namespace XboxGamingBarHelper.AutoTDP
                 }
                 string ceilingInfo = isCeilingDetected ? $", Ceiling(eff={effectiveTarget}, achv≈{achievableFPS:F0})" : "";
                 Logger.Info($"AutoTDP: FPS={measuredFPS} (smooth={smoothedFPS:F1}, pred={predictedFPS:F1}), Trend={trend:F2}, Target={targetFPS.Value}, TDP: {currentTDP}W -> {newTDP}W{ceilingInfo}, SweetSpot={sweetSpotTDP}W@{sweetSpotConfidence}%");
-                performanceManager.SetAutoTDP(newTDP);
+                ApplyTDP(newTDP);
                 lastAppliedTDP = newTDP;
                 consecutiveStableReadings = 0;
             }
@@ -500,7 +581,7 @@ namespace XboxGamingBarHelper.AutoTDP
             {
                 int profileTDP = performanceManager.TDP.Value;
                 Logger.Info($"AutoTDP: {reason} - restoring profile TDP: {profileTDP}W");
-                performanceManager.SetAutoTDP(profileTDP);
+                ApplyTDP(profileTDP);
             }
         }
 
@@ -761,9 +842,18 @@ namespace XboxGamingBarHelper.AutoTDP
                 }
             }
 
+            // Clearly below target (outside the dead zone): take at least a 1 W step (2 W when far
+            // below) instead of waiting for the gentle PID share / integral to build up past 0.5.
+            if (adjustment > 0 && error > DeadZone)
+            {
+                adjustment = Math.Max(adjustment, error >= 15 ? 2 : 1);
+            }
+
             int newTDP = (int)Math.Round(currentTDP + adjustment);
 
-            int maxIncrease = 1;
+            // Bigger steps for bigger deficits so a sudden heavy scene is caught in a second or
+            // two rather than climbing 1 W at a time.
+            int maxIncrease = error >= 15 ? 3 : error >= 8 ? 2 : 1;
             int maxDecreaseCycle = inUpperDeadZone ? 2 : 1;
             newTDP = Math.Max(currentTDP - maxDecreaseCycle, Math.Min(currentTDP + maxIncrease, newTDP));
 

@@ -88,4 +88,36 @@ namespace XboxGamingBarHelper.AutoTDP
         }
     }
 
+    internal class AutoTDPSpptBoostProperty : HelperProperty<int, AutoTDPManager>
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        public AutoTDPSpptBoostProperty(int inValue, AutoTDPManager inManager) : base(inValue, null, Function.AutoTDPSpptBoost, inManager)
+        {
+        }
+
+        protected override void NotifyPropertyChanged(string propertyName = "")
+        {
+            base.NotifyPropertyChanged(propertyName);
+            Logger.Info($"AutoTDP SPPT boost: +{Value}W");
+            Manager.OnBoostsChanged();
+        }
+    }
+
+    internal class AutoTDPFpptBoostProperty : HelperProperty<int, AutoTDPManager>
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        public AutoTDPFpptBoostProperty(int inValue, AutoTDPManager inManager) : base(inValue, null, Function.AutoTDPFpptBoost, inManager)
+        {
+        }
+
+        protected override void NotifyPropertyChanged(string propertyName = "")
+        {
+            base.NotifyPropertyChanged(propertyName);
+            Logger.Info($"AutoTDP FPPT boost: +{Value}W");
+            Manager.OnBoostsChanged();
+        }
+    }
+
 }

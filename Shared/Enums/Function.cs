@@ -648,5 +648,10 @@
         //   0 = unknown / no controller, 1 = X-Input, 2 = D-Input,
         //   3 = Dual D-Input (controllers detached), 4 = FPS mode (right-controller switch)
         LegionControllerMode,           // int
+
+        // AutoTDP drives a single wattage (SPL); SPPT and FPPT follow it at these offsets, which
+        // the widget takes from the Custom card's SPPT Boost / FPPT Boost sliders. Widget -> helper.
+        AutoTDPSpptBoost,               // int watts added to the AutoTDP value for SPPT (0-10)
+        AutoTDPFpptBoost,               // int watts added to the AutoTDP value for FPPT (0-15)
     }
 }

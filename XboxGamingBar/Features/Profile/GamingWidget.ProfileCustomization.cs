@@ -56,61 +56,18 @@ namespace XboxGamingBar
                 _saveCPUBoost = settings.Values.ContainsKey("ProfileSaveCPUBoost") ? (bool)settings.Values["ProfileSaveCPUBoost"] : true;
                 _saveCPUEPP = settings.Values.ContainsKey("ProfileSaveCPUEPP") ? (bool)settings.Values["ProfileSaveCPUEPP"] : true;
                 _saveCPUState = settings.Values.ContainsKey("ProfileSaveCPUState") ? (bool)settings.Values["ProfileSaveCPUState"] : true;
-                _saveAMDFeatures = settings.Values.ContainsKey("ProfileSaveAMDFeatures") ? (bool)settings.Values["ProfileSaveAMDFeatures"] : false;
                 _saveFPSLimit = settings.Values.ContainsKey("ProfileSaveFPSLimit") ? (bool)settings.Values["ProfileSaveFPSLimit"] : true;
                 _saveOSPowerMode = settings.Values.ContainsKey("ProfileSaveOSPowerMode") ? (bool)settings.Values["ProfileSaveOSPowerMode"] : true;
-                // HDR and Resolution - check for new separate settings first, fall back to combined setting for migration
-                if (settings.Values.ContainsKey("ProfileSaveHDR"))
-                {
-                    _saveHDR = (bool)settings.Values["ProfileSaveHDR"];
-                }
-                else if (settings.Values.ContainsKey("ProfileSaveHDRResolution"))
-                {
-                    _saveHDR = (bool)settings.Values["ProfileSaveHDRResolution"]; // Migrate from combined setting
-                }
-                else
-                {
-                    _saveHDR = false;
-                }
-
-                if (settings.Values.ContainsKey("ProfileSaveResolution"))
-                {
-                    _saveResolution = (bool)settings.Values["ProfileSaveResolution"];
-                }
-                else if (settings.Values.ContainsKey("ProfileSaveHDRResolution"))
-                {
-                    _saveResolution = (bool)settings.Values["ProfileSaveHDRResolution"]; // Migrate from combined setting
-                }
-                else
-                {
-                    _saveResolution = false;
-                }
-
-                _saveRefreshRate = settings.Values.ContainsKey("ProfileSaveRefreshRate") ? (bool)settings.Values["ProfileSaveRefreshRate"] : false;
                 _saveOverlayLevel = settings.Values.ContainsKey("ProfileSaveOverlayLevel") ? (bool)settings.Values["ProfileSaveOverlayLevel"] : false;
-                _saveNintendoLayout = settings.Values.ContainsKey("ProfileSaveNintendoLayout") ? (bool)settings.Values["ProfileSaveNintendoLayout"] : false;
-                _saveVibration = settings.Values.ContainsKey("ProfileSaveVibration") ? (bool)settings.Values["ProfileSaveVibration"] : false;
-                _saveLighting = settings.Values.ContainsKey("ProfileSaveLighting") ? (bool)settings.Values["ProfileSaveLighting"] : false;
-                _saveButtonMappings = settings.Values.ContainsKey("ProfileSaveButtonMappings") ? (bool)settings.Values["ProfileSaveButtonMappings"] : false;
-                _saveGyroSettings = settings.Values.ContainsKey("ProfileSaveGyroSettings") ? (bool)settings.Values["ProfileSaveGyroSettings"] : false;
 
                 // Update UI checkboxes
                 if (ProfileSaveTDPCheckBox != null) ProfileSaveTDPCheckBox.IsChecked = _saveTDP;
                 if (ProfileSaveCPUBoostCheckBox != null) ProfileSaveCPUBoostCheckBox.IsChecked = _saveCPUBoost;
                 if (ProfileSaveCPUEPPCheckBox != null) ProfileSaveCPUEPPCheckBox.IsChecked = _saveCPUEPP;
                 if (ProfileSaveCPUStateCheckBox != null) ProfileSaveCPUStateCheckBox.IsChecked = _saveCPUState;
-                if (ProfileSaveAMDFeaturesCheckBox != null) ProfileSaveAMDFeaturesCheckBox.IsChecked = _saveAMDFeatures;
                 if (ProfileSaveFPSLimitCheckBox != null) ProfileSaveFPSLimitCheckBox.IsChecked = _saveFPSLimit;
                 if (ProfileSaveOSPowerModeCheckBox != null) ProfileSaveOSPowerModeCheckBox.IsChecked = _saveOSPowerMode;
-                if (ProfileSaveHDRCheckBox != null) ProfileSaveHDRCheckBox.IsChecked = _saveHDR;
-                if (ProfileSaveResolutionCheckBox != null) ProfileSaveResolutionCheckBox.IsChecked = _saveResolution;
-                if (ProfileSaveRefreshRateCheckBox != null) ProfileSaveRefreshRateCheckBox.IsChecked = _saveRefreshRate;
                 if (ProfileSaveOverlayLevelCheckBox != null) ProfileSaveOverlayLevelCheckBox.IsChecked = _saveOverlayLevel;
-                if (ProfileSaveNintendoLayoutCheckBox != null) ProfileSaveNintendoLayoutCheckBox.IsChecked = _saveNintendoLayout;
-                if (ProfileSaveVibrationCheckBox != null) ProfileSaveVibrationCheckBox.IsChecked = _saveVibration;
-                if (ProfileSaveLightingCheckBox != null) ProfileSaveLightingCheckBox.IsChecked = _saveLighting;
-                if (ProfileSaveButtonMappingsCheckBox != null) ProfileSaveButtonMappingsCheckBox.IsChecked = _saveButtonMappings;
-                if (ProfileSaveGyroSettingsCheckBox != null) ProfileSaveGyroSettingsCheckBox.IsChecked = _saveGyroSettings;
             }
             finally
             {
@@ -127,18 +84,9 @@ namespace XboxGamingBar
             settings.Values["ProfileSaveCPUBoost"] = ProfileSaveCPUBoostCheckBox?.IsChecked ?? true;
             settings.Values["ProfileSaveCPUEPP"] = ProfileSaveCPUEPPCheckBox?.IsChecked ?? true;
             settings.Values["ProfileSaveCPUState"] = ProfileSaveCPUStateCheckBox?.IsChecked ?? true;
-            settings.Values["ProfileSaveAMDFeatures"] = ProfileSaveAMDFeaturesCheckBox?.IsChecked ?? false;
             settings.Values["ProfileSaveFPSLimit"] = ProfileSaveFPSLimitCheckBox?.IsChecked ?? true;
             settings.Values["ProfileSaveOSPowerMode"] = ProfileSaveOSPowerModeCheckBox?.IsChecked ?? true;
-            settings.Values["ProfileSaveHDR"] = ProfileSaveHDRCheckBox?.IsChecked ?? false;
-            settings.Values["ProfileSaveResolution"] = ProfileSaveResolutionCheckBox?.IsChecked ?? false;
-            settings.Values["ProfileSaveRefreshRate"] = ProfileSaveRefreshRateCheckBox?.IsChecked ?? false;
             settings.Values["ProfileSaveOverlayLevel"] = ProfileSaveOverlayLevelCheckBox?.IsChecked ?? false;
-            settings.Values["ProfileSaveNintendoLayout"] = ProfileSaveNintendoLayoutCheckBox?.IsChecked ?? false;
-            settings.Values["ProfileSaveVibration"] = ProfileSaveVibrationCheckBox?.IsChecked ?? false;
-            settings.Values["ProfileSaveLighting"] = ProfileSaveLightingCheckBox?.IsChecked ?? false;
-            settings.Values["ProfileSaveButtonMappings"] = ProfileSaveButtonMappingsCheckBox?.IsChecked ?? false;
-            settings.Values["ProfileSaveGyroSettings"] = ProfileSaveGyroSettingsCheckBox?.IsChecked ?? false;
         }
 
         private void ProfileSettingsCheckBox_Changed(object sender, RoutedEventArgs e)
@@ -211,18 +159,9 @@ namespace XboxGamingBar
             _saveCPUBoost = ProfileSaveCPUBoostCheckBox?.IsChecked ?? true;
             _saveCPUEPP = ProfileSaveCPUEPPCheckBox?.IsChecked ?? true;
             _saveCPUState = ProfileSaveCPUStateCheckBox?.IsChecked ?? true;
-            _saveAMDFeatures = ProfileSaveAMDFeaturesCheckBox?.IsChecked ?? false;
             _saveFPSLimit = ProfileSaveFPSLimitCheckBox?.IsChecked ?? true;
             _saveOSPowerMode = ProfileSaveOSPowerModeCheckBox?.IsChecked ?? true;
-            _saveHDR = ProfileSaveHDRCheckBox?.IsChecked ?? false;
-            _saveResolution = ProfileSaveResolutionCheckBox?.IsChecked ?? false;
-            _saveRefreshRate = ProfileSaveRefreshRateCheckBox?.IsChecked ?? false;
             _saveOverlayLevel = ProfileSaveOverlayLevelCheckBox?.IsChecked ?? false;
-            _saveNintendoLayout = ProfileSaveNintendoLayoutCheckBox?.IsChecked ?? false;
-            _saveVibration = ProfileSaveVibrationCheckBox?.IsChecked ?? false;
-            _saveLighting = ProfileSaveLightingCheckBox?.IsChecked ?? false;
-            _saveButtonMappings = ProfileSaveButtonMappingsCheckBox?.IsChecked ?? false;
-            _saveGyroSettings = ProfileSaveGyroSettingsCheckBox?.IsChecked ?? false;
         }
 
     }

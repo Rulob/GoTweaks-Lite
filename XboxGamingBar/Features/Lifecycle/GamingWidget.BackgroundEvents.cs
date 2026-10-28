@@ -126,9 +126,6 @@ namespace XboxGamingBar
                 // Update FPS Limit controls based on RTSS installed status
                 UpdateFPSLimitControls();
 
-                // Register Chill FPS handlers after sync to prevent crash
-                RegisterChillFPSHandlers();
-
                 // Re-evaluate which profile should be active and reload its settings
                 // This is needed because the game may have closed while widget was in background
                 // and the UI may still show stale game profile values

@@ -56,23 +56,6 @@ namespace XboxGamingBar
             FPSLimitToggle.Toggled += FPSLimitToggle_Toggled;
             FPSLimitSlider.ValueChanged += FPSLimitSlider_ValueChanged;
 
-            // Graphics settings (HDR and Resolution for profile feature)
-            HDRToggle.Toggled += SettingChanged;
-            ResolutionComboBox.SelectionChanged += SettingChanged;
-
-            // AMD settings
-            AMDFluidMotionFrameToggle.Toggled += SettingChanged;
-            AMDRadeonSuperResolutionToggle.Toggled += AMDRadeonSuperResolutionToggle_Toggled;
-            AMDRadeonSuperResolutionSharpnessSlider.ValueChanged += SettingChangedDebounced;
-            AMDImageSharpeningToggle.Toggled += AMDImageSharpeningToggle_Toggled;
-            AMDImageSharpeningSlider.ValueChanged += SettingChangedDebounced;
-            AMDRadeonAntiLagToggle.Toggled += AMDRadeonAntiLagToggle_Toggled;
-            AMDRadeonBoostToggle.Toggled += AMDRadeonBoostToggle_Toggled;
-            AMDRadeonBoostResolutionSlider.ValueChanged += SettingChangedDebounced;
-            AMDRadeonChillToggle.Toggled += AMDRadeonChillToggle_Toggled;
-            AMDRadeonChillMinFPSSlider.ValueChanged += SettingChangedDebounced;
-            AMDRadeonChillMaxFPSSlider.ValueChanged += SettingChangedDebounced;
-
             // Legion controller button mapping settings
             InitializeButtonMappingEvents("Y1");
             InitializeButtonMappingEvents("Y2");
@@ -83,8 +66,6 @@ namespace XboxGamingBar
             InitializeButtonMappingEvents("Desktop");
             InitializeButtonMappingEvents("Page");
 
-            if (LegionNintendoLayoutToggle != null)
-                LegionNintendoLayoutToggle.Toggled += LegionNintendoLayout_Toggled;
             if (LegionDesktopControlsToggle != null)
                 LegionDesktopControlsToggle.Toggled += LegionDesktopControls_Toggled;
             if (LegionVibrationComboBox != null)
