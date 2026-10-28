@@ -21,10 +21,6 @@ namespace XboxGamingBar
         // Custom mode (nothing to restore) or while AutoTDP is off.
         private int? tdpModeIndexBeforeAutoTDP = null;
 
-        // The FPS limit as it was before turning AutoTDP on capped it at the target FPS, so
-        // turning AutoTDP off can put it back. Null when AutoTDP didn't change it.
-        private (bool enabled, int value)? fpsLimitBeforeAutoTDP = null;
-
         // After AutoTDP is turned off the helper writes its own restore value; re-assert the
         // Custom card's limits once that has landed.
         private const int CustomTDPRestoreAfterAutoTDPDelayMs = 1500;
@@ -74,8 +70,6 @@ namespace XboxGamingBar
             }
             autoTDPEnabled?.SetValue(isOn);
 
-            ApplyAutoTDPFpsLimit(isOn);
-
             if (!isOn)
             {
                 ScheduleCustomTDPRestoreAfterAutoTDP();
@@ -89,8 +83,8 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Turning AutoTDP on switches to Custom mode and caps the FPS limit, which reveals the
-        /// Custom power-limit card and the FPS limit slider above the AutoTDP card. That pushes
+        /// Turning AutoTDP on switches to Custom mode, which reveals the Custom power-limit card
+        /// above the AutoTDP card. That pushes
         /// AutoTDP's own settings (which appear at the same moment) down out of view, so it
         /// looked as if the tab jumped. Once that layout has settled, scroll the AutoTDP card back
         /// to the top of the view so its settings are visible.
@@ -116,59 +110,6 @@ namespace XboxGamingBar
                     Logger.Debug($"KeepAutoTDPCardInView failed: {ex.Message}");
                 }
             });
-        }
-
-        /// <summary>
-        /// Caps the FPS limiter at AutoTDP's target while it runs (no point rendering frames above
-        /// the target - it only burns battery and makes AutoTDP hold a higher wattage), and puts
-        /// the previous limit back when AutoTDP is turned off, unless the user changed it since.
-        /// </summary>
-        private void ApplyAutoTDPFpsLimit(bool isOn)
-        {
-            // Disabled toggle = RTSS isn't available, so there is no limiter to drive.
-            if (FPSLimitToggle == null || FPSLimitSlider == null || !FPSLimitToggle.IsEnabled) return;
-
-            int target = AutoTDPTargetFPSSlider != null ? (int)Math.Round(AutoTDPTargetFPSSlider.Value) : 60;
-
-            if (isOn)
-            {
-                fpsLimitBeforeAutoTDP = (FPSLimitToggle.IsOn, (int)FPSLimitSlider.Value);
-                Logger.Info($"AutoTDP: capping FPS limit at the target ({target} FPS); was {(FPSLimitToggle.IsOn ? $"{(int)FPSLimitSlider.Value} FPS" : "off")}");
-                SetFpsLimitValue(target);
-            }
-            else if (fpsLimitBeforeAutoTDP.HasValue)
-            {
-                var before = fpsLimitBeforeAutoTDP.Value;
-                fpsLimitBeforeAutoTDP = null;
-
-                if (!FPSLimitToggle.IsOn || (int)FPSLimitSlider.Value != target)
-                {
-                    Logger.Info("AutoTDP: FPS limit was changed while AutoTDP ran - leaving it as it is");
-                    return;
-                }
-
-                Logger.Info($"AutoTDP: restoring FPS limit to {(before.enabled ? $"{before.value} FPS" : "off")}");
-                if (before.enabled)
-                {
-                    FPSLimitSlider.Value = before.value; // toggle stays on; the slider's debounce applies it
-                }
-                else
-                {
-                    FPSLimitToggle.IsOn = false;         // sends "unlimited"
-                    FPSLimitSlider.Value = before.value; // toggle is off, so this only restores the slider
-                }
-            }
-        }
-
-        /// <summary>Turns the FPS limiter on at <paramref name="fps"/> through its normal controls.</summary>
-        private void SetFpsLimitValue(int fps)
-        {
-            if (FPSLimitToggle == null || FPSLimitSlider == null) return;
-            FPSLimitSlider.Value = fps;          // with the toggle on, the slider's debounce sends it
-            if (!FPSLimitToggle.IsOn)
-            {
-                FPSLimitToggle.IsOn = true;      // Toggled sends the slider value
-            }
         }
 
         /// <summary>
@@ -246,7 +187,6 @@ namespace XboxGamingBar
 
             // The profile now decides the mode; there is nothing to restore when AutoTDP goes off.
             tdpModeIndexBeforeAutoTDP = null;
-            fpsLimitBeforeAutoTDP = null;
             UpdateAutoTDPToggleUI(on);
             Logger.Info($"Applied profile AutoTDP for {profileName}: {(on ? "On" : "Off")}, target={profile.AutoTDPTargetFPS} FPS, {profile.AutoTDPMinTDP}-{profile.AutoTDPMaxTDP}W");
 
@@ -362,16 +302,6 @@ namespace XboxGamingBar
         {
             autoTDPTargetFPSDebounceTimer.Stop();
             Logger.Info($"AutoTDP target FPS changed to: {pendingAutoTDPTargetFPS} (debounced)");
-
-            // If the FPS limit is the cap AutoTDP set (still at the old target), move it with
-            // the target.
-            int oldTarget = autoTDPTargetFPS?.Value ?? 0;
-            if (AutoTDPToggle?.IsOn == true && FPSLimitToggle?.IsOn == true && FPSLimitSlider != null
-                && (int)FPSLimitSlider.Value == oldTarget && oldTarget != pendingAutoTDPTargetFPS)
-            {
-                Logger.Info($"AutoTDP: moving FPS limit with the target ({oldTarget} -> {pendingAutoTDPTargetFPS} FPS)");
-                SetFpsLimitValue(pendingAutoTDPTargetFPS);
-            }
 
             autoTDPTargetFPS?.SetValue(pendingAutoTDPTargetFPS);
             SaveCurrentSettingsToProfile(currentProfileName);

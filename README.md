@@ -86,8 +86,8 @@ upstream, and why.
   range, and it continuously adjusts TDP live to hit that FPS, backing off gracefully when the
   target is unreachable (CPU-bound games). Works from any TDP Mode — enabling it (from its card or
   the matching Quick Settings tile) automatically switches to and locks Custom mode, and restores
-  your previous mode when turned off. While it runs it also caps the FPS limiter at the target
-  (restored afterwards), keeps your Custom-mode SPPT / FPPT boosts on top of the wattage it picks,
+  your previous mode when turned off. While it runs it keeps your Custom-mode SPPT / FPPT boosts
+  on top of the wattage it picks,
   and is saved with each profile (on/off, target FPS, min/max TDP). Restored from upstream, trimmed
   to the rule-based PID controller only (no Q-Learning/SARSA machine-learning modes or per-game
   learned data).
