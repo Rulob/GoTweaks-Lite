@@ -97,6 +97,8 @@ namespace XboxGamingBar
             AutoTDPMaxSlider.LostFocus += Control_LostFocus;
             AutoTDPPauseWhenUnfocusedToggle.GotFocus += Control_GotFocus;
             AutoTDPPauseWhenUnfocusedToggle.LostFocus += Control_LostFocus;
+            AutoTDPFastResponseToggle.GotFocus += Control_GotFocus;
+            AutoTDPFastResponseToggle.LostFocus += Control_LostFocus;
 
             // Performance tab - CPU Boost card
             CPUBoostToggle.GotFocus += Control_GotFocus;
@@ -191,6 +193,10 @@ namespace XboxGamingBar
             // Legion tab - Charge Limit card
             LegionChargeLimitToggle.GotFocus += Control_GotFocus;
             LegionChargeLimitToggle.LostFocus += Control_LostFocus;
+
+            // Legion tab - Game Bar card
+            GameBarFirstSlotToggle.GotFocus += Control_GotFocus;
+            GameBarFirstSlotToggle.LostFocus += Control_LostFocus;
         }
 
         private void Control_GotFocus(object sender, RoutedEventArgs e)

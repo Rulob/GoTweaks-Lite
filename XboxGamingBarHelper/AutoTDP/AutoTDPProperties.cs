@@ -120,4 +120,32 @@ namespace XboxGamingBarHelper.AutoTDP
         }
     }
 
+    /// <summary>
+    /// Fast response: when FPS is far from the target, AutoTDP estimates the wattage it needs
+    /// and jumps there in one step instead of climbing 1-3 W at a time. Global setting, saved by
+    /// the helper (default on).
+    /// </summary>
+    internal class AutoTDPFastResponseProperty : HelperProperty<bool, AutoTDPManager>
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string SettingsKey = "AutoTDPFastResponse";
+
+        public AutoTDPFastResponseProperty(AutoTDPManager inManager) : base(LoadFromSettings(), null, Function.AutoTDPFastResponse, inManager)
+        {
+            Logger.Info($"AutoTDP fast response loaded: {Value}");
+        }
+
+        private static bool LoadFromSettings()
+        {
+            return Settings.LocalSettingsHelper.TryGetValue<bool>(SettingsKey, out var value) ? value : true;
+        }
+
+        protected override void NotifyPropertyChanged(string propertyName = "")
+        {
+            base.NotifyPropertyChanged(propertyName);
+            Settings.LocalSettingsHelper.SetValue(SettingsKey, Value);
+            Logger.Info($"AutoTDP fast response: {Value}");
+        }
+    }
+
 }

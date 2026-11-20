@@ -161,6 +161,14 @@ upstream, and why.
   of the helper's ~1 s main loop, and takes bigger steps when FPS is far below target. The Min /
   Max TDP sliders stay inside the device's TDP range (no more 85 W), moving one no longer shifts
   the other's handle, and turning AutoTDP on no longer scrolls its settings out of view.
+- **AutoTDP Fast response** (on by default, switch on the AutoTDP card). When FPS is far from the
+  target, AutoTDP estimates the wattage it needs and jumps there in one step (up to +8 / −6 W),
+  waits ¾ s for it to settle, then fine-tunes as before; it also probes for a lower wattage sooner
+  once on target. Turn it off for the previous, gentler behaviour.
+- **Show GoTweaks first in Game Bar** (Legion tab → Game Bar). Puts the widget in Game Bar's
+  device-maker slot, left of Home, where Legion Space normally sits, so it opens straight from the
+  Game Bar button. Game Bar closes once to apply it; open it again. Turning it off puts the
+  previous widget (e.g. Legion Space) back, and so does the uninstaller.
 
 ---
 
@@ -229,6 +237,7 @@ Deep support for the Legion Go 2 with automatic device detection.
 **Other**
 - Touchpad toggle
 - Battery charge limit
+- Show GoTweaks first in Game Bar (takes Legion Space's slot left of Home)
 
 ### 🔋 Power & Sleep
 

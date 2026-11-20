@@ -134,6 +134,7 @@
     <Compile Include="Data\Legion\LegionVibrationProperty.cs" />
     <Compile Include="Data\Legion\LegionPowerLightProperty.cs" />
     <Compile Include="Data\Legion\LegionChargeLimitProperty.cs" />
+    <Compile Include="Data\Legion\GameBarFirstSlotProperty.cs" />
     <Compile Include="Data\Legion\LegionButtonY1Property.cs" />
     <Compile Include="Data\Legion\LegionButtonY2Property.cs" />
     <Compile Include="Data\Legion\LegionButtonY3Property.cs" />
@@ -181,6 +182,7 @@
     <Compile Include="Data\Device\DeviceHasTouchpadProperty.cs" />
     <Compile Include="Data\Performance\PerformanceProperties.cs" />
     <Compile Include="Data\AutoTDP\AutoTDPProperties.cs" />
+    <Compile Include="Data\AutoTDP\AutoTDPFastResponseProperty.cs" />
     <Compile Include="Data\PerGameProfileProperty.cs" />
     <Compile Include="Data\OSDProperty.cs" />
     <Compile Include="Data\RefreshRatesProperty.cs" />

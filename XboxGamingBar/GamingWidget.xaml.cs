@@ -532,6 +532,8 @@ namespace XboxGamingBar
         private readonly XboxGamingBar.Data.AutoTDPPauseWhenUnfocusedProperty autoTDPPauseWhenUnfocused;
         private readonly XboxGamingBar.Data.AutoTDPSpptBoostProperty autoTDPSpptBoost;
         private readonly XboxGamingBar.Data.AutoTDPFpptBoostProperty autoTDPFpptBoost;
+        private readonly XboxGamingBar.Data.AutoTDPFastResponseProperty autoTDPFastResponse;
+        private readonly GameBarFirstSlotProperty gameBarFirstSlot;
         private readonly RunningGameProperty runningGame;
         private readonly PerGameProfileProperty perGameProfile;
         private readonly DeleteGameProfileProperty deleteGameProfile;
@@ -1032,7 +1034,9 @@ namespace XboxGamingBar
             autoTDPPauseWhenUnfocused = new XboxGamingBar.Data.AutoTDPPauseWhenUnfocusedProperty(true);
             autoTDPSpptBoost = new XboxGamingBar.Data.AutoTDPSpptBoostProperty(2);
             autoTDPFpptBoost = new XboxGamingBar.Data.AutoTDPFpptBoostProperty(5);
-            osd = new OSDProperty(0, PerformanceOverlaySlider, this);
+            autoTDPFastResponse = new XboxGamingBar.Data.AutoTDPFastResponseProperty(AutoTDPFastResponseToggle, this);
+            gameBarFirstSlot = new GameBarFirstSlotProperty(GameBarFirstSlotToggle, this);
+            osd =new OSDProperty(0, PerformanceOverlaySlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, DetectedGameText, this);
             // Callback fires after RunningGameProperty updates DetectedGameText.Text on the
             // UI thread. Re-evaluate the marquee scroll so long window titles (e.g. Windows
@@ -1298,6 +1302,8 @@ namespace XboxGamingBar
                 autoTDPPauseWhenUnfocused,
                 autoTDPSpptBoost,
                 autoTDPFpptBoost,
+                autoTDPFastResponse,
+                gameBarFirstSlot,
                 legionGoDetected,
                 legionTouchpadEnabled,
                 legionLightMode,

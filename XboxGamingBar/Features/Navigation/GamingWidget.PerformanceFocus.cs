@@ -38,6 +38,7 @@ namespace XboxGamingBar
             yield return AutoTDPMinSlider;
             yield return AutoTDPMaxSlider;
             yield return AutoTDPPauseWhenUnfocusedToggle;
+            yield return AutoTDPFastResponseToggle;
             yield return OSPowerModeComboBox;
             yield return CPUExtrasExpandToggle;
         }

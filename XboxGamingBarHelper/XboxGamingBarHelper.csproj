@@ -549,6 +549,7 @@
     <Compile Include="Settings\ProfileMatchByExeProperty.cs" />
     <Compile Include="Settings\ProfileCustomGamePathProperty.cs" />
     <Compile Include="Settings\ProfileGamesOnlyProperty.cs" />
+    <Compile Include="Settings\GameBarFirstSlotProperty.cs" />
     <Compile Include="Settings\ProfileBlacklistPathsProperty.cs" />
     <Compile Include="PresentMon\PresentMonMetrics.cs" />
     <Compile Include="PresentMon\PresentMonRunner.cs" />

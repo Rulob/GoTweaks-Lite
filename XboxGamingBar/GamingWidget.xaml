@@ -1354,6 +1354,20 @@
                                                       IsOn="True"
                                                       Toggled="AutoTDPPauseWhenUnfocusedToggle_Toggled"/>
                                     </Grid>
+
+                                    <!-- Fast response -->
+                                    <Grid>
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,60,0">
+                                            <TextBlock Text="Fast response" FontSize="13" Foreground="#FFFFFF" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Jump to the estimated wattage when FPS is far off target, then fine-tune"
+                                                       FontSize="11" Foreground="#888888" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <ToggleSwitch x:Name="AutoTDPFastResponseToggle"
+                                                      Style="{StaticResource ModernToggleStyle}"
+                                                      Width="52"
+                                                      HorizontalAlignment="Right"
+                                                      IsOn="True"/>
+                                    </Grid>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -5412,6 +5426,27 @@
                                                Style="{StaticResource CardCaptionStyle}"/>
                                 </StackPanel>
                                 <ToggleSwitch x:Name="LegionChargeLimitToggle"
+                                              Grid.Column="1"
+                                              Style="{StaticResource ModernToggleStyle}"
+                                              IsOn="False"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Game Bar Section: put GoTweaks in the device-maker slot left of Home -->
+                        <TextBlock Text="Game Bar" Style="{StaticResource SectionHeaderStyle}"/>
+                        <Border Style="{StaticResource CardStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="Show GoTweaks first" Style="{StaticResource CardTitleStyle}"/>
+                                    <TextBlock Text="Takes Legion Space's spot left of Home. Game Bar closes to apply; open it again."
+                                               Style="{StaticResource CardCaptionStyle}"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <ToggleSwitch x:Name="GameBarFirstSlotToggle"
                                               Grid.Column="1"
                                               Style="{StaticResource ModernToggleStyle}"
                                               IsOn="False"/>

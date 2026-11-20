@@ -385,6 +385,18 @@ namespace XboxGamingBarHelper.Services
                 results.AppendLine($"✗ Failed to remove scheduled task: {ex.Message}");
             }
 
+            // 1b. Give Game Bar's device-maker slot back (only acts if GoTweaks holds it)
+            try
+            {
+                Settings.GameBarOemSlot.Release(restartGameBar: false);
+                results.AppendLine("✓ Game Bar slot checked / restored");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Uninstall: Failed to restore the Game Bar slot: {ex.Message}");
+                results.AppendLine($"✗ Failed to restore the Game Bar slot: {ex.Message}");
+            }
+
             // 2. Restore CPU Boost
             if (_restoreData.CpuBoostSaved && _restoreData.OriginalCpuBoostAC.HasValue)
             {

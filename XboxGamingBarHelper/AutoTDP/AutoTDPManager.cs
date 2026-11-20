@@ -59,6 +59,19 @@ namespace XboxGamingBarHelper.AutoTDP
         private readonly AutoTDPFpptBoostProperty fpptBoost;
         public AutoTDPFpptBoostProperty FpptBoost => fpptBoost;
 
+        private readonly AutoTDPFastResponseProperty fastResponse;
+        public AutoTDPFastResponseProperty FastResponse => fastResponse;
+
+        // Fast response: when FPS is far off target, estimate the wattage needed and jump there,
+        // then let the PID loop below fine-tune. After a jump, sampling pauses briefly so the
+        // frames rendered during the change don't trigger another jump.
+        private const double FastSettleMs = 750;
+        private const int FastMaxJumpUp = 8;     // W per jump
+        private const int FastMaxJumpDown = 6;   // W per jump
+        private const int FastAtTargetRequired = 3; // decisions at target before probing lower (vs 6)
+        private DateTime fastSettleUntil = DateTime.MinValue;
+        private int AtTargetRequired => fastResponse.Value ? FastAtTargetRequired : StableAtTargetRequired;
+
         // Controller state
         private double integral = 0;
         private DateTime lastUpdateTime = DateTime.MinValue;
@@ -183,6 +196,7 @@ namespace XboxGamingBarHelper.AutoTDP
             pauseWhenUnfocused = new AutoTDPPauseWhenUnfocusedProperty(true, this);
             spptBoost = new AutoTDPSpptBoostProperty(2, this);  // Same defaults as the widget's
             fpptBoost = new AutoTDPFpptBoostProperty(5, this);  // boost sliders (+2 / +5 W)
+            fastResponse = new AutoTDPFastResponseProperty(this);
 
             minTDP = minTDPProperty.Value;
             maxTDP = maxTDPProperty.Value;
@@ -431,6 +445,14 @@ namespace XboxGamingBarHelper.AutoTDP
                 return;  // Skip this cycle to let things settle
             }
 
+            // Fast response: just jumped - skip the transition frames.
+            if (now < fastSettleUntil)
+            {
+                samplesSinceLastDecision = 0;
+                StatusText = "Settling";
+                return;
+            }
+
             // Spike detection - detect sudden FPS jumps (menus opening, pause screens)
             double currentAverage = CalculateWeightedAverage();
             bool recentTargetChange = (DateTime.Now - lastTargetChangeTime).TotalMilliseconds < TargetChangeSettleTimeMs;
@@ -496,7 +518,9 @@ namespace XboxGamingBarHelper.AutoTDP
             }
             samplesSinceLastDecision = 0;
 
-            int newTDP = CalculateConservativeTDP(smoothedFPS, predictedFPS, trend, currentTDP, gpuUtil);
+            int jumpTDP = currentTDP;
+            bool jumped = fastResponse.Value && TryFastJump(currentTDP, out jumpTDP);
+            int newTDP = jumped ? jumpTDP : CalculateConservativeTDP(smoothedFPS, predictedFPS, trend, currentTDP, gpuUtil);
 
             CurrentTDPValue = currentTDP;
             NewTDPValue = newTDP;
@@ -511,7 +535,7 @@ namespace XboxGamingBarHelper.AutoTDP
                     RecordTDPIncrease(smoothedFPS, currentTDP);
                 }
 
-                string action = newTDP > currentTDP ? "Increasing" : "Decreasing";
+                string action = (newTDP > currentTDP ? "Increasing" : "Decreasing") + (jumped ? " (fast)" : "");
                 string ceilingPrefix = isCeilingDetected ? "[Ceiling] " : "";
                 string powerOptPrefix = isPowerOptimizationMode ? "[PwrOpt] " : "";
                 StatusText = ceilingPrefix + powerOptPrefix + action;
@@ -524,6 +548,10 @@ namespace XboxGamingBarHelper.AutoTDP
                 ApplyTDP(newTDP);
                 lastAppliedTDP = newTDP;
                 consecutiveStableReadings = 0;
+                if (jumped)
+                {
+                    BeginFastSettle();
+                }
             }
             else
             {
@@ -569,6 +597,82 @@ namespace XboxGamingBarHelper.AutoTDP
                     consecutiveStableReadings++;
                 }
             }
+        }
+
+        /// <summary>
+        /// Fast response: if the last two raw FPS samples are both clearly off target, estimate
+        /// the wattage that hits the target and return it. Handheld APUs in this range need
+        /// roughly 1.5x more power for each 1x more FPS, so the increase uses that exponent plus
+        /// 1 W of margin. The decrease scales only linearly, which deliberately drops less than
+        /// needed and leaves the rest to the probing below. Off while the target is unreachable
+        /// (ceiling mode), where the existing logic already minimizes power.
+        /// </summary>
+        private bool TryFastJump(int currentTDP, out int jumpTDP)
+        {
+            jumpTDP = currentTDP;
+            if (isCeilingDetected || isPowerOptimizationMode || fpsHistoryCount < 2)
+            {
+                return false;
+            }
+
+            int target = targetFPS.Value;
+            double last = fpsHistory[(fpsHistoryIndex - 1 + fpsHistory.Length) % fpsHistory.Length];
+            double previous = fpsHistory[(fpsHistoryIndex - 2 + fpsHistory.Length) % fpsHistory.Length];
+            double recent = (last + previous) / 2;
+            if (recent <= 0 || target <= 0)
+            {
+                return false;
+            }
+
+            double belowGap = Math.Max(4.0, target * 0.07);
+            double aboveGap = Math.Max(6.0, target * 0.12);
+
+            if (last < target - belowGap && previous < target - belowGap)
+            {
+                if (currentTDP >= maxTDP) return false;
+                double estimate = currentTDP * Math.Pow(target / recent, 1.5) + 1;
+                jumpTDP = Math.Min((int)Math.Ceiling(estimate), currentTDP + FastMaxJumpUp);
+            }
+            else if (last > target + aboveGap && previous > target + aboveGap)
+            {
+                if (currentTDP <= minTDP) return false;
+                double estimate = currentTDP * (target / recent);
+                jumpTDP = Math.Max((int)Math.Round(estimate), currentTDP - FastMaxJumpDown);
+            }
+            else
+            {
+                return false;
+            }
+
+            jumpTDP = Math.Max(minTDP, Math.Min(maxTDP, jumpTDP));
+            // Steps of 1 W are left to the fine-tune loop.
+            if (Math.Abs(jumpTDP - currentTDP) < 2)
+            {
+                jumpTDP = currentTDP;
+                return false;
+            }
+
+            Logger.Info($"AutoTDP: Fast jump - FPS {previous:F0}/{last:F0} vs target {target}, {currentTDP}W -> {jumpTDP}W");
+            return true;
+        }
+
+        /// <summary>
+        /// After a fast jump: drop the FPS history (it describes the old wattage), clear the
+        /// PID / probing state, and pause sampling for <see cref="FastSettleMs"/>.
+        /// </summary>
+        private void BeginFastSettle()
+        {
+            fastSettleUntil = DateTime.Now.AddMilliseconds(FastSettleMs);
+            fpsHistoryCount = 0;
+            fpsHistoryIndex = 0;
+            fpsDeltaCount = 0;
+            fpsDeltaIndex = 0;
+            lastSmoothedFPS = 0;
+            integral = 0;
+            consecutiveStableReadings = 0;
+            consecutiveAtTarget = 0;
+            IsProbing = false;
+            samplesSinceLastDecision = 0;
         }
 
         /// <summary>
@@ -758,8 +862,8 @@ namespace XboxGamingBarHelper.AutoTDP
             if (atOrAboveTarget && !IsProbing)
             {
                 consecutiveAtTarget++;
-                Logger.Debug($"AutoTDP: At/above target ({smoothedFPS:F1}/{target}), consecutiveAtTarget={consecutiveAtTarget}/{StableAtTargetRequired}");
-                if (consecutiveAtTarget >= StableAtTargetRequired && currentTDP > minTDP)
+                Logger.Debug($"AutoTDP: At/above target ({smoothedFPS:F1}/{target}), consecutiveAtTarget={consecutiveAtTarget}/{AtTargetRequired}");
+                if (consecutiveAtTarget >= AtTargetRequired && currentTDP > minTDP)
                 {
                     IsProbing = true;
                     lastProbeTDP = currentTDP;
@@ -781,13 +885,13 @@ namespace XboxGamingBarHelper.AutoTDP
                 else if (error <= 1.0)
                 {
                     consecutiveAtTarget++;
-                    Logger.Debug($"AutoTDP: Probing, FPS at {smoothedFPS:F1}/{target}, consecutiveAtTarget={consecutiveAtTarget}/{StableAtTargetRequired / 2}");
-                    if (consecutiveAtTarget >= StableAtTargetRequired / 2)
+                    Logger.Debug($"AutoTDP: Probing, FPS at {smoothedFPS:F1}/{target}, consecutiveAtTarget={consecutiveAtTarget}/{AtTargetRequired / 2}");
+                    if (consecutiveAtTarget >= AtTargetRequired / 2)
                     {
                         Logger.Info($"AutoTDP: Probe succeeded at {currentTDP}W, will probe again");
                         lastProbeTDP = currentTDP;
                         IsProbing = false;
-                        consecutiveAtTarget = StableAtTargetRequired - 2;
+                        consecutiveAtTarget = AtTargetRequired - 2;
                     }
                     return currentTDP;
                 }
