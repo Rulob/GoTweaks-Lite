@@ -378,6 +378,15 @@ namespace XboxGamingBarHelper.Core
                     }
                 }
             }
+            else if (_comboModifier == modifier && _comboButton == button)
+            {
+                // The second button was let go while the modifier is still held: re-arm, so
+                // pressing it again (e.g. Menu held, D-Pad Right tapped repeatedly for brightness)
+                // fires again instead of waiting for the modifier to be released too.
+                _comboModifier = 0;
+                _comboButton = 0;
+                _comboStartTime = DateTime.MinValue;
+            }
         }
 
         /// <summary>

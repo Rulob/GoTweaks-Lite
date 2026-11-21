@@ -173,7 +173,8 @@ upstream, and why.
   gear button on the title bar were removed.)
 - **Brightness hotkeys.** The Hotkeys card (View / Menu + button combos) has two new actions,
   _Brightness Up (+5%)_ and _Brightness Down (-5%)_. Each press moves the panel brightness one 5%
-  step (0, 5, 10 … 100), and the brightness slider follows.
+  step (0, 5, 10 … 100), and the brightness slider follows. Keep Menu / View held and tap the
+  second button again for more steps.
 - **Customizing Quick Settings no longer jumps to the top.** Showing or hiding a tile (tap it twice)
   in customize mode now updates that tile in place, and swapping two tiles keeps the scroll
   position and focus.
