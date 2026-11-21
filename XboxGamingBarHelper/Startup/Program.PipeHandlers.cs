@@ -1148,11 +1148,6 @@ namespace XboxGamingBarHelper
                 {
                     response = HandleLabsLegionScrollRemap(request);
                 }
-                // Labs: Legion R Brightness Gesture (hold + tilt stick)
-                else if (functionValue == (int)Function.Labs_LegionRBrightnessGesture)
-                {
-                    response = HandleLabsLegionRBrightnessGesture(request);
-                }
                 // Controller Hotkey Config: Receive hotkey settings from widget for XInput monitoring
                 else if (functionValue == (int)Function.ControllerHotkeyConfig)
                 {
@@ -1285,40 +1280,6 @@ namespace XboxGamingBarHelper
             response = new global::Windows.Foundation.Collections.ValueSet();
             response.Add("Success", success);
             Logger.Info($"Pipe: Legion {button} Remap - Enabled: {enabled}, Success: {success}");
-            return response;
-        }
-
-        // Labs: Brightness Gesture (enabled + trigger button + axis)
-        private static global::Windows.Foundation.Collections.ValueSet HandleLabsLegionRBrightnessGesture(Shared.IPC.PipeMessage request)
-        {
-            bool enabled = false;
-            if (request.Extra.TryGetValue("Enabled", out object enabledObj))
-                enabled = Convert.ToBoolean(enabledObj);
-
-            int triggerType = 0;
-            if (request.Extra.TryGetValue("Trigger", out object triggerObj))
-                triggerType = Convert.ToInt32(triggerObj);
-
-            int axisType = 0;
-            if (request.Extra.TryGetValue("Axis", out object axisObj))
-                axisType = Convert.ToInt32(axisObj);
-
-            bool success = ConfigureLegionBrightnessGesture(enabled, triggerType, axisType);
-
-            try
-            {
-                Settings.LocalSettingsHelper.SetValue("LegionR_BrightnessGesture", enabled);
-                Settings.LocalSettingsHelper.SetValue("BrightnessGesture_Trigger", triggerType);
-                Settings.LocalSettingsHelper.SetValue("BrightnessGesture_Axis", axisType);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Pipe: Failed to persist brightness gesture settings: {ex.Message}");
-            }
-
-            var response = new global::Windows.Foundation.Collections.ValueSet();
-            response.Add("Success", success);
-            Logger.Info($"Pipe: Brightness Gesture - Enabled: {enabled}, Trigger: {triggerType}, Axis: {axisType}, Success: {success}");
             return response;
         }
 

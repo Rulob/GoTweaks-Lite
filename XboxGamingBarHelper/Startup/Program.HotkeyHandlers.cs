@@ -252,6 +252,39 @@ namespace XboxGamingBarHelper
         }
 
         /// <summary>
+        /// Brightness hotkeys move the panel brightness by this many percent per press.
+        /// </summary>
+        private const int BrightnessHotkeyStep = 5;
+
+        /// <summary>
+        /// Steps the built-in panel brightness by <paramref name="delta"/>, snapped to the step grid
+        /// (0, 5, 10 ... 100) so presses land on round values. Starts from the real current
+        /// brightness (it may have been changed in Windows) and goes through the PanelBrightness
+        /// property so the hardware and the widget slider both update.
+        /// </summary>
+        private static void StepPanelBrightness(int delta)
+        {
+            var brightness = systemManager?.PanelBrightness;
+            if (brightness == null)
+            {
+                Logger.Warn("Brightness hotkey: panel brightness not available");
+                return;
+            }
+
+            int current = XboxGamingBarHelper.Sidebar.BrightnessManager.GetBrightness();
+            if (current < 0) current = brightness.Value;
+
+            int step = Math.Abs(delta);
+            int next = delta > 0
+                ? (current / step + 1) * step
+                : ((current + step - 1) / step - 1) * step;
+            next = Math.Max(0, Math.Min(100, next));
+
+            Logger.Info($"Brightness hotkey: {current}% -> {next}%");
+            brightness.ForceSetValue(next);
+        }
+
+        /// <summary>
         /// Executes the configured action for a controller hotkey combo.
         /// Uses cached config from Named Pipe, falls back to LocalSettings.
         /// </summary>
@@ -290,7 +323,8 @@ namespace XboxGamingBarHelper
 
                 // HotkeyAction enum from widget:
                 // 0=Disabled, 1=KeyboardKey, 2=KeyboardShortcut, 3=ToggleOSD, 4=Screenshot,
-                // 5=AltTab, 6=AltF4, 7=OpenKeyboard, 8=CtrlAltDel, 9=TaskManager, 10=FocusGoTweaks
+                // 5=AltTab, 6=AltF4, 7=OpenKeyboard, 8=CtrlAltDel, 9=TaskManager, 10=FocusGoTweaks,
+                // 11=BrightnessUp, 12=BrightnessDown
                 switch (action)
                 {
                     case 0: // Disabled
@@ -330,6 +364,12 @@ namespace XboxGamingBarHelper
                         break;
                     case 10: // Focus GoTweaks widget
                         FocusGoTweaksWidget();
+                        break;
+                    case 11: // Brightness up
+                        StepPanelBrightness(BrightnessHotkeyStep);
+                        break;
+                    case 12: // Brightness down
+                        StepPanelBrightness(-BrightnessHotkeyStep);
                         break;
                     default:
                         Logger.Warn($"ExecuteControllerHotkeyAction: Unknown action {action} for {hotkeyName}");

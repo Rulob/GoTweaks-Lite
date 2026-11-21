@@ -56,6 +56,8 @@ upstream, and why.
   panel — the single _TDP Mode_ selector replaces them all. (**AutoTDP** was also removed here, then
   brought back in PID-only form — see below.)
 - The beta **Sidebar overlay** — _Focus GoTweaks Lite_ now simply opens the Game Bar.
+- **GoTweaks Haptics** (per-button controller clicks) and the **Brightness Gesture** (hold a button
+  + tilt a stick). For brightness, bind _Brightness Up / Down_ to a controller hotkey instead.
 - **Microsoft / bundled Default Game Profiles** — only your own per-game profiles remain.
 - The **Advanced panel** (core parking / affinity), the **AC/DC Power Plan** selector, and the
   debug **Themes** selector — niche, no-ops on the Legion Go 2, or superseded.
@@ -96,8 +98,6 @@ upstream, and why.
   and is saved with each profile (on/off, target FPS, min/max TDP). Restored from upstream, trimmed
   to the rule-based PID controller only (no Q-Learning/SARSA machine-learning modes or per-game
   learned data).
-- **Brightness Gesture** — SteamOS-style brightness control: hold a configurable button and tilt a
-  stick to fade the panel brightness up or down.
 - **Power & Sleep card** — power-button behavior, screen-off, and a GoTweaks-owned "hibernate
   after" idle timer (input-aware, so a controller-only session isn't wrongly treated as idle),
   all restored automatically on uninstall.
@@ -171,6 +171,12 @@ upstream, and why.
   previous widget (e.g. Legion Space) back, and so does the uninstaller. (Game Bar only uses that
   slot for an app with a single widget, so the old, unused "GoTweaks Lite Settings" widget and the
   gear button on the title bar were removed.)
+- **Brightness hotkeys.** The Hotkeys card (View / Menu + button combos) has two new actions,
+  _Brightness Up (+5%)_ and _Brightness Down (-5%)_. Each press moves the panel brightness one 5%
+  step (0, 5, 10 … 100), and the brightness slider follows.
+- **Customizing Quick Settings no longer jumps to the top.** Showing or hiding a tile (tap it twice)
+  in customize mode now updates that tile in place, and swapping two tiles keeps the scroll
+  position and focus.
 
 ---
 
@@ -229,7 +235,6 @@ Deep support for the Legion Go 2 with automatic device detection.
 - **Stick Deadzones** — adjust left/right stick deadzones (0–50%)
 - **Gyroscope** — enable/disable with target selection, X/Y sensitivity, axis inversion, and
   activation mode (Hold/Toggle) with a button binding
-- **Brightness Gesture** — hold a trigger button and tilt a stick/D-pad to fade panel brightness
 - **Vibration Mode** & **Touchpad Haptics** — configure vibration behavior and haptic feedback
 
 **RGB lighting**

@@ -208,11 +208,14 @@ namespace XboxGamingBar
                 }
                 else if (qsSelectedTileForMove.Id == clickedTile.Id)
                 {
-                    // Tap same tile: toggle visibility - need rebuild for eye icon change
+                    // Tap same tile: toggle visibility. Update the tile in place: rebuilding the
+                    // grid destroyed the focused button, focus fell back to the top of the page
+                    // and the view jumped there.
                     clickedTile.IsVisible = !clickedTile.IsVisible;
                     qsSelectedTileForMove = null;
                     UpdateSelectedTileIndicator(null);
-                    BuildSortableGridPreserveScroll(tileId);
+                    UpdateSortableGridVisuals();
+                    UpdateSortableTileVisibilityVisuals(button, clickedTile);
                     Logger.Info($"Toggled visibility for {clickedTile.Name}: {clickedTile.IsVisible}");
                 }
                 else
@@ -236,46 +239,85 @@ namespace XboxGamingBar
         }
 
         /// <summary>
+        /// Refreshes the parts of a sortable mini tile that show whether it is visible (icon and
+        /// name colour, eye glyph) without rebuilding it. Matches CreateMiniTileForSort's layout:
+        /// a Grid whose first child is the icon/name stack and second child the eye icon.
+        /// </summary>
+        private static void UpdateSortableTileVisibilityVisuals(Button button, TileDefinition tile)
+        {
+            if (!(button?.Content is Grid content)) return;
+
+            var textBrush = new SolidColorBrush(tile.IsVisible ? Windows.UI.Colors.White : Windows.UI.Colors.Gray);
+            if (content.Children.Count > 0 && content.Children[0] is StackPanel stack)
+            {
+                foreach (var child in stack.Children)
+                {
+                    if (child is FontIcon icon) icon.Foreground = textBrush;
+                    else if (child is TextBlock text) text.Foreground = textBrush;
+                }
+            }
+
+            if (content.Children.Count > 1 && content.Children[1] is FontIcon eyeIcon)
+            {
+                eyeIcon.Glyph = tile.IsVisible ? "" : "";  // Eye / Eye crossed
+                eyeIcon.Foreground = new SolidColorBrush(tile.IsVisible
+                    ? Windows.UI.Color.FromArgb(255, 100, 200, 100)
+                    : Windows.UI.Color.FromArgb(255, 200, 100, 100));
+            }
+        }
+
+        /// <summary>
         /// Build sortable grid while preserving scroll position and focus
         /// </summary>
         private void BuildSortableGridPreserveScroll(string focusTileId = null)
         {
-            // Save scroll position
-            double scrollOffset = 0;
-            if (QuickSettingsScrollViewer != null)
+            var scrollViewer = QuickSettingsScrollViewer;
+            double scrollOffset = scrollViewer?.VerticalOffset ?? 0;
+
+            // Rebuilding removes the focused button, and focus then falls back to the top of the
+            // page. With BringIntoViewOnFocusChange on, that scrolls the view to the top (and an
+            // animated scroll can outlast a deferred restore). Turn it off for the rebuild, put
+            // focus back on the same tile, then restore the offset.
+            if (scrollViewer != null) scrollViewer.BringIntoViewOnFocusChange = false;
+            try
             {
-                scrollOffset = QuickSettingsScrollViewer.VerticalOffset;
+                BuildSortableGrid();
+                scrollViewer?.UpdateLayout();
+                FindSortableTileButton(focusTileId)?.Focus(FocusState.Programmatic);
+                scrollViewer?.ChangeView(null, scrollOffset, null, true);
             }
-
-            BuildSortableGrid();
-
-            // Restore scroll position and focus after layout update
-            _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, () =>
+            finally
             {
-                if (QuickSettingsScrollViewer != null && scrollOffset > 0)
+                // Re-enable after the pending layout / focus work has run.
+                _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, () =>
                 {
-                    QuickSettingsScrollViewer.ChangeView(null, scrollOffset, null, true);
-                }
-
-                // Restore focus to the specified tile
-                if (!string.IsNullOrEmpty(focusTileId) && TileSortableGrid != null)
-                {
-                    foreach (var child in TileSortableGrid.Children)
+                    if (scrollViewer == null) return;
+                    if (Math.Abs(scrollViewer.VerticalOffset - scrollOffset) > 1)
                     {
-                        if (child is Grid row)
+                        scrollViewer.ChangeView(null, scrollOffset, null, true);
+                    }
+                    scrollViewer.BringIntoViewOnFocusChange = true;
+                });
+            }
+        }
+
+        private Button FindSortableTileButton(string tileId)
+        {
+            if (string.IsNullOrEmpty(tileId) || TileSortableGrid == null) return null;
+            foreach (var child in TileSortableGrid.Children)
+            {
+                if (child is Grid row)
+                {
+                    foreach (var cell in row.Children)
+                    {
+                        if (cell is Button btn && btn.Tag is string id && id == tileId)
                         {
-                            foreach (var cell in row.Children)
-                            {
-                                if (cell is Button btn && btn.Tag is string id && id == focusTileId)
-                                {
-                                    btn.Focus(FocusState.Programmatic);
-                                    return;
-                                }
-                            }
+                            return btn;
                         }
                     }
                 }
-            });
+            }
+            return null;
         }
 
         /// <summary>

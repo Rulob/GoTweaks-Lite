@@ -178,7 +178,9 @@ namespace XboxGamingBar
         OpenKeyboard = 7,
         CtrlAltDel = 8,
         TaskManager = 9,
-        FocusGoTweaks = 10
+        FocusGoTweaks = 10,
+        BrightnessUp = 11,
+        BrightnessDown = 12
     }
 
     /// <summary>

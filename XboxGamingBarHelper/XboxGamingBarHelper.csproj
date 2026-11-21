@@ -544,7 +544,6 @@
     <Compile Include="Settings\AutoStartRTSSProperty.cs" />
     <Compile Include="Settings\UseManufacturerWMIProperty.cs" />
     <Compile Include="Settings\GoTweaksLightingConfigProperty.cs" />
-    <Compile Include="Settings\GoTweaksHapticsConfigProperty.cs" />
     <Compile Include="Settings\LegionControllerSleepMinutesProperty.cs" />
     <Compile Include="Settings\ProfileMatchByExeProperty.cs" />
     <Compile Include="Settings\ProfileCustomGamePathProperty.cs" />
@@ -613,9 +612,7 @@
     <Compile Include="Labs\LegionButtonMonitor.cs" />
     <Compile Include="Labs\LegionInputButtons.cs" />
     <Compile Include="Labs\LegionLightingManager.cs" />
-    <Compile Include="Labs\GoTweaksHapticManager.cs" />
     <Compile Include="Labs\LegionUsbPortCycler.cs" />
-    <Compile Include="Labs\HapticXInput.cs" />
     <Compile Include="Icons\GameIconHelper.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -174,41 +174,6 @@ namespace XboxGamingBarHelper.Labs
         private Action<string> onCommandTriggered;
         private Action onFocusGoTweaksTriggered;
 
-        // SteamOS-style brightness gesture: hold a configurable trigger button + tilt a
-        // configurable stick/D-Pad axis. Deliberately excludes Legion L/R as trigger
-        // options - holding either for 5+ seconds is hardcoded in the controller firmware
-        // itself to toggle that grip's connection off/on (a real Legion Space feature, not
-        // overridable from software - confirmed by reproducing the disconnect with every
-        // Legion L/R remap disabled). None of the available trigger buttons have this
-        // quirk. Only Scroll Click has an existing GoTweaks click action to preserve
-        // (defer-then-fire-on-tap, exactly like the old Legion R design); the rest have
-        // nothing to fire/suppress but the gesture's own state.
-        private bool brightnessGestureEnabled = false;
-        private int brightnessGestureTriggerType = BRIGHTNESS_GESTURE_TRIGGER_DESKTOP;
-        private int brightnessGestureAxisType = BRIGHTNESS_GESTURE_AXIS_RIGHTSTICK;
-        private Action<int> onBrightnessGestureAdjust;
-        private bool brightnessGestureCandidateActive = false;
-        private DateTime brightnessGesturePressStartUtc = DateTime.MinValue;
-        private bool brightnessGestureClaimed = false;
-        private int brightnessGestureCurrentLevel = -1;
-        private DateTime brightnessGestureLastStepUtc = DateTime.MinValue;
-
-        // Debounce state for the configured trigger button (when it's an AuxButtons-based
-        // one, i.e. anything except Scroll Click), tracked the same way as the Legion L/R
-        // buttons but independently - the trigger comes from the parsed gamepad sample's
-        // AuxButtons, not the raw Legion button byte. Scroll Click reuses its own existing
-        // lastScrollClickState instead (see HandleScrollClickEdge).
-        private bool lastGestureTriggerBtnState = false;
-        private bool? pendingGestureTriggerBtnState = null;
-        private DateTime pendingGestureTriggerBtnStateSince = DateTime.MinValue;
-
-        // Runs the hold-claim + stick-sample + step + WMI/pipe write entirely off the HID
-        // monitor thread, so it can never delay servicing it (the controller's own 3s
-        // keep-alive heartbeat included). HandleBrightnessGestureEdge wakes it on press.
-        private Thread brightnessGestureWorkerThread;
-        private readonly AutoResetEvent brightnessGestureSignal = new AutoResetEvent(false);
-        private volatile bool brightnessGestureWorkerRunning = false;
-
         private SafeFileHandle hidHandle;
         private bool _hasWriteAccess = false;  // Track if we have write access for heartbeat
         private bool _highQualityGyroConfigured = false;
@@ -226,35 +191,6 @@ namespace XboxGamingBarHelper.Labs
         private const int SCROLL_CLICK_MIN_HOLD_MS = 150; // Minimum time to hold Xbox Guide button for Game Bar to register
         private const int LEGION_BUTTON_PRESS_DEBOUNCE_MS = 8; // Keep press responsive
         private const int LEGION_BUTTON_RELEASE_DEBOUNCE_MS = 35; // Filter release chatter while held
-
-        // Brightness gesture tuning (hold a configurable trigger, tilt a configurable
-        // axis). Discrete step model: each repeat applies a fixed +/-STEP_PERCENT jump;
-        // the interval between repeats scales with how far an analog axis is tilted
-        // (further = faster repeats), between MAX (near deadzone) and MIN (full
-        // deflection) - D-Pad is digital and always uses MIN (a fixed fast repeat). The
-        // first step after (re-)crossing the deadzone (or D-Pad press) fires immediately.
-        private const int BRIGHTNESS_GESTURE_TAP_THRESHOLD_MS = 180; // below this = tap (fires the trigger's own click action, if it has one); at/above = claimed as a hold gesture, click never fires
-        private const short BRIGHTNESS_GESTURE_STICK_DEADZONE = 8000; // ~24% of short.MaxValue
-        private const int BRIGHTNESS_GESTURE_STEP_PERCENT = 2; // brightness change per discrete step
-        private const int BRIGHTNESS_GESTURE_MIN_STEP_INTERVAL_MS = 60; // fastest repeat, at full stick deflection (or any D-Pad hold)
-        private const int BRIGHTNESS_GESTURE_MAX_STEP_INTERVAL_MS = 400; // slowest repeat, just past deadzone
-        private const int BRIGHTNESS_GESTURE_POLL_MS = 20; // worker-thread poll granularity while a hold is active
-
-        // Trigger button options (Legion L/R excluded - see field comment above).
-        private const int BRIGHTNESS_GESTURE_TRIGGER_DESKTOP = 0;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_PAGE = 1;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_SCROLLCLICK = 2;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_Y1 = 3;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_Y2 = 4;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_Y3 = 5;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_M1 = 6;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_M2 = 7;
-        private const int BRIGHTNESS_GESTURE_TRIGGER_M3 = 8;
-
-        // Axis options.
-        private const int BRIGHTNESS_GESTURE_AXIS_RIGHTSTICK = 0;
-        private const int BRIGHTNESS_GESTURE_AXIS_LEFTSTICK = 1;
-        private const int BRIGHTNESS_GESTURE_AXIS_DPAD = 2;
 
         // Scroll wheel Raw Input monitor thread
         // Uses Raw Input API to capture mouse events from Legion Go mi_01/col02 interface
@@ -921,137 +857,14 @@ namespace XboxGamingBarHelper.Labs
         }
 
         /// <summary>
-        /// Get whether any button is configured. Includes the brightness gesture, which
-        /// can be enabled standalone with no click action bound to its trigger.
+        /// Get whether any button is configured.
         /// </summary>
-        public bool HasAnyButtonConfigured => legionLEnabled || legionREnabled || brightnessGestureEnabled;
+        public bool HasAnyButtonConfigured => legionLEnabled || legionREnabled;
 
         /// <summary>
-        /// Enable/disable the SteamOS-style brightness gesture (hold the configured
-        /// trigger, tilt the configured axis - see SetBrightnessGestureTrigger/Axis).
-        /// While the trigger is held past the tap threshold, the axis fades the panel
-        /// brightness and (for Scroll Click only, the sole trigger with a configurable
-        /// click action) that action never fires for that press - not even on release.
-        /// <paramref name="adjustCallback"/> receives each new 0-100 brightness level to
-        /// apply; route it through the PanelBrightness property so hardware apply and
-        /// widget slider sync both happen through the normal property-sync path.
+        /// Get whether any scroll wheel action is configured.
         /// </summary>
-        public void SetBrightnessGestureEnabled(bool enabled, Action<int> adjustCallback)
-        {
-            brightnessGestureEnabled = enabled;
-            if (adjustCallback != null)
-                onBrightnessGestureAdjust = adjustCallback;
-
-            if (enabled)
-            {
-                StartBrightnessGestureWorker();
-                EnsureScrollWheelThreadForGesture();
-            }
-            else
-            {
-                StopBrightnessGestureWorker();
-                brightnessGestureCandidateActive = false;
-                brightnessGestureClaimed = false;
-                brightnessGestureCurrentLevel = -1;
-                brightnessGestureLastStepUtc = DateTime.MinValue;
-            }
-            Logger.Info($"LegionButtonMonitor: Brightness gesture {(enabled ? "enabled" : "disabled")}");
-        }
-
-        /// <summary>
-        /// Set the brightness gesture's trigger button (BRIGHTNESS_GESTURE_TRIGGER_*).
-        /// Legion L/R are deliberately not offered - see the field comment above.
-        /// </summary>
-        public void SetBrightnessGestureTrigger(int triggerType)
-        {
-            brightnessGestureTriggerType = triggerType;
-            EnsureScrollWheelThreadForGesture();
-        }
-
-        /// <summary>
-        /// Set the axis the brightness gesture reads while its trigger is held
-        /// (BRIGHTNESS_GESTURE_AXIS_*).
-        /// </summary>
-        public void SetBrightnessGestureAxis(int axisType)
-        {
-            brightnessGestureAxisType = axisType;
-        }
-
-        /// <summary>
-        /// Starts the scroll-wheel Raw Input thread if the gesture is enabled, Scroll
-        /// Click is the configured trigger, and the monitor is already running but the
-        /// thread isn't - mirrors the hot-configure path in ConfigureScrollWheel().
-        /// </summary>
-        private void EnsureScrollWheelThreadForGesture()
-        {
-            if (!brightnessGestureEnabled || brightnessGestureTriggerType != BRIGHTNESS_GESTURE_TRIGGER_SCROLLCLICK)
-                return;
-            if (!isRunning || (scrollWheelThread != null && scrollWheelThread.IsAlive))
-                return;
-
-            scrollWheelRunning = true;
-            scrollWheelThread = new Thread(ScrollWheelThreadProc)
-            {
-                IsBackground = true,
-                Name = "LegionScrollWheel"
-            };
-            scrollWheelThread.Start();
-            Logger.Info("LegionButtonMonitor: Scroll wheel Raw Input monitor thread started (brightness gesture trigger)");
-        }
-
-        private void StartBrightnessGestureWorker()
-        {
-            if (brightnessGestureWorkerRunning)
-                return;
-
-            brightnessGestureWorkerRunning = true;
-            brightnessGestureWorkerThread = new Thread(BrightnessGestureWorkerLoop)
-            {
-                IsBackground = true,
-                Name = "BrightnessGesture"
-            };
-            brightnessGestureWorkerThread.Start();
-        }
-
-        private void StopBrightnessGestureWorker()
-        {
-            if (!brightnessGestureWorkerRunning)
-                return;
-
-            brightnessGestureWorkerRunning = false;
-            brightnessGestureSignal.Set(); // wake the worker so it can observe the flag and exit
-        }
-
-        /// <summary>
-        /// Drives the brightness gesture entirely off the HID monitor thread and the Raw
-        /// Input scroll-wheel thread: sleeps until HandleScrollClickEdge signals a press,
-        /// then polls TickBrightnessGesture (claim-check + stick sample + step + WMI/pipe
-        /// write) at BRIGHTNESS_GESTURE_POLL_MS until the press is released.
-        /// </summary>
-        private void BrightnessGestureWorkerLoop()
-        {
-            while (brightnessGestureWorkerRunning)
-            {
-                if (!brightnessGestureCandidateActive)
-                {
-                    brightnessGestureSignal.WaitOne();
-                    continue;
-                }
-
-                if (!brightnessGestureWorkerRunning)
-                    break;
-
-                TickBrightnessGesture();
-                Thread.Sleep(BRIGHTNESS_GESTURE_POLL_MS);
-            }
-        }
-
-        /// <summary>
-        /// Get whether any scroll wheel action is configured. Includes the brightness
-        /// gesture when Scroll Click is its configured trigger.
-        /// </summary>
-        public bool HasAnyScrollConfigured => scrollEnabled || scrollClickEnabled || scrollUpEnabled || scrollDownEnabled
-            || (brightnessGestureEnabled && brightnessGestureTriggerType == BRIGHTNESS_GESTURE_TRIGGER_SCROLLCLICK);
+        public bool HasAnyScrollConfigured => scrollEnabled || scrollClickEnabled || scrollUpEnabled || scrollDownEnabled;
 
         /// <summary>
         /// Get whether the monitor is currently running.
@@ -2813,30 +2626,6 @@ namespace XboxGamingBarHelper.Labs
                                         }
                                     }
                                 }
-
-                                // Brightness gesture: hold the configured trigger button +
-                                // tilt the configured axis. All triggers except Scroll
-                                // Click come from the parsed gamepad sample's AuxButtons
-                                // (already refreshed this tick by TryParseAndStoreGyroSamples
-                                // above), not the raw Legion L/R button byte; Scroll Click
-                                // is handled separately in HandleScrollClickEdge since it
-                                // arrives via the Raw Input scroll-wheel thread instead.
-                                if (brightnessGestureEnabled && brightnessGestureTriggerType != BRIGHTNESS_GESTURE_TRIGGER_SCROLLCLICK)
-                                {
-                                    ushort triggerAuxMask = GetBrightnessGestureTriggerAuxMask(brightnessGestureTriggerType);
-                                    bool triggerRawPressed = TryGetLatestGamepadSample(out LegionGamepadSample triggerSample)
-                                        && (triggerSample.AuxButtons & triggerAuxMask) != 0;
-
-                                    if (TryCommitDebouncedButtonState(
-                                        triggerRawPressed,
-                                        ref lastGestureTriggerBtnState,
-                                        ref pendingGestureTriggerBtnState,
-                                        ref pendingGestureTriggerBtnStateSince,
-                                        out bool triggerPressed))
-                                    {
-                                        HandleBrightnessGestureEdge(triggerPressed);
-                                    }
-                                }
                             }
                         }
                     }
@@ -3563,36 +3352,16 @@ namespace XboxGamingBarHelper.Labs
         }
 
         /// <summary>
-        /// Handles a Scroll Click press/release edge from the Raw Input thread. When the
-        /// brightness gesture is enabled AND Scroll Click is its configured trigger, a
-        /// press starts the tap-vs-hold candidate window without firing Scroll Click's own
-        /// configured action yet - we don't know which it'll be until either the click is
-        /// released (tap) or the threshold elapses (hold, handled by TickBrightnessGesture
-        /// on the worker thread). A release either fires the normal action (genuine tap,
-        /// released before the threshold) or fires nothing at all (already claimed as a
-        /// hold - even if the axis was never moved). Otherwise this is the original
-        /// immediate-fire behavior, including the XboxGuide cooldown/minimum-hold handling,
-        /// unchanged.
+        /// Handles a Scroll Click press/release edge from the Raw Input thread, including the XboxGuide cooldown / minimum-hold handling.
         /// </summary>
         private void HandleScrollClickEdge(bool rawPressed, string source)
         {
-            bool gestureViaScrollClick = brightnessGestureEnabled && brightnessGestureTriggerType == BRIGHTNESS_GESTURE_TRIGGER_SCROLLCLICK;
-
             if (rawPressed)
             {
-                if (!scrollClickEnabled && !gestureViaScrollClick)
+                if (!scrollClickEnabled)
                     return;
                 if (lastScrollClickState)
                     return; // duplicate press event, ignore
-
-                if (gestureViaScrollClick)
-                {
-                    lastScrollClickState = true;
-                    scrollClickPressTime = DateTime.Now;
-                    HandleBrightnessGestureEdge(true);
-                    Logger.Info($"LegionButtonMonitor: Scroll Click PRESSED ({source}) - brightness-gesture candidate");
-                    return;
-                }
 
                 var timeSinceLastAction = (DateTime.Now - lastScrollClickActionTime).TotalMilliseconds;
                 if (scrollClickActionType == LegionButtonAction.XboxGuide && timeSinceLastAction < SCROLL_CLICK_COOLDOWN_MS)
@@ -3614,41 +3383,6 @@ namespace XboxGamingBarHelper.Labs
 
                 lastScrollClickState = false;
 
-                if (gestureViaScrollClick)
-                {
-                    bool wasGenuineTap = !brightnessGestureClaimed; // read BEFORE the edge call resets it
-                    HandleBrightnessGestureEdge(false);
-
-                    if (wasGenuineTap && scrollClickEnabled)
-                    {
-                        if (scrollClickActionType == LegionButtonAction.XboxGuide)
-                        {
-                            var holdDuration = (DateTime.Now - scrollClickPressTime).TotalMilliseconds;
-                            if (holdDuration < SCROLL_CLICK_MIN_HOLD_MS)
-                            {
-                                Thread.Sleep(SCROLL_CLICK_MIN_HOLD_MS - (int)holdDuration);
-                            }
-                        }
-
-                        lastScrollClickActionTime = DateTime.Now;
-                        Logger.Info($"LegionButtonMonitor: Scroll Click RELEASED ({source}) - tap, firing action");
-                        try
-                        {
-                            ProcessButtonAction("Scroll Click", true, scrollClickActionType, scrollClickShortcutKeys, scrollClickCommandPath);
-                            ProcessButtonAction("Scroll Click", false, scrollClickActionType, scrollClickShortcutKeys, scrollClickCommandPath);
-                        }
-                        catch (Exception btnEx)
-                        {
-                            Logger.Error($"LegionButtonMonitor: Scroll Click button action exception: {btnEx.Message}\n{btnEx.StackTrace}");
-                        }
-                    }
-                    else
-                    {
-                        Logger.Info($"LegionButtonMonitor: Scroll Click RELEASED ({source}) - brightness-gesture hold, no action fired");
-                    }
-                    return;
-                }
-
                 if (!scrollClickEnabled)
                     return;
 
@@ -3665,149 +3399,6 @@ namespace XboxGamingBarHelper.Labs
 
                 Logger.Info($"LegionButtonMonitor: Scroll Click RELEASED ({source})");
                 ProcessButtonAction("Scroll Click", false, scrollClickActionType, scrollClickShortcutKeys, scrollClickCommandPath);
-            }
-        }
-
-        /// <summary>
-        /// Maps a BRIGHTNESS_GESTURE_TRIGGER_* value to its AuxButtons bit. Not valid for
-        /// BRIGHTNESS_GESTURE_TRIGGER_SCROLLCLICK, which doesn't come from AuxButtons at
-        /// all - callers must check for that separately (see HandleScrollClickEdge).
-        /// </summary>
-        private static ushort GetBrightnessGestureTriggerAuxMask(int triggerType)
-        {
-            switch (triggerType)
-            {
-                case BRIGHTNESS_GESTURE_TRIGGER_PAGE: return LEGION_AUX_SHARE;
-                case BRIGHTNESS_GESTURE_TRIGGER_Y1: return LEGION_AUX_EXTRA_L1;
-                case BRIGHTNESS_GESTURE_TRIGGER_Y2: return LEGION_AUX_EXTRA_L2;
-                case BRIGHTNESS_GESTURE_TRIGGER_Y3: return LEGION_AUX_EXTRA_R1;
-                case BRIGHTNESS_GESTURE_TRIGGER_M1: return LEGION_AUX_EXTRA_RM1;
-                case BRIGHTNESS_GESTURE_TRIGGER_M2: return LEGION_AUX_EXTRA_R3;
-                case BRIGHTNESS_GESTURE_TRIGGER_M3: return LEGION_AUX_EXTRA_R2;
-                default: return LEGION_AUX_MODE; // Desktop
-            }
-        }
-
-        /// <summary>
-        /// Handles a debounced trigger-button press/release edge when the brightness
-        /// gesture is enabled and the configured trigger is anything except Scroll Click.
-        /// A press starts the tap-vs-hold candidate window; a release just clears it -
-        /// none of these triggers have a GoTweaks-side click action to fire, so unlike
-        /// Scroll Click there's nothing to defer or suppress here, only the gesture's own
-        /// state to reset. Scroll Click's own edge handling (which does need to
-        /// defer/suppress its configured action) lives in HandleScrollClickEdge instead.
-        /// </summary>
-        private void HandleBrightnessGestureEdge(bool pressed)
-        {
-            if (pressed)
-            {
-                brightnessGestureCandidateActive = true;
-                brightnessGesturePressStartUtc = DateTime.UtcNow;
-                brightnessGestureClaimed = false;
-                brightnessGestureSignal.Set(); // wake the worker thread to start polling
-                return;
-            }
-
-            brightnessGestureCandidateActive = false;
-            brightnessGestureClaimed = false;
-            brightnessGestureCurrentLevel = -1; // re-seed from hardware on the next hold
-            brightnessGestureLastStepUtc = DateTime.MinValue;
-        }
-
-        /// <summary>
-        /// Runs on the dedicated brightness-gesture worker thread while the configured
-        /// trigger is down and the gesture is enabled. Claims the hold once the tap
-        /// threshold elapses, then steps the panel brightness by a fixed
-        /// +/-BRIGHTNESS_GESTURE_STEP_PERCENT per repeat along the configured axis: up/D-Pad
-        /// Up = brighter, down/D-Pad Down = darker, centered = paused. On an analog stick
-        /// axis the repeat interval scales with deflection (further tilt = faster
-        /// repeats); D-Pad is digital and always repeats at the fastest (MIN) interval.
-        /// The first step after (re-)crossing the deadzone (or a fresh D-Pad press) fires
-        /// immediately.
-        /// </summary>
-        private void TickBrightnessGesture()
-        {
-            if (!brightnessGestureClaimed)
-            {
-                double heldMs = (DateTime.UtcNow - brightnessGesturePressStartUtc).TotalMilliseconds;
-                if (heldMs < BRIGHTNESS_GESTURE_TAP_THRESHOLD_MS)
-                    return;
-
-                brightnessGestureClaimed = true;
-                Logger.Debug("LegionButtonMonitor: Brightness gesture trigger hold claimed");
-            }
-
-            if (onBrightnessGestureAdjust == null || !TryGetLatestGamepadSample(out LegionGamepadSample sample))
-                return;
-
-            int direction;
-            double deflection; // 0..1; D-Pad is digital and always reports full deflection
-
-            if (brightnessGestureAxisType == BRIGHTNESS_GESTURE_AXIS_DPAD)
-            {
-                bool up = (sample.Buttons & XINPUT_GAMEPAD_DPAD_UP) != 0;
-                bool down = (sample.Buttons & XINPUT_GAMEPAD_DPAD_DOWN) != 0;
-                if (up == down) // neither held, or both (ambiguous) - paused
-                {
-                    brightnessGestureLastStepUtc = DateTime.MinValue;
-                    return;
-                }
-                direction = up ? 1 : -1;
-                deflection = 1.0;
-            }
-            else
-            {
-                short y = brightnessGestureAxisType == BRIGHTNESS_GESTURE_AXIS_LEFTSTICK ? sample.LeftStickY : sample.RightStickY;
-                if (y > -BRIGHTNESS_GESTURE_STICK_DEADZONE && y < BRIGHTNESS_GESTURE_STICK_DEADZONE)
-                {
-                    // Centered - pause the repeat cadence so re-tilting starts a fresh
-                    // immediate step instead of resuming mid-interval.
-                    brightnessGestureLastStepUtc = DateTime.MinValue;
-                    return;
-                }
-                direction = y > 0 ? 1 : -1;
-                deflection = y > 0
-                    ? (y - BRIGHTNESS_GESTURE_STICK_DEADZONE) / (double)(short.MaxValue - BRIGHTNESS_GESTURE_STICK_DEADZONE)
-                    : (-y - BRIGHTNESS_GESTURE_STICK_DEADZONE) / (double)(short.MaxValue - BRIGHTNESS_GESTURE_STICK_DEADZONE);
-                deflection = Math.Max(0.0, Math.Min(1.0, deflection));
-            }
-
-            DateTime nowUtc = DateTime.UtcNow;
-            bool dueForStep;
-            if (brightnessGestureLastStepUtc == DateTime.MinValue)
-            {
-                dueForStep = true; // first step after (re-)tilting/pressing fires immediately
-            }
-            else
-            {
-                double intervalMs = BRIGHTNESS_GESTURE_MAX_STEP_INTERVAL_MS
-                    - (BRIGHTNESS_GESTURE_MAX_STEP_INTERVAL_MS - BRIGHTNESS_GESTURE_MIN_STEP_INTERVAL_MS) * deflection;
-                dueForStep = (nowUtc - brightnessGestureLastStepUtc).TotalMilliseconds >= intervalMs;
-            }
-
-            if (!dueForStep)
-                return;
-
-            if (brightnessGestureCurrentLevel < 0)
-            {
-                brightnessGestureCurrentLevel = XboxGamingBarHelper.Sidebar.BrightnessManager.GetBrightness();
-                if (brightnessGestureCurrentLevel < 0)
-                    brightnessGestureCurrentLevel = 50;
-            }
-
-            brightnessGestureCurrentLevel = Math.Max(0, Math.Min(100, brightnessGestureCurrentLevel + direction * BRIGHTNESS_GESTURE_STEP_PERCENT));
-            brightnessGestureLastStepUtc = nowUtc;
-
-            // Runs on the worker thread already, so it's safe to call the WMI+pipe adjust
-            // callback directly here - never on the HID monitor thread or the Raw Input
-            // scroll-wheel thread.
-            try
-            {
-                onBrightnessGestureAdjust(brightnessGestureCurrentLevel);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"LegionButtonMonitor: brightness gesture adjust callback threw: {ex.Message}");
             }
         }
 
@@ -3910,7 +3501,6 @@ namespace XboxGamingBarHelper.Labs
                 return;
 
             isDisposed = true;
-            StopBrightnessGestureWorker();
             Stop();
             Logger.Info("LegionButtonMonitor: Disposed");
         }

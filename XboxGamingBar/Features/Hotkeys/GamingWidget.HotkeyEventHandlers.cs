@@ -162,6 +162,12 @@ namespace XboxGamingBar
                     case HotkeyAction.FocusGoTweaks:
                         _ = FocusThisWidgetAsync();
                         break;
+
+                    case HotkeyAction.BrightnessUp:
+                    case HotkeyAction.BrightnessDown:
+                        // Done only by the helper's controller monitor (ExecuteControllerHotkeyAction),
+                        // which sees the same combo; doing it here too would step twice per press.
+                        break;
                 }
             }
             catch (Exception ex)

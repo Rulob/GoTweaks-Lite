@@ -457,11 +457,11 @@ namespace XboxGamingBarHelper
         }
 
         /// <summary>
-        /// Instantiate the GoTweaks lighting + standalone haptic managers (idempotent) and
-        /// apply current settings. Subscribes to the two config properties so widget edits
-        /// reconfigure the managers live. Called once the LegionButtonMonitor is running.
+        /// Instantiate the GoTweaks lighting manager (idempotent) and apply current settings.
+        /// Subscribes to the lighting config and controller sleep properties so widget edits
+        /// apply live. Called once the LegionButtonMonitor is running.
         /// </summary>
-        private static void InitGoTweaksLightingAndHaptics(LegionButtonMonitor monitor)
+        private static void InitGoTweaksLighting(LegionButtonMonitor monitor)
         {
             try
             {
@@ -469,14 +469,9 @@ namespace XboxGamingBarHelper
                 {
                     legionLightingManager = new XboxGamingBarHelper.Labs.LegionLightingManager(legionManager);
                 }
-                if (goTweaksHapticManager == null)
-                {
-                    goTweaksHapticManager = new XboxGamingBarHelper.Labs.GoTweaksHapticManager();
-                }
 
                 // Apply persisted config now.
                 legionLightingManager?.ApplyConfigString(settingsManager?.GoTweaksLightingConfig?.Value);
-                goTweaksHapticManager?.ApplyConfigString(settingsManager?.GoTweaksHapticsConfig?.Value);
                 if (settingsManager?.LegionControllerSleepMinutes != null)
                 {
                     try { monitor.SetAutoSleepTime(settingsManager.LegionControllerSleepMinutes.Value); }
@@ -489,10 +484,6 @@ namespace XboxGamingBarHelper
                     {
                         settingsManager.GoTweaksLightingConfig.PropertyChanged += OnGoTweaksLightingConfigChanged;
                     }
-                    if (settingsManager?.GoTweaksHapticsConfig != null)
-                    {
-                        settingsManager.GoTweaksHapticsConfig.PropertyChanged += OnGoTweaksHapticsConfigChanged;
-                    }
                     if (settingsManager?.LegionControllerSleepMinutes != null)
                     {
                         settingsManager.LegionControllerSleepMinutes.PropertyChanged += OnLegionControllerSleepMinutesChanged;
@@ -500,11 +491,11 @@ namespace XboxGamingBarHelper
                     goTweaksFeaturesHooked = true;
                 }
 
-                Logger.Info("GoTweaks lighting + haptics initialized");
+                Logger.Info("GoTweaks lighting initialized");
             }
             catch (Exception ex)
             {
-                Logger.Warn($"InitGoTweaksLightingAndHaptics threw: {ex.Message}");
+                Logger.Warn($"InitGoTweaksLighting threw: {ex.Message}");
             }
         }
 
@@ -518,12 +509,6 @@ namespace XboxGamingBarHelper
         {
             try { legionButtonMonitor?.SetAutoSleepTime(settingsManager?.LegionControllerSleepMinutes?.Value ?? 15); }
             catch (Exception ex) { Logger.Warn($"OnLegionControllerSleepMinutesChanged threw: {ex.Message}"); }
-        }
-
-        private static void OnGoTweaksHapticsConfigChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            try { goTweaksHapticManager?.ApplyConfigString(settingsManager?.GoTweaksHapticsConfig?.Value); }
-            catch (Exception ex) { Logger.Warn($"OnGoTweaksHapticsConfigChanged threw: {ex.Message}"); }
         }
 
         private static LegionButtonMonitor EnsureLegionButtonMonitor()
@@ -847,82 +832,6 @@ namespace XboxGamingBarHelper
             {
                 Logger.Error($"Labs: Error configuring Legion {button} button remap: {ex.Message}");
                 return false;
-            }
-        }
-
-        /// <summary>
-        /// Enable/disable the SteamOS-style brightness gesture (hold a configurable
-        /// trigger button, tilt a configurable axis to fade brightness) and set which
-        /// trigger/axis it uses. Uses the same unified LegionButtonMonitor as the button
-        /// and scroll wheel remaps.
-        /// </summary>
-        /// <param name="triggerType">0=Desktop,1=Page,2=ScrollClick,3=Y1,4=Y2,5=Y3,6=M1,7=M2,8=M3</param>
-        /// <param name="axisType">0=RightStick,1=LeftStick,2=DPad</param>
-        private static bool ConfigureLegionBrightnessGesture(bool enabled, int triggerType, int axisType)
-        {
-            try
-            {
-                lock (legionButtonMonitorLock)
-                {
-                    LegionButtonMonitor monitor = EnsureLegionButtonMonitor();
-                    bool wasRunning = monitor.IsRunning;
-
-                    monitor.SetBrightnessGestureTrigger(triggerType);
-                    monitor.SetBrightnessGestureAxis(axisType);
-                    monitor.SetBrightnessGestureEnabled(enabled, (level) =>
-                    {
-                        // Route through the PanelBrightness property, not BrightnessManager
-                        // directly, so hardware apply AND widget slider sync both happen
-                        // through the normal property-sync path.
-                        systemManager?.PanelBrightness?.SetValue(level);
-                    });
-
-                    if (!monitor.HasAnyButtonConfigured)
-                    {
-                        if (!wasRunning)
-                        {
-                            monitor.StartForBatteryMonitoring();
-                        }
-                        Logger.Info("Labs: Brightness gesture disabled, no buttons configured - battery monitoring continues");
-                        return true;
-                    }
-                    else if (!wasRunning)
-                    {
-                        if (!monitor.Start())
-                        {
-                            Logger.Error("Labs: Failed to start Legion button monitoring for brightness gesture (controller not found)");
-                            return false;
-                        }
-                    }
-
-                    Logger.Info($"Labs: Brightness gesture {(enabled ? "enabled" : "disabled")} - Trigger={triggerType}, Axis={axisType}");
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Labs: Error configuring brightness gesture: {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Load and apply the brightness gesture settings (enabled/trigger/axis) from
-        /// LocalSettings on startup.
-        /// </summary>
-        private static void LoadLegionRBrightnessGestureSetting()
-        {
-            try
-            {
-                bool enabled = Settings.LocalSettingsHelper.TryGetValue<bool>("LegionR_BrightnessGesture", out var enabledVal) && enabledVal;
-                int triggerType = Settings.LocalSettingsHelper.TryGetValue<int>("BrightnessGesture_Trigger", out var triggerVal) ? triggerVal : 0;
-                int axisType = Settings.LocalSettingsHelper.TryGetValue<int>("BrightnessGesture_Axis", out var axisVal) ? axisVal : 0;
-                bool success = ConfigureLegionBrightnessGesture(enabled, triggerType, axisType);
-                Logger.Info($"Labs: Loaded brightness gesture settings - Enabled={enabled}, Trigger={triggerType}, Axis={axisType}, Success={success}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Labs: Failed to load brightness gesture settings: {ex.Message}");
             }
         }
 

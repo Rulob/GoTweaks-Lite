@@ -57,24 +57,11 @@ namespace XboxGamingBar
             if (ScrollClickActionComboBox != null)
                 ScrollClickActionComboBox.SelectionChanged += ScrollClickActionComboBox_SelectionChanged;
 
-            // Wire up the Brightness Gesture card
-            if (BrightnessGestureEnabledToggle != null)
-                BrightnessGestureEnabledToggle.Toggled += BrightnessGestureEnabledToggle_Toggled;
-            if (BrightnessGestureTriggerComboBox != null)
-                BrightnessGestureTriggerComboBox.SelectionChanged += BrightnessGestureTriggerComboBox_SelectionChanged;
-            if (BrightnessGestureAxisComboBox != null)
-                BrightnessGestureAxisComboBox.SelectionChanged += BrightnessGestureAxisComboBox_SelectionChanged;
-
             // Load saved Legion remap settings
             LoadLegionRemapSettings();
 
             // Load saved Scroll wheel remap settings
             LoadScrollRemapSettings();
-
-            // Load the saved brightness gesture settings (guarded - see
-            // _brightnessGestureLoaded below, ToggleSwitch/ListView fire their change
-            // events even for this programmatic assignment)
-            LoadBrightnessGestureSettings();
 
             // Mark Labs section as initialized (enables event handlers)
             labsSectionInitialized = true;
@@ -92,130 +79,9 @@ namespace XboxGamingBar
                     {
                         ApplyLegionRemapSettingsToHelper();
                         ApplyScrollRemapSettingsToHelper();
-                        ApplyBrightnessGestureSettingsToHelper();
                     });
                 }
             });
-        }
-
-        private bool _brightnessGestureLoaded = false;
-
-        private void LoadBrightnessGestureSettings()
-        {
-            try
-            {
-                var settings = ApplicationData.Current.LocalSettings;
-                bool enabled = settings.Values.TryGetValue("LegionR_BrightnessGesture", out var enabledVal) && enabledVal is bool b && b;
-                int trigger = settings.Values.TryGetValue("BrightnessGesture_Trigger", out var triggerVal) && triggerVal is int ti ? ti : 0;
-                int axis = settings.Values.TryGetValue("BrightnessGesture_Axis", out var axisVal) && axisVal is int ai ? ai : 0;
-
-                if (BrightnessGestureEnabledToggle != null)
-                    BrightnessGestureEnabledToggle.IsOn = enabled;
-                if (BrightnessGestureTriggerComboBox != null && trigger >= 0 && trigger < BrightnessGestureTriggerComboBox.Items.Count)
-                    BrightnessGestureTriggerComboBox.SelectedIndex = trigger;
-                if (BrightnessGestureAxisComboBox != null && axis >= 0 && axis < BrightnessGestureAxisComboBox.Items.Count)
-                    BrightnessGestureAxisComboBox.SelectedIndex = axis;
-                if (BrightnessGestureOptionsPanel != null)
-                    BrightnessGestureOptionsPanel.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-
-                Logger.Info($"Brightness gesture settings loaded: Enabled={enabled}, Trigger={trigger}, Axis={axis}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to load brightness gesture settings: {ex.Message}");
-            }
-            finally
-            {
-                // Only after the controls have been set (which may have already fired
-                // their change events once, ignored below) do user interactions actually
-                // save/send.
-                _brightnessGestureLoaded = true;
-            }
-        }
-
-        private async void BrightnessGestureEnabledToggle_Toggled(object sender, RoutedEventArgs e)
-        {
-            bool enabled = BrightnessGestureEnabledToggle?.IsOn ?? false;
-            if (BrightnessGestureOptionsPanel != null)
-                BrightnessGestureOptionsPanel.Visibility = enabled ? Visibility.Visible : Visibility.Collapsed;
-
-            if (!_brightnessGestureLoaded)
-                return; // ignore the programmatic IsOn assignment during LoadBrightnessGestureSettings
-
-            await SaveAndSendBrightnessGestureSettings();
-        }
-
-        private async void BrightnessGestureTriggerComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!_brightnessGestureLoaded)
-                return;
-
-            await SaveAndSendBrightnessGestureSettings();
-        }
-
-        private async void BrightnessGestureAxisComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (!_brightnessGestureLoaded)
-                return;
-
-            await SaveAndSendBrightnessGestureSettings();
-        }
-
-        private async Task SaveAndSendBrightnessGestureSettings()
-        {
-            bool enabled = BrightnessGestureEnabledToggle?.IsOn ?? false;
-            int trigger = BrightnessGestureTriggerComboBox?.SelectedIndex ?? 0;
-            int axis = BrightnessGestureAxisComboBox?.SelectedIndex ?? 0;
-            if (trigger < 0) trigger = 0;
-            if (axis < 0) axis = 0;
-
-            try
-            {
-                var settings = ApplicationData.Current.LocalSettings;
-                settings.Values["LegionR_BrightnessGesture"] = enabled;
-                settings.Values["BrightnessGesture_Trigger"] = trigger;
-                settings.Values["BrightnessGesture_Axis"] = axis;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to save brightness gesture settings: {ex.Message}");
-            }
-
-            await SendBrightnessGestureSettingsToHelper(enabled, trigger, axis);
-        }
-
-        private void ApplyBrightnessGestureSettingsToHelper()
-        {
-            bool enabled = BrightnessGestureEnabledToggle?.IsOn ?? false;
-            int trigger = BrightnessGestureTriggerComboBox?.SelectedIndex ?? 0;
-            int axis = BrightnessGestureAxisComboBox?.SelectedIndex ?? 0;
-            if (trigger < 0) trigger = 0;
-            if (axis < 0) axis = 0;
-            _ = SendBrightnessGestureSettingsToHelper(enabled, trigger, axis);
-        }
-
-        private async Task SendBrightnessGestureSettingsToHelper(bool enabled, int trigger, int axis)
-        {
-            if (!App.IsConnected) return;
-
-            try
-            {
-                var request = new Windows.Foundation.Collections.ValueSet();
-                request.Add("Function", (int)Function.Labs_LegionRBrightnessGesture);
-                request.Add("Enabled", enabled);
-                request.Add("Trigger", trigger);
-                request.Add("Axis", axis);
-
-                var response = await App.SendMessageAsync(request);
-                if (response != null && response.TryGetValue("Success", out object successObj))
-                {
-                    Logger.Info($"Brightness Gesture: Enabled={enabled}, Trigger={trigger}, Axis={axis}, Success={Convert.ToBoolean(successObj)}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to send brightness gesture settings to helper: {ex.Message}");
-            }
         }
 
         // Legion L event handlers

@@ -499,10 +499,8 @@
         // mode: disabled|solid|pulse|rainbow|spiral|flash|cycle|perbutton. Colors are RRGGBB hex.
         GoTweaksLightingConfig,                             // string - see format above
 
-        // GoTweaks Haptics (standalone physical-controller button haptics).
-        // Config is a single delimited string:
-        //   "<masterOn0/1>|face:<on>,<intensity0-100>|front:<on>,<i>|back:<on>,<i>|trigger:<on>,<i>"
-        GoTweaksHapticsConfig,                              // string - see format above
+        // Unused since 1.9.5 (GoTweaks Haptics removed). Kept so later values keep their numbers.
+        GoTweaksHapticsConfig,
 
         // Legion controller auto-sleep (idle power-off) timeout, in minutes. 0 = never.
         // Written via HID sub-command 0x09. Common values: 0, 5, 10, 15, 20, 30.
@@ -578,16 +576,10 @@
         // Not Legion-specific hardware, but only surfaced on Legion Go 2 for now.
         TouchscreenEnabled,         // bool - true = touch input active, false = digitizer disabled
 
-        // SteamOS-style "hold a button + tilt a stick/D-Pad" brightness gesture. While the
-        // configured trigger button is held past a short tap threshold, its own configured
-        // click action (if any - only Scroll Click has one) never fires; only a genuine
-        // quick tap still fires it. See LegionButtonMonitor's gesture state machine.
-        Labs_LegionRBrightnessGesture,          // bool - true = gesture enabled (default false)
-
-        // Trigger button: 0=Desktop,1=Page,2=ScrollClick,3=Y1,4=Y2,5=Y3,6=M1,7=M2,8=M3 (default 0=Desktop)
-        Labs_LegionBrightnessGestureTrigger,    // int
-        // Axis used to adjust brightness while the trigger is held: 0=RightStick,1=LeftStick,2=DPad (default 0)
-        Labs_LegionBrightnessGestureAxis,       // int
+        // Unused since 1.9.5 (Brightness Gesture removed). Kept so later values keep their numbers.
+        Labs_LegionRBrightnessGesture,
+        Labs_LegionBrightnessGestureTrigger,
+        Labs_LegionBrightnessGestureAxis,
 
         // Read-only status: is the built-in panel the active display right now (vs. docked with
         // only an external monitor active)? Gates Auto SDR / Resolution / Refresh Rate, which only

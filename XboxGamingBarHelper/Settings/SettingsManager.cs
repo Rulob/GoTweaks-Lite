@@ -47,12 +47,6 @@ namespace XboxGamingBarHelper.Settings
             get { return goTweaksLightingConfig; }
         }
 
-        private readonly GoTweaksHapticsConfigProperty goTweaksHapticsConfig;
-        public GoTweaksHapticsConfigProperty GoTweaksHapticsConfig
-        {
-            get { return goTweaksHapticsConfig; }
-        }
-
         private readonly LegionControllerSleepMinutesProperty legionControllerSleepMinutes;
         public LegionControllerSleepMinutesProperty LegionControllerSleepMinutes
         {
@@ -97,7 +91,6 @@ namespace XboxGamingBarHelper.Settings
             isForeground = new IsForegroundProperty(this);
             useManufacturerWMI = new UseManufacturerWMIProperty(this);
             goTweaksLightingConfig = new GoTweaksLightingConfigProperty(this);
-            goTweaksHapticsConfig = new GoTweaksHapticsConfigProperty(this);
             legionControllerSleepMinutes = new LegionControllerSleepMinutesProperty(this);
             // Profile Detection Settings
             profileMatchByExe = new ProfileMatchByExeProperty(this);

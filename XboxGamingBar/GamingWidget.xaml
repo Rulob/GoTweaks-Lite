@@ -2799,6 +2799,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuAKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -2836,6 +2838,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuBKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -2873,6 +2877,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuXKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -2910,6 +2916,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuYKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -2947,6 +2955,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuDpadUpKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -2984,6 +2994,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuDpadDownKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -3021,6 +3033,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuDpadLeftKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -3058,6 +3072,8 @@
                                                 <ComboBoxItem Content="Open Keyboard" Tag="7"/>
                                                 <ComboBoxItem Content="Task Manager" Tag="9"/>
                                                 <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
                                             </ComboBox>
                                         </Grid>
                                         <StackPanel x:Name="HotkeyMenuDpadRightKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
@@ -3868,102 +3884,6 @@
                                             <x:String>High</x:String>
                                         </ComboBox>
                                     </Grid>
-
-                                    <!-- GoTweaks Haptics: standalone per-button LRA clicks (works outside emulation) -->
-                                    <Border Height="1" Background="#22FFFFFF" Margin="0,4,0,4"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0">
-                                            <TextBlock Text="GoTweaks Haptics" Foreground="#FFFFFF" FontSize="13"/>
-                                            <TextBlock Text="Tactile click on inputs, system-wide via the controller motors"
-                                                       Foreground="#888888" FontSize="11" TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="GoTweaksHapticsMasterToggle"
-                                                      Grid.Column="1"
-                                                      Style="{StaticResource ModernToggleStyle}"
-                                                      IsOn="False"
-                                                      Toggled="GoTweaksHaptics_Changed"/>
-                                    </Grid>
-
-                                    <StackPanel x:Name="GoTweaksHapticsGroupsPanel" Spacing="10" Margin="0,4,0,0" Visibility="Collapsed">
-                                        <!-- Pulse length (tap duration) -->
-                                        <StackPanel>
-                                            <Grid>
-                                                <TextBlock Text="Pulse Length" FontSize="13" Foreground="#B9C0CC"/>
-                                                <TextBlock x:Name="GoTweaksHapticsPulseValue" Text="10 ms" Style="{StaticResource CardValueStyle}"/>
-                                            </Grid>
-                                            <Slider x:Name="GoTweaksHapticsPulseSlider"
-                                                    Style="{StaticResource ModernSliderStyle}"
-                                                    Minimum="4" Maximum="40" Value="10"
-                                                    StepFrequency="1"
-                                                    ValueChanged="GoTweaksHaptics_Changed"/>
-                                        </StackPanel>
-                                        <!-- Also click on release -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Click on release too" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ToggleSwitch x:Name="GoTweaksHapticsReleaseToggle" Grid.Column="1" MinWidth="0"
-                                                          Style="{StaticResource ModernToggleStyle}" IsOn="False" Toggled="GoTweaksHaptics_Changed"/>
-                                        </Grid>
-                                        <!-- ABXY -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <ToggleSwitch x:Name="GoTweaksHapticsFaceToggle" Grid.Column="0" MinWidth="0"
-                                                          Style="{StaticResource ModernToggleStyle}" IsOn="True" Toggled="GoTweaksHaptics_Changed"/>
-                                            <TextBlock Grid.Column="1" Text="ABXY buttons" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13" Margin="8,0,0,0"/>
-                                            <Slider x:Name="GoTweaksHapticsFaceSlider" Grid.Column="2" Width="110" Minimum="0" Maximum="100" Value="100"
-                                                    StepFrequency="5" VerticalAlignment="Center" ValueChanged="GoTweaksHaptics_Changed"/>
-                                        </Grid>
-                                        <!-- Front -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <ToggleSwitch x:Name="GoTweaksHapticsFrontToggle" Grid.Column="0" MinWidth="0"
-                                                          Style="{StaticResource ModernToggleStyle}" IsOn="True" Toggled="GoTweaksHaptics_Changed"/>
-                                            <TextBlock Grid.Column="1" Text="Front buttons (d-pad, start, bumpers)" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13" Margin="8,0,0,0"/>
-                                            <Slider x:Name="GoTweaksHapticsFrontSlider" Grid.Column="2" Width="110" Minimum="0" Maximum="100" Value="100"
-                                                    StepFrequency="5" VerticalAlignment="Center" ValueChanged="GoTweaksHaptics_Changed"/>
-                                        </Grid>
-                                        <!-- Back -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <ToggleSwitch x:Name="GoTweaksHapticsBackToggle" Grid.Column="0" MinWidth="0"
-                                                          Style="{StaticResource ModernToggleStyle}" IsOn="True" Toggled="GoTweaksHaptics_Changed"/>
-                                            <TextBlock Grid.Column="1" Text="Back buttons / paddles" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13" Margin="8,0,0,0"/>
-                                            <Slider x:Name="GoTweaksHapticsBackSlider" Grid.Column="2" Width="110" Minimum="0" Maximum="100" Value="100"
-                                                    StepFrequency="5" VerticalAlignment="Center" ValueChanged="GoTweaksHaptics_Changed"/>
-                                        </Grid>
-                                        <!-- Triggers -->
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <ToggleSwitch x:Name="GoTweaksHapticsTriggerToggle" Grid.Column="0" MinWidth="0"
-                                                          Style="{StaticResource ModernToggleStyle}" IsOn="True" Toggled="GoTweaksHaptics_Changed"/>
-                                            <TextBlock Grid.Column="1" Text="Triggers (LT / RT)" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13" Margin="8,0,0,0"/>
-                                            <Slider x:Name="GoTweaksHapticsTriggerSlider" Grid.Column="2" Width="110" Minimum="0" Maximum="100" Value="100"
-                                                    StepFrequency="5" VerticalAlignment="Center" ValueChanged="GoTweaksHaptics_Changed"/>
-                                        </Grid>
-                                    </StackPanel>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -5098,88 +5018,6 @@
                                                    Margin="0,8,0,0"/>
                                     </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Brightness Gesture Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel Spacing="12">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
-                                        <TextBlock Text="Brightness Gesture" Style="{StaticResource CardTitleStyle}"/>
-                                        <TextBlock Text="Hold the trigger button below and tilt the axis to fade display brightness. A quick tap of the trigger still behaves normally."
-                                                   Style="{StaticResource CardCaptionStyle}"
-                                                   TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                    <ToggleSwitch x:Name="BrightnessGestureEnabledToggle"
-                                                  Grid.Column="1"
-                                                  Style="{StaticResource ModernToggleStyle}"
-                                                  IsOn="False"/>
-                                </Grid>
-
-                                <StackPanel x:Name="BrightnessGestureOptionsPanel" Spacing="12" Visibility="Collapsed">
-                                    <!-- Trigger Button -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Trigger" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                        <ComboBox x:Name="BrightnessGestureTriggerComboBox"
-                                                  Grid.Column="1"
-                                                  MinWidth="140"
-                                                  HorizontalAlignment="Left"
-                                                  Style="{StaticResource ModernComboBoxStyle}"
-                                                  SelectionChanged="BrightnessGestureTriggerComboBox_SelectionChanged">
-                                            <ComboBoxItem Content="Desktop" Tag="0"/>
-                                            <ComboBoxItem Content="Page" Tag="1"/>
-                                            <ComboBoxItem Content="Scroll Click" Tag="2"/>
-                                            <ComboBoxItem Content="Y1" Tag="3"/>
-                                            <ComboBoxItem Content="Y2" Tag="4"/>
-                                            <ComboBoxItem Content="Y3" Tag="5"/>
-                                            <ComboBoxItem Content="M1" Tag="6"/>
-                                            <ComboBoxItem Content="M2" Tag="7"/>
-                                            <ComboBoxItem Content="M3" Tag="8"/>
-                                        </ComboBox>
-                                    </Grid>
-
-                                    <!-- Axis -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Axis" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                        <ComboBox x:Name="BrightnessGestureAxisComboBox"
-                                                  Grid.Column="1"
-                                                  MinWidth="140"
-                                                  HorizontalAlignment="Left"
-                                                  Style="{StaticResource ModernComboBoxStyle}"
-                                                  SelectionChanged="BrightnessGestureAxisComboBox_SelectionChanged">
-                                            <ComboBoxItem Content="Right Stick" Tag="0"/>
-                                            <ComboBoxItem Content="Left Stick" Tag="1"/>
-                                            <ComboBoxItem Content="D-Pad (Up/Down)" Tag="2"/>
-                                        </ComboBox>
-                                    </Grid>
-                                </StackPanel>
-
-                                <!-- Info note, collapsed by default to keep the card tidy - explains
-                                     why Legion L/R aren't offered as trigger options. -->
-                                <muxc:Expander HorizontalAlignment="Stretch"
-                                               HorizontalContentAlignment="Stretch"
-                                               IsExpanded="False">
-                                    <muxc:Expander.Header>
-                                        <TextBlock Text="Why not Legion R + left stick, like SteamOS?" FontSize="12" Foreground="#B9C0CC"/>
-                                    </muxc:Expander.Header>
-                                    <Border Background="{StaticResource PageBackgroundBrush}" CornerRadius="4" Padding="10">
-                                        <TextBlock FontSize="11" Foreground="#B9C0CC" TextWrapping="Wrap"
-                                                   Text="This gesture was meant to work exactly like on SteamOS - hold Legion R and tilt the left stick. On Windows, holding Legion L or R for more than about 5 seconds is hardcoded in the controller's own firmware to toggle that grip's connection off and on (a real Legion Space feature) - not something GoTweaks, or any app, can override. None of the trigger options below have this limitation."/>
-                                    </Border>
-                                </muxc:Expander>
                             </StackPanel>
                         </Border>
 
