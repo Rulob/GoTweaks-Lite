@@ -53,12 +53,6 @@ namespace XboxGamingBar
             });
         }
 
-        private async void GamingWidget_SettingsClicked(XboxGameBarWidget sender, object args)
-        {
-            Logger.Info("Game Bar event: SettingsClicked");
-            await widget.ActivateSettingsAsync();
-        }
-
         // Diagnostics for the "widget opens but nothing responds" report: logs the FIRST pointer or
         // key input that reaches the widget after each Game Bar visibility change. A window that is
         // open but cut off from Game Bar shows VisibleChanged lines (or none at all) and then never

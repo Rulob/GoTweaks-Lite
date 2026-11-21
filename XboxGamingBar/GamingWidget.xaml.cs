@@ -2451,9 +2451,8 @@ namespace XboxGamingBar
                 await widget.CenterWindowAsync();
                 Logger.Info("widget.CenterWindowAsync() completed.");
 
-                Logger.Info("Registering widget event handlers (RequestedThemeChanged, SettingsClicked, VisibleChanged, GameBarDisplayModeChanged)...");
+                Logger.Info("Registering widget event handlers (RequestedThemeChanged, VisibleChanged, GameBarDisplayModeChanged)...");
                 widget.RequestedThemeChanged += GamingWidget_RequestedThemeChanged;
-                widget.SettingsClicked += GamingWidget_SettingsClicked;
                 widget.VisibleChanged += GamingWidget_VisibleChanged;
                 widget.GameBarDisplayModeChanged += GamingWidget_GameBarDisplayModeChanged;
                 Logger.Info("Widget event handlers registered.");

@@ -117,7 +117,6 @@ namespace XboxGamingBar
                 if (widget != null)
                 {
                     widget.RequestedThemeChanged -= GamingWidget_RequestedThemeChanged;
-                    widget.SettingsClicked -= GamingWidget_SettingsClicked;
                     widget.VisibleChanged -= GamingWidget_VisibleChanged;
                     widget.GameBarDisplayModeChanged -= GamingWidget_GameBarDisplayModeChanged;
                 }

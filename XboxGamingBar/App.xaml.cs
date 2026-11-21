@@ -80,9 +80,7 @@ namespace XboxGamingBar
         }
 
         private XboxGameBarWidget gamingXboxGameBarWidget = null;
-        private XboxGameBarWidget gamingSettingsXboxGameBarWidget = null;
         private GamingWidget gamingWidget = null;
-        private GamingWidgetSettings gamingWidgetSettings = null;
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         /// <summary>
@@ -289,15 +287,6 @@ namespace XboxGamingBar
                             Logger.Error($"Stack trace: {ex.StackTrace}");
                         }
                     }
-                    else if (widgetArgs.AppExtensionId == "GamingWidgetSettings")
-                    {
-                        Logger.Info("Creating XboxGameBarWidget for GamingWidgetSettings...");
-                        gamingSettingsXboxGameBarWidget = new XboxGameBarWidget(widgetArgs, Window.Current.CoreWindow, rootFrame);
-                        rootFrame.Navigate(typeof(GamingWidgetSettings), gamingSettingsXboxGameBarWidget);
-                        gamingWidgetSettings = rootFrame.Content as GamingWidgetSettings;
-
-                        Window.Current.Closed += GamingSettingsWidgetWindow_Closed;
-                    }
 
                     Logger.Info("Calling Window.Current.Activate()...");
                     Window.Current.Activate();
@@ -356,35 +345,6 @@ namespace XboxGamingBar
                             Logger.Error($"Stack trace: {ex.StackTrace}");
                         }
                     }
-                    else if (widgetArgs.AppExtensionId == "GamingWidgetSettings" && gamingSettingsXboxGameBarWidget == null)
-                    {
-                        Logger.Info("Running in app mode but received Game Bar settings activation. Attempting to upgrade.");
-
-                        var rootFrame = Window.Current.Content as Frame;
-                        if (rootFrame == null)
-                        {
-                            rootFrame = new Frame();
-                            rootFrame.NavigationFailed += OnNavigationFailed;
-                            Window.Current.Content = rootFrame;
-                        }
-
-                        try
-                        {
-                            gamingSettingsXboxGameBarWidget = new XboxGameBarWidget(widgetArgs, Window.Current.CoreWindow, rootFrame);
-                            rootFrame.Navigate(typeof(GamingWidgetSettings), gamingSettingsXboxGameBarWidget);
-                            gamingWidgetSettings = rootFrame.Content as GamingWidgetSettings;
-
-                            Window.Current.Closed -= GamingSettingsWidgetWindow_Closed;
-                            Window.Current.Closed += GamingSettingsWidgetWindow_Closed;
-
-                            Window.Current.Activate();
-                            Logger.Info("Successfully upgraded settings to Game Bar widget mode.");
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error($"Failed to upgrade settings to widget mode: {ex.Message}");
-                        }
-                    }
                     else
                     {
                         Logger.Info($"Subsequent activation ignored. gamingXboxGameBarWidget is null: {gamingXboxGameBarWidget == null}");
@@ -407,14 +367,6 @@ namespace XboxGamingBar
             Window.Current.Closed -= GamingWidgetWindow_Closed;
             // No widget left to keep alive - let normal suspend policy apply.
             ReleaseWidgetKeepAliveSession("widget window closed");
-        }
-
-        private void GamingSettingsWidgetWindow_Closed(object sender, Windows.UI.Core.CoreWindowEventArgs e)
-        {
-            Logger.Info("App gaming widget settings closed");
-            gamingSettingsXboxGameBarWidget = null;
-            gamingWidgetSettings = null;
-            Window.Current.Closed -= GamingSettingsWidgetWindow_Closed;
         }
 
         /// <summary>
@@ -653,8 +605,6 @@ namespace XboxGamingBar
             // to avoid race conditions and double-disposal
             gamingXboxGameBarWidget = null;
             gamingWidget = null;
-            gamingSettingsXboxGameBarWidget = null;
-            gamingWidgetSettings = null;
 
             deferral.Complete();
         }
