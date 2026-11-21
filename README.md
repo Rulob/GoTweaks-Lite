@@ -168,7 +168,9 @@ upstream, and why.
 - **Show GoTweaks first in Game Bar** (Legion tab → Game Bar). Puts the widget in Game Bar's
   device-maker slot, left of Home, where Legion Space normally sits, so it opens straight from the
   Game Bar button. Game Bar closes once to apply it; open it again. Turning it off puts the
-  previous widget (e.g. Legion Space) back, and so does the uninstaller.
+  previous widget (e.g. Legion Space) back, and so does the uninstaller. (Game Bar only uses that
+  slot for an app with a single widget, so the old, unused "GoTweaks Lite Settings" widget and the
+  gear button on the title bar were removed.)
 
 ---
 

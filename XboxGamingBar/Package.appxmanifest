@@ -53,7 +53,6 @@
               <GameBarWidget Type="Standard">
                 <HomeMenuVisible>true</HomeMenuVisible>
                 <PinningSupported>true</PinningSupported>
-                <SettingsSupported AppExtensionId="GamingWidgetSettings" />
                 <Window>
                   <Size>
                     <Height>620</Height>
@@ -73,28 +72,6 @@
           </uap3:AppExtension>
         </uap3:Extension>
 
-		<uap3:Extension Category="windows.appExtension">
-			<uap3:AppExtension Name="microsoft.gameBarUIExtension"
-							Id="GamingWidgetSettings"
-							DisplayName="GoTweaks Lite Settings"
-							Description="GoTweaks Lite settings."
-							PublicFolder="Assets">
-				<uap3:Properties>
-					<GameBarWidget Type="Settings">
-						<Window>
-							<Size>
-								<Height>300</Height>
-								<Width>300</Width>
-							</Size>
-							<ResizeSupported>
-								<Horizontal>false</Horizontal>
-								<Vertical>false</Vertical>
-							</ResizeSupported>
-						</Window>
-					</GameBarWidget>
-				</uap3:Properties>
-			</uap3:AppExtension>
-		</uap3:Extension>
       </Extensions>
     </Application>
   </Applications>
