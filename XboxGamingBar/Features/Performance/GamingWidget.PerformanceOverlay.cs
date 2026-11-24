@@ -163,6 +163,13 @@ namespace XboxGamingBar
             if (PerformanceOverlayToggle == null) return;
 
             bool isOn = e.NewValue > 0;
+
+            // The Quick Settings tile and the helper's hotkey change the overlay without going
+            // through PerformanceOverlayToggle_Toggled, so the profile kept its old OverlayLevel.
+            // The Profiles tab then showed the wrong state, and the next profile re-apply (e.g.
+            // LoadProfileSettings each time Game Bar opens) flipped the overlay back.
+            SyncOverlayStateToProfile(isOn);
+
             if (PerformanceOverlayToggle.IsOn == isOn) return;
 
             isApplyingHelperUpdate = true;
@@ -173,6 +180,36 @@ namespace XboxGamingBar
             finally
             {
                 isApplyingHelperUpdate = false;
+            }
+        }
+
+        /// <summary>
+        /// Records the overlay's actual on/off state in the active profile (when the profile
+        /// saves the overlay), whatever changed it. Skipped while a profile is being loaded or
+        /// switched, so a change that belongs to one profile never lands in another; a value the
+        /// profile already has is not rewritten.
+        /// </summary>
+        private void SyncOverlayStateToProfile(bool isOn)
+        {
+            try
+            {
+                if (!SaveOverlayLevel || string.IsNullOrEmpty(currentProfileName)) return;
+                if (isLoadingProfile || isSwitchingProfile || isInitialSync) return;
+                if (currentProfileName.IndexOf("No game detected", StringComparison.OrdinalIgnoreCase) >= 0) return;
+
+                var profile = GetProfile(currentProfileName);
+                if (profile == null) return;
+                int level = isOn ? 1 : 0;
+                if ((profile.OverlayLevel > 0) == isOn) return;
+
+                profile.OverlayLevel = level;
+                SaveProfileToStorage(currentProfileName, profile);
+                UpdateProfileDisplay();
+                Logger.Info($"Overlay {(isOn ? "on" : "off")} saved to profile '{currentProfileName}'");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"SyncOverlayStateToProfile failed: {ex.Message}");
             }
         }
 

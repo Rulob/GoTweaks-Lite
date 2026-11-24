@@ -44,6 +44,14 @@ namespace XboxGamingBar
 
             if (isOn)
             {
+                // Tell the helper which firmware mode to return to while no game runs (Global
+                // profile; see Program.AutoTDPIdleMode.cs). 0 = it was already Custom.
+                if (legionGoDetected?.Value == true)
+                {
+                    int presetMode = GetCurrentPresetLegionMode();
+                    SendIntToHelper(Shared.Enums.Function.AutoTDPIdleMode, presetMode >= 1 && presetMode <= 3 ? presetMode : 0);
+                }
+
                 if (TDPModeComboBox != null && !IsCustomTdpModeSelected())
                 {
                     tdpModeIndexBeforeAutoTDP = TDPModeComboBox.SelectedIndex;

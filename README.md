@@ -177,7 +177,22 @@ upstream, and why.
   second button again for more steps.
 - **Customizing Quick Settings no longer jumps to the top.** Showing or hiding a tile (tap it twice)
   in customize mode now updates that tile in place, and swapping two tiles keeps the scroll
-  position and focus.
+  position and focus. Reordering the metrics row with its up / down arrows does the same.
+- **Metrics row works without PawnIO.** CPU temperature and CPU / GPU wattage need the PawnIO
+  driver, which GoTweaks Lite no longer installs, so on a fresh Windows they showed "--". The row
+  now uses the overlay's values: one **SoC Temp** (CPU temperature, or the AMD GPU sensor when that
+  isn't available; both are on the same chip) and **TDP** (the mode name in Quiet / Balanced /
+  Performance, the TDP limit in Custom). Saved selections move over automatically. The fan-curve
+  temperature uses the same fallback, and the row no longer misreads decimals on systems that use
+  a comma as the decimal separator.
+- **Overlay on/off is saved to the profile however it's changed.** The Quick Settings tile and the
+  hotkey didn't update the profile, so the Profiles tab showed the wrong state and opening Game Bar
+  could switch the overlay back. Game profile cards now show the Overlay setting too.
+- **AutoTDP on the Global profile returns to your mode between games.** With AutoTDP on and no
+  per-game profile, the device used to stay in Custom at AutoTDP's last wattage after a game
+  closed. Now, 5 seconds after the game closes, it goes back to the mode you had before turning
+  AutoTDP on (Quiet, Balanced or Performance), and it switches to Custom again when the next game
+  starts. AutoTDP stays on. (After updating, turn AutoTDP off and on once so it records that mode.)
 
 ---
 
@@ -191,7 +206,8 @@ A customizable dashboard of quick-access tiles for your most-used settings.
 - **Assign a controller button combo to any tile** — hold the combo (paddles included) to fire it
   hands-free
 - Custom keyboard-shortcut tiles you can add and remove
-- An optional built-in **brightness slider** and a live metrics row (CPU/GPU/memory, battery, fan)
+- An optional built-in **brightness slider** and a live metrics row (CPU/GPU usage, SoC
+  temperature, TDP, memory, battery)
 - Device-specific tiles that appear when supported hardware is detected
 
 ### ⚡ Performance Control

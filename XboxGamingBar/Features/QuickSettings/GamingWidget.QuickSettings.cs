@@ -130,11 +130,9 @@ namespace XboxGamingBar
             BatteryDrain,
             BatteryLevel,
             CPUUsage,
-            CPUTemp,
-            CPUWattage,
             GPUUsage,
-            GPUTemp,
-            GPUWattage,
+            SoCTemp,
+            TDP,
             MemoryUsage,
             TimeRemaining
         }
@@ -156,11 +154,10 @@ namespace XboxGamingBar
             { MetricType.BatteryDrain, new MetricInfo { Id = "BatteryDrain", Label = "Battery", Glyph = "\uE83F", Unit = "W" } },
             { MetricType.BatteryLevel, new MetricInfo { Id = "BatteryLevel", Label = "Battery", Glyph = "\uE83F", Unit = "%" } },
             { MetricType.CPUUsage, new MetricInfo { Id = "CPUUsage", Label = "CPU", Glyph = ((char)0xEEA1).ToString(), Unit = "%" } },
-            { MetricType.CPUTemp, new MetricInfo { Id = "CPUTemp", Label = "CPU Temp", Glyph = "\uE9CA", Unit = "°" } },
-            { MetricType.CPUWattage, new MetricInfo { Id = "CPUWattage", Label = "CPU", Glyph = ((char)0xEEA1).ToString(), Unit = "W" } },
             { MetricType.GPUUsage, new MetricInfo { Id = "GPUUsage", Label = "GPU", Glyph = ((char)0xE964).ToString(), Unit = "%" } },
-            { MetricType.GPUTemp, new MetricInfo { Id = "GPUTemp", Label = "GPU Temp", Glyph = "\uE9CA", Unit = "°" } },
-            { MetricType.GPUWattage, new MetricInfo { Id = "GPUWattage", Label = "GPU", Glyph = ((char)0xE964).ToString(), Unit = "W" } },
+            // Same as the overlay's TEMP and TDP items (see PerformanceManager.PushQuickMetrics).
+            { MetricType.SoCTemp, new MetricInfo { Id = "SoCTemp", Label = "Temp", Glyph = "\uE9CA", Unit = "°" } },
+            { MetricType.TDP, new MetricInfo { Id = "TDP", Label = "TDP", Glyph = "\uE945", Unit = "W" } },
             { MetricType.MemoryUsage, new MetricInfo { Id = "MemoryUsage", Label = "Memory", Glyph = ((char)0xEEA0).ToString(), Unit = "%" } },
             { MetricType.TimeRemaining, new MetricInfo { Id = "TimeRemaining", Label = "Time", Glyph = "\uE916", Unit = "" } }
         };
@@ -518,9 +515,15 @@ namespace XboxGamingBar
                 if (settings.Values.TryGetValue(QuickMetricsSelectionKey, out object selectionVal) && selectionVal is string selectionStr)
                 {
                     // Parse comma-separated metric IDs
-                    foreach (var id in selectionStr.Split(','))
+                    foreach (var rawId in selectionStr.Split(','))
                     {
-                        if (Enum.TryParse<MetricType>(id.Trim(), out var metricType))
+                        // Selections saved before 1.9.7: CPU/GPU Temp became the single SoC
+                        // Temp, and CPU/GPU Wattage became TDP (as on the overlay).
+                        string id = rawId.Trim();
+                        if (id == "CPUTemp" || id == "GPUTemp") id = nameof(MetricType.SoCTemp);
+                        else if (id == "CPUWattage" || id == "GPUWattage") id = nameof(MetricType.TDP);
+
+                        if (Enum.TryParse<MetricType>(id, out var metricType) && !selectedMetrics.Contains(metricType))
                         {
                             selectedMetrics.Add(metricType);
                         }
@@ -528,8 +531,8 @@ namespace XboxGamingBar
                 }
                 else
                 {
-                    // Default selection: Battery Drain, CPU Usage, CPU Temp, GPU Usage, Time Remaining
-                    selectedMetrics.AddRange(new[] { MetricType.BatteryDrain, MetricType.CPUUsage, MetricType.CPUTemp, MetricType.GPUUsage, MetricType.TimeRemaining });
+                    // Default selection: Battery Drain, CPU Usage, SoC Temp, GPU Usage, Time Remaining
+                    selectedMetrics.AddRange(new[] { MetricType.BatteryDrain, MetricType.CPUUsage, MetricType.SoCTemp, MetricType.GPUUsage, MetricType.TimeRemaining });
                 }
 
                 // Update Quick Metrics UI

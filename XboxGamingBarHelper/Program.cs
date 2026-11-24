@@ -1173,6 +1173,7 @@ namespace XboxGamingBarHelper
                 autoTDPManager.SpptBoost,
                 autoTDPManager.FpptBoost,
                 autoTDPManager.FastResponse,
+                autoTDPManager.IdleMode,
                 profileManager.PerGameProfile,
                 profileManager.DeleteGameProfile,
                 powerManager.CPUBoost,
@@ -1422,6 +1423,10 @@ namespace XboxGamingBarHelper
             autoTDPManager.MinTDP.PropertyChanged += AutoTDPSetting_PropertyChanged;
             autoTDPManager.MaxTDP.PropertyChanged += AutoTDPSetting_PropertyChanged;
             autoTDPManager.PauseWhenUnfocused.PropertyChanged += AutoTDPSetting_PropertyChanged;
+
+            // On the Global profile, AutoTDP returns to the pre-AutoTDP firmware mode while no game
+            // runs (see Program.AutoTDPIdleMode.cs).
+            autoTDPManager.GameRunningStateCallback = OnAutoTDPGameRunningState;
 
             // AutoTDP paces itself on its own thread (see AutoTDPManager.RunLoop), not the main loop.
             autoTDPManager.Start();

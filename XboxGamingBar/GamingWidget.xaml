@@ -900,23 +900,19 @@
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
                                             <!-- Row 0 -->
                                             <CheckBox x:Name="MetricCheck_BatteryDrain" Content="Battery Drain" Grid.Row="0" Grid.Column="0" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
                                             <CheckBox x:Name="MetricCheck_BatteryLevel" Content="Battery Level" Grid.Row="0" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
                                             <!-- Row 1 -->
                                             <CheckBox x:Name="MetricCheck_CPUUsage" Content="CPU Usage" Grid.Row="1" Grid.Column="0" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
-                                            <CheckBox x:Name="MetricCheck_CPUTemp" Content="CPU Temp" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
-                                            <!-- Row 2 -->
-                                            <CheckBox x:Name="MetricCheck_CPUWattage" Content="CPU Wattage" Grid.Row="2" Grid.Column="0" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
-                                            <CheckBox x:Name="MetricCheck_GPUUsage" Content="GPU Usage" Grid.Row="2" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
+                                            <CheckBox x:Name="MetricCheck_GPUUsage" Content="GPU Usage" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
+                                            <!-- Row 2: same values as the overlay's TEMP and TDP items -->
+                                            <CheckBox x:Name="MetricCheck_SoCTemp" Content="SoC Temp" Grid.Row="2" Grid.Column="0" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
+                                            <CheckBox x:Name="MetricCheck_TDP" Content="TDP" Grid.Row="2" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
                                             <!-- Row 3 -->
-                                            <CheckBox x:Name="MetricCheck_GPUTemp" Content="GPU Temp" Grid.Row="3" Grid.Column="0" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
-                                            <CheckBox x:Name="MetricCheck_GPUWattage" Content="GPU Wattage" Grid.Row="3" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
-                                            <!-- Row 4 -->
-                                            <CheckBox x:Name="MetricCheck_MemoryUsage" Content="Memory Usage" Grid.Row="4" Grid.Column="0" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
-                                            <CheckBox x:Name="MetricCheck_TimeRemaining" Content="Time Remaining" Grid.Row="4" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
+                                            <CheckBox x:Name="MetricCheck_MemoryUsage" Content="Memory Usage" Grid.Row="3" Grid.Column="0" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
+                                            <CheckBox x:Name="MetricCheck_TimeRemaining" Content="Time Remaining" Grid.Row="3" Grid.Column="1" Foreground="White" FontSize="12" Margin="0,2" Checked="MetricCheckBox_Changed" Unchecked="MetricCheckBox_Changed"/>
                                         </Grid>
                                         <TextBlock x:Name="MetricsSelectionCount" Text="0/6 selected" Foreground="#888888" FontSize="11" Margin="0,6,0,0" HorizontalAlignment="Right"/>
 

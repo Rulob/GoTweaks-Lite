@@ -62,6 +62,17 @@ namespace XboxGamingBarHelper.AutoTDP
         private readonly AutoTDPFastResponseProperty fastResponse;
         public AutoTDPFastResponseProperty FastResponse => fastResponse;
 
+        // The firmware mode to sit in while AutoTDP is on but no game runs (Global profile only).
+        private readonly AutoTDPIdleModeProperty idleMode;
+        public AutoTDPIdleModeProperty IdleMode => idleMode;
+
+        /// <summary>
+        /// Called from the AutoTDP loop while AutoTDP is enabled, with whether a game is running.
+        /// Program sets it: on the Global profile it returns the device to <see cref="IdleMode"/>
+        /// when no game runs and back to Custom when one starts (AutoTDP needs Custom).
+        /// </summary>
+        public Action<bool> GameRunningStateCallback { get; set; }
+
         // Fast response: when FPS is far off target, estimate the wattage needed and jump there,
         // then let the PID loop below fine-tune. After a jump, sampling pauses briefly so the
         // frames rendered during the change don't trigger another jump.
@@ -197,6 +208,7 @@ namespace XboxGamingBarHelper.AutoTDP
             spptBoost = new AutoTDPSpptBoostProperty(2, this);  // Same defaults as the widget's
             fpptBoost = new AutoTDPFpptBoostProperty(5, this);  // boost sliders (+2 / +5 W)
             fastResponse = new AutoTDPFastResponseProperty(this);
+            idleMode = new AutoTDPIdleModeProperty(this);
 
             minTDP = minTDPProperty.Value;
             maxTDP = maxTDPProperty.Value;
@@ -318,6 +330,7 @@ namespace XboxGamingBarHelper.AutoTDP
 
             // Check if a game is running
             var runningGame = systemManager.RunningGame.Value;
+            InvokeGameRunningStateCallback(runningGame.IsValid());
             if (!runningGame.IsValid())
             {
                 RestoreProfileTDPIfActive("Game exited");
@@ -673,6 +686,18 @@ namespace XboxGamingBarHelper.AutoTDP
             consecutiveAtTarget = 0;
             IsProbing = false;
             samplesSinceLastDecision = 0;
+        }
+
+        private void InvokeGameRunningStateCallback(bool gameRunning)
+        {
+            try
+            {
+                GameRunningStateCallback?.Invoke(gameRunning);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"AutoTDP game-state callback failed: {ex.Message}");
+            }
         }
 
         /// <summary>

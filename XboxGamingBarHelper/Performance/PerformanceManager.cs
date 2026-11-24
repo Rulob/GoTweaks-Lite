@@ -208,6 +208,22 @@ namespace XboxGamingBarHelper.Performance
         /// </summary>
         public bool IsAutoTDPActive { get; set; }
 
+        /// <summary>
+        /// The SoC temperature, as the overlay shows it: the CPU Tctl reading, or the AMD GPU
+        /// temperature when the CPU sensor has no value (it needs the PawnIO driver; the GPU
+        /// one comes from the AMD driver). CPU and GPU share one die. -1 when neither reads.
+        /// </summary>
+        public float SoCTemperature
+        {
+            get
+            {
+                float cpu = CPUTemperature != null ? CPUTemperature.Value : -1;
+                if (cpu > 0) return cpu;
+                float gpu = GPUTemperature != null ? GPUTemperature.Value : -1;
+                return gpu > 0 ? gpu : -1;
+            }
+        }
+
         // Matches the widget's CustomTDPCeilingW: AutoTDP's SPPT/FPPT boosts never push past it.
         private const int AutoTDPLimitCeilingW = 50;
 
@@ -1457,34 +1473,33 @@ namespace XboxGamingBarHelper.Performance
         {
             try
             {
-                // Build JSON with all sensor values for flexible display
+                // Same sources as the overlay: one SoC temperature (CPU Tctl, falling back to the
+                // AMD GPU sensor, which needs no kernel driver) and the TDP limit / firmware mode
+                // instead of measured CPU/GPU watts (those need the PawnIO driver).
                 float batteryDrain = BatteryDischargeRate.Value > 0 ? BatteryDischargeRate.Value : -BatteryChargeRate.Value;
                 float cpuUsage = CPUUsage.Value;
                 float gpuUsage = GPUUsage.Value;
-                float cpuTemp = CPUTemperature.Value;
-                float gpuTemp = GPUTemperature.Value;
-                float cpuWattage = CPUWattage.Value;
-                float gpuWattage = GPUWattage.Value;
+                float socTemp = SoCTemperature;
                 float memoryUsage = MemoryUsage.Value;
                 float batteryLevel = BatteryLevel.Value;
                 float timeRemaining = BatteryTimeRemaining;
                 float timeToFull = BatteryTimeToFull;
                 bool isCharging = BatteryChargeRate.Value > 0;
+                int tdpMode = legionManager != null && (legionManager.LegionGoDetected?.Value ?? false)
+                    ? legionManager.CurrentPerformanceMode
+                    : 255;
+                int tdp = CurrentSPL;
 
-                // Format as JSON with all metrics
-                string json = $"{{" +
-                    $"\"batteryDrain\":{batteryDrain:F1}," +
-                    $"\"cpuUsage\":{cpuUsage:F0}," +
-                    $"\"gpuUsage\":{gpuUsage:F0}," +
-                    $"\"cpuTemp\":{cpuTemp:F0}," +
-                    $"\"gpuTemp\":{gpuTemp:F0}," +
-                    $"\"cpuWattage\":{cpuWattage:F1}," +
-                    $"\"gpuWattage\":{gpuWattage:F1}," +
-                    $"\"memoryUsage\":{memoryUsage:F0}," +
-                    $"\"batteryLevel\":{batteryLevel:F0}," +
-                    $"\"timeRemaining\":{timeRemaining:F0}," +
-                    $"\"timeToFull\":{timeToFull:F0}," +
-                    $"\"isCharging\":{(isCharging ? "true" : "false")}}}";
+                // Invariant culture: a comma decimal separator (e.g. Spanish) would break the
+                // widget's number parsing.
+                var inv = System.Globalization.CultureInfo.InvariantCulture;
+                string json = string.Format(inv,
+                    "{{\"batteryDrain\":{0:F1},\"cpuUsage\":{1:F0},\"gpuUsage\":{2:F0},\"socTemp\":{3:F0}," +
+                    "\"memoryUsage\":{4:F0},\"batteryLevel\":{5:F0},\"timeRemaining\":{6:F0},\"timeToFull\":{7:F0}," +
+                    "\"tdpMode\":{8},\"tdp\":{9},\"isCharging\":{10}}}",
+                    batteryDrain, cpuUsage, gpuUsage, socTemp,
+                    memoryUsage, batteryLevel, timeRemaining, timeToFull,
+                    tdpMode, tdp, isCharging ? "true" : "false");
 
                 // Send via named pipe
                 var message = new Shared.IPC.PipeMessage

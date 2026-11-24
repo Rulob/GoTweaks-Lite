@@ -795,6 +795,15 @@ namespace XboxGamingBar
                         rowIndex++;
                     }
 
+                    // Overlay (if saved), as on the Global / AC-DC cards
+                    if (SaveOverlayLevel)
+                    {
+                        AddTextBlock(acDcGrid, rowIndex, 0, "Overlay", 10, "#AAAAAA", margin: new Thickness(0, 3, 8, 0));
+                        AddTextBlock(acDcGrid, rowIndex, 1, GetOverlayLevelShortName(gameAC.OverlayLevel), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
+                        AddTextBlock(acDcGrid, rowIndex, 2, GetOverlayLevelShortName(gameDC.OverlayLevel), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0), horizontalAlignment: HorizontalAlignment.Center);
+                        rowIndex++;
+                    }
+
                     stackPanel.Children.Add(acDcGrid);
                 }
                 else
@@ -882,6 +891,14 @@ namespace XboxGamingBar
                     {
                         AddTextBlock(singleGrid, rowIndex, 0, "Power Mode", 10, "#AAAAAA", margin: new Thickness(0, 3, 0, 0));
                         AddTextBlock(singleGrid, rowIndex, 1, GetPowerModeShortName(game.OSPowerMode), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
+                        rowIndex++;
+                    }
+
+                    // Overlay (if saved), as on the Global / AC-DC cards
+                    if (SaveOverlayLevel)
+                    {
+                        AddTextBlock(singleGrid, rowIndex, 0, "Overlay", 10, "#AAAAAA", margin: new Thickness(0, 3, 0, 0));
+                        AddTextBlock(singleGrid, rowIndex, 1, GetOverlayLevelShortName(game.OverlayLevel), 10, "#FFFFFF", margin: new Thickness(0, 3, 0, 0));
                         rowIndex++;
                     }
 

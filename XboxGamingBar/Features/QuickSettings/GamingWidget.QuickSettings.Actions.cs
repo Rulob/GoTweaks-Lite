@@ -611,6 +611,9 @@ namespace XboxGamingBar
                     Logger.Info("AMD Overlay toggled OFF");
                 }
                 UpdateQuickSettingsTileStates();
+                // RTSS changes reach the profile via PerformanceOverlaySlider_ValueChanged; the
+                // AMD overlay doesn't use that slider.
+                SyncOverlayStateToProfile(amdOverlayLevel > 0);
             }
             else // RTSS
             {

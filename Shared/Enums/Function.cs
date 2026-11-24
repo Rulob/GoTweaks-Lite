@@ -654,5 +654,11 @@
         // Space / Armoury Crate) via HKLM GamingConfiguration\OEMGameBarWidget. Saved by the
         // helper, which keeps the replaced value and restores it when turned off. Both directions.
         GameBarFirstSlot,               // bool (default false)
+
+        // The Legion firmware mode (1 Quiet, 2 Balanced, 3 Performance) that was active before
+        // AutoTDP switched to Custom; 0 when it was already Custom. On the Global profile the
+        // helper returns to it while no game runs and switches back to Custom when one starts.
+        // Saved by the helper. Widget -> helper.
+        AutoTDPIdleMode,                // int (default 0)
     }
 }

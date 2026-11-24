@@ -161,7 +161,8 @@ namespace XboxGamingBar
                     {
                         currentMetricsIsCharging = value == "true";
                     }
-                    else if (double.TryParse(value, out double numValue))
+                    else if (double.TryParse(value, System.Globalization.NumberStyles.Float,
+                                 System.Globalization.CultureInfo.InvariantCulture, out double numValue))
                     {
                         currentMetricsData[key] = numValue;
                     }
@@ -223,29 +224,25 @@ namespace XboxGamingBar
                             displayValue = $"{cpuUse:F0}%";
                         break;
 
-                    case MetricType.CPUTemp:
-                        if (currentMetricsData.TryGetValue("cpuTemp", out var cpuTemp) && cpuTemp > 0)
-                            displayValue = $"{cpuTemp:F0}°";
-                        break;
-
-                    case MetricType.CPUWattage:
-                        if (currentMetricsData.TryGetValue("cpuWattage", out var cpuWatt) && cpuWatt >= 0)
-                            displayValue = $"{cpuWatt:F1}W";
-                        break;
-
                     case MetricType.GPUUsage:
                         if (currentMetricsData.TryGetValue("gpuUsage", out var gpuUse) && gpuUse >= 0)
                             displayValue = $"{gpuUse:F0}%";
                         break;
 
-                    case MetricType.GPUTemp:
-                        if (currentMetricsData.TryGetValue("gpuTemp", out var gpuTemp) && gpuTemp > 0)
-                            displayValue = $"{gpuTemp:F0}°";
+                    case MetricType.SoCTemp:
+                        if (currentMetricsData.TryGetValue("socTemp", out var socTemp) && socTemp > 0)
+                            displayValue = $"{socTemp:F0}°";
                         break;
 
-                    case MetricType.GPUWattage:
-                        if (currentMetricsData.TryGetValue("gpuWattage", out var gpuWatt) && gpuWatt >= 0)
-                            displayValue = $"{gpuWatt:F1}W";
+                    case MetricType.TDP:
+                        // As on the overlay: the firmware mode name in Quiet / Balanced /
+                        // Performance, the SPL in Custom (255) or on non-Legion devices.
+                        currentMetricsData.TryGetValue("tdpMode", out var tdpMode);
+                        if (tdpMode == 1) displayValue = "Quiet";
+                        else if (tdpMode == 2) displayValue = "Balanced";
+                        else if (tdpMode == 3) displayValue = "Perf";
+                        else if (currentMetricsData.TryGetValue("tdp", out var tdp) && tdp > 0)
+                            displayValue = $"{tdp:F0}W";
                         break;
 
                     case MetricType.MemoryUsage:
@@ -302,11 +299,9 @@ namespace XboxGamingBar
                     { MetricCheck_BatteryDrain, MetricType.BatteryDrain },
                     { MetricCheck_BatteryLevel, MetricType.BatteryLevel },
                     { MetricCheck_CPUUsage, MetricType.CPUUsage },
-                    { MetricCheck_CPUTemp, MetricType.CPUTemp },
-                    { MetricCheck_CPUWattage, MetricType.CPUWattage },
                     { MetricCheck_GPUUsage, MetricType.GPUUsage },
-                    { MetricCheck_GPUTemp, MetricType.GPUTemp },
-                    { MetricCheck_GPUWattage, MetricType.GPUWattage },
+                    { MetricCheck_SoCTemp, MetricType.SoCTemp },
+                    { MetricCheck_TDP, MetricType.TDP },
                     { MetricCheck_MemoryUsage, MetricType.MemoryUsage },
                     { MetricCheck_TimeRemaining, MetricType.TimeRemaining }
                 };
@@ -354,11 +349,9 @@ namespace XboxGamingBar
                 { MetricCheck_BatteryDrain, MetricType.BatteryDrain },
                 { MetricCheck_BatteryLevel, MetricType.BatteryLevel },
                 { MetricCheck_CPUUsage, MetricType.CPUUsage },
-                { MetricCheck_CPUTemp, MetricType.CPUTemp },
-                { MetricCheck_CPUWattage, MetricType.CPUWattage },
                 { MetricCheck_GPUUsage, MetricType.GPUUsage },
-                { MetricCheck_GPUTemp, MetricType.GPUTemp },
-                { MetricCheck_GPUWattage, MetricType.GPUWattage },
+                { MetricCheck_SoCTemp, MetricType.SoCTemp },
+                { MetricCheck_TDP, MetricType.TDP },
                 { MetricCheck_MemoryUsage, MetricType.MemoryUsage },
                 { MetricCheck_TimeRemaining, MetricType.TimeRemaining }
             };
@@ -391,7 +384,7 @@ namespace XboxGamingBar
             UpdateMetricsSelectionCount();
 
             // Rebuild the metrics grid
-            RebuildMetricsGrid();
+            RebuildMetricsGridPreserveScroll(null, preferUp: true);
         }
 
         /// <summary>
@@ -410,6 +403,68 @@ namespace XboxGamingBar
             {
                 Logger.Error($"Error saving metrics selection: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// RebuildMetricsGrid for changes made in the Customize panel, keeping the scroll
+        /// position (same approach as BuildSortableGridPreserveScroll). Rebuilding the reorder
+        /// list removes the focused up/down button; focus then falls back to the top of the page
+        /// and the view jumps there. When <paramref name="focusMetric"/> is set, focus goes to
+        /// that metric's up (or down) button in its new row, or the other one if it is disabled.
+        /// </summary>
+        private void RebuildMetricsGridPreserveScroll(MetricType? focusMetric, bool preferUp)
+        {
+            var scrollViewer = QuickSettingsScrollViewer;
+            double scrollOffset = scrollViewer?.VerticalOffset ?? 0;
+
+            if (scrollViewer != null) scrollViewer.BringIntoViewOnFocusChange = false;
+            try
+            {
+                RebuildMetricsGrid();
+                scrollViewer?.UpdateLayout();
+                if (focusMetric.HasValue)
+                {
+                    FindMetricMoveButton(focusMetric.Value, preferUp)?.Focus(FocusState.Programmatic);
+                }
+                scrollViewer?.ChangeView(null, scrollOffset, null, true);
+            }
+            finally
+            {
+                _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, () =>
+                {
+                    if (scrollViewer == null) return;
+                    if (Math.Abs(scrollViewer.VerticalOffset - scrollOffset) > 1)
+                    {
+                        scrollViewer.ChangeView(null, scrollOffset, null, true);
+                    }
+                    scrollViewer.BringIntoViewOnFocusChange = true;
+                });
+            }
+        }
+
+        /// <summary>The enabled up (column 2) or down (column 3) button of a metric's reorder row.</summary>
+        private Button FindMetricMoveButton(MetricType metric, bool preferUp)
+        {
+            if (MetricsReorderList == null) return null;
+            foreach (var child in MetricsReorderList.Children)
+            {
+                if (!(child is Grid row)) continue;
+                Button up = null, down = null;
+                foreach (var cell in row.Children)
+                {
+                    if (cell is Button b && b.Tag is MetricType m && m == metric)
+                    {
+                        if (Grid.GetColumn(b) == 2) up = b; else down = b;
+                    }
+                }
+                if (up == null && down == null) continue;
+                var first = preferUp ? up : down;
+                var second = preferUp ? down : up;
+                if (first != null && first.IsEnabled) return first;
+                if (second != null && second.IsEnabled) return second;
+                return first ?? second;
+            }
+            return null;
         }
 
         /// <summary>
@@ -648,7 +703,7 @@ namespace XboxGamingBar
 
             // Save and rebuild
             SaveMetricsSelection();
-            RebuildMetricsGrid();
+            RebuildMetricsGridPreserveScroll(metricType, preferUp: true);
         }
 
         /// <summary>
@@ -668,7 +723,7 @@ namespace XboxGamingBar
 
             // Save and rebuild
             SaveMetricsSelection();
-            RebuildMetricsGrid();
+            RebuildMetricsGridPreserveScroll(metricType, preferUp: false);
         }
 
     }

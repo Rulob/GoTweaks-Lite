@@ -148,4 +148,32 @@ namespace XboxGamingBarHelper.AutoTDP
         }
     }
 
+    /// <summary>
+    /// The Legion firmware mode (1-3) to return to while AutoTDP is on but no game runs, on the
+    /// Global profile; 0 = stay in Custom. Sent by the widget when AutoTDP is turned on (the mode
+    /// it switched away from). Persisted so it survives helper restarts.
+    /// </summary>
+    internal class AutoTDPIdleModeProperty : HelperProperty<int, AutoTDPManager>
+    {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string SettingsKey = "AutoTDPIdleMode";
+
+        public AutoTDPIdleModeProperty(AutoTDPManager inManager) : base(LoadFromSettings(), null, Function.AutoTDPIdleMode, inManager)
+        {
+            Logger.Info($"AutoTDP idle mode loaded: {Value}");
+        }
+
+        private static int LoadFromSettings()
+        {
+            return Settings.LocalSettingsHelper.TryGetValue<int>(SettingsKey, out var value) && value >= 1 && value <= 3 ? value : 0;
+        }
+
+        protected override void NotifyPropertyChanged(string propertyName = "")
+        {
+            base.NotifyPropertyChanged(propertyName);
+            Settings.LocalSettingsHelper.SetValue(SettingsKey, Value);
+            Logger.Info($"AutoTDP idle mode: {Value}");
+        }
+    }
+
 }

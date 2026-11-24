@@ -569,6 +569,22 @@ namespace XboxGamingBar
                             Logger.Info($"SaveTDP disabled - deferring mode to helper for game profile: {profileName}");
                         }
                     }
+                    else if (SaveTDP && profile.AutoTDPEnabled == true && legionPerformanceMode != null)
+                    {
+                        // AutoTDP owns the mode on this profile: the helper keeps it in Custom while
+                        // a game runs and in the pre-AutoTDP mode otherwise (Program.AutoTDPIdleMode).
+                        // Forcing the profile's saved mode here (Custom) would undo that every time
+                        // Game Bar opens, so only show the mode the device is in.
+                        int currentIndex = Array.IndexOf(modeValues, legionPerformanceMode.Value);
+                        if (currentIndex >= 0)
+                        {
+                            lastTDPModeIndex = currentIndex;
+                            if (TDPModeComboBox.SelectedIndex != currentIndex)
+                                TDPModeComboBox.SelectedIndex = currentIndex;
+                        }
+                        savedLegionPerformanceMode = -1;
+                        Logger.Info($"AutoTDP on for {profileName}: TDP Mode left to AutoTDP (now {GetLegionModeShortName(legionPerformanceMode.Value)})");
+                    }
                     else if (savedLegionPerformanceMode >= 0)
                     {
                         // Loading Global/AC/DC profile and we have a saved mode to restore
