@@ -193,6 +193,11 @@ upstream, and why.
   closed. Now, 5 seconds after the game closes, it goes back to the mode you had before turning
   AutoTDP on (Quiet, Balanced or Performance), and it switches to Custom again when the next game
   starts. AutoTDP stays on. (After updating, turn AutoTDP off and on once so it records that mode.)
+- **Focus GoTweaks opens on GoTweaks.** The _Focus GoTweaks Lite_ action (hotkeys, Legion L / R,
+  scroll wheel) uses Game Bar's own link to open straight on the widget, or switch to it when Game
+  Bar is already open, including in the slot left of Home; before, it always landed on Home. With
+  _Show GoTweaks first_ on, _Open Game Bar_ opens on GoTweaks too, like Legion L does for Legion
+  Space. If the link doesn't open Game Bar within 3 seconds, Win+G is used as before.
 
 ---
 

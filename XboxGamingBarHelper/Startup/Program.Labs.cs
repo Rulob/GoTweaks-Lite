@@ -779,7 +779,7 @@ namespace XboxGamingBarHelper
                         {
                             // Execute the keyboard shortcut when the button is pressed
                             Logger.Debug($"Labs: Executing shortcut '{shortcutKeys}'");
-                            SendKeyboardShortcutViaInputInjector(shortcutKeys);
+                            RunButtonShortcut(shortcutKeys); // Xbox Guide (Win+G) -> OpenGameBarFromButton
                         },
                         (commandPath) =>
                         {
@@ -865,7 +865,7 @@ namespace XboxGamingBarHelper
                         {
                             // Execute the keyboard shortcut when scroll action is triggered
                             Logger.Debug($"Labs: Executing shortcut '{shortcutKeys}' for scroll {direction}");
-                            SendKeyboardShortcutViaInputInjector(shortcutKeys);
+                            RunButtonShortcut(shortcutKeys); // Xbox Guide (Win+G) -> OpenGameBarFromButton
                         },
                         (commandPath) =>
                         {
@@ -981,8 +981,9 @@ namespace XboxGamingBarHelper
         }
 
         /// <summary>
-        /// Focus GoTweaks widget by opening Game Bar and sending activation command to widget.
-        /// Win+G is required to open Game Bar before widget can be activated.
+        /// Focus the GoTweaks widget: Game Bar's activate link opens Game Bar on it (or switches to
+        /// it when Game Bar is open), in the device-maker slot left of Home too. If the link opens
+        /// nothing, fall back to Win+G plus the widget's own activation over the pipe.
         /// </summary>
         private static async void FocusGoTweaksWidget()
         {
@@ -997,8 +998,16 @@ namespace XboxGamingBarHelper
                 }
                 lastFocusWidgetTime = now;
 
-                // Open Game Bar (required for widget activation)
-                SendKeyboardShortcutViaInputInjector("Win+G");
+                if (await OpenGameBarOnGoTweaksAsync())
+                {
+                    return;
+                }
+
+                // Fallback. Win+G toggles, so only press it while Game Bar is closed.
+                if (IsGameBarOpen() != true)
+                {
+                    SendKeyboardShortcutViaInputInjector("Win+G");
+                }
                 Logger.Info("Labs: Sent Win+G to open Game Bar");
 
                 // Delay to ensure Game Bar is fully open and widget is ready
