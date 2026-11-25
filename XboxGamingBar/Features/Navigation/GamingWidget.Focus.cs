@@ -124,16 +124,7 @@ namespace XboxGamingBar
             OSPowerModeComboBox.GotFocus += Control_GotFocus;
             OSPowerModeComboBox.LostFocus += Control_LostFocus;
 
-            // Profiles tab - Power Source Profile card
-            PowerSourceProfileToggle.GotFocus += Control_GotFocus;
-            PowerSourceProfileToggle.LostFocus += Control_LostFocus;
 
-            // System tab - Profile Settings card (checkboxes have individual focus, not card focus)
-            // These use FocusableCheckBoxStyle which shows its own focus visual
-            ProfileSaveTDPCheckBox.GotFocus += StandaloneControl_GotFocus;
-            ProfileSaveCPUBoostCheckBox.GotFocus += StandaloneControl_GotFocus;
-            ProfileSaveCPUEPPCheckBox.GotFocus += StandaloneControl_GotFocus;
-            ProfileSaveCPUStateCheckBox.GotFocus += StandaloneControl_GotFocus;
 
             // System tab - Power & Sleep card
             PowerAndSleepExpandButton.GotFocus += Control_GotFocus;

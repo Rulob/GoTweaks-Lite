@@ -25,7 +25,6 @@ namespace XboxGamingBar
         private IEnumerable<Control> PerformanceTabFocusOrder()
         {
             yield return PerGameProfileToggle;
-            yield return PowerSourceProfileToggle;
             yield return PerformanceOverlayToggle;
             yield return FPSLimitToggle;
             yield return FPSLimitSlider;

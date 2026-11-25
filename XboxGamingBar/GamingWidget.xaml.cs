@@ -44,62 +44,30 @@ using Shared.Enums;
 namespace XboxGamingBar
 {
     /// <summary>
-    /// Profile settings storage
+    /// One profile's saved settings as shown on the Profiles tab, filled from the helper's
+    /// ProfileList (the helper owns the profiles since 1.9.7a).
     /// </summary>
     public class PerformanceProfile
     {
-        public double TDP { get; set; } = 15;          // Absolute SPL (base TDP) in Custom mode
-        public double TDPFast { get; set; } = 17;       // Absolute SPPT (= TDP + SPPT Boost) in Custom mode; default +2 W
-        public double TDPPeak { get; set; } = 20;       // Absolute FPPT (= TDP + FPPT Boost) in Custom mode; default +5 W
+        public double TDP { get; set; } = 15;          // Custom SPL (also kept while in a firmware mode)
+        public double TDPFast { get; set; } = 17;       // Custom SPPT
+        public double TDPPeak { get; set; } = 20;       // Custom FPPT
         public bool CPUBoost { get; set; } = false;
         public double CPUEPP { get; set; } = 0;
         public int MaxCPUState { get; set; } = 100;
         public int MinCPUState { get; set; } = 5;
-        // FPS Limit settings
         public bool FPSLimitEnabled { get; set; } = false;
         public int FPSLimitValue { get; set; } = 60;
-        // OS Power Mode (0=Best Power Efficiency, 1=Balanced, 2=Best Performance)
+        // OS Power Mode (0=Best Power Efficiency, 1=Balanced, 2=Best Performance, -1 = not recorded)
         public int OSPowerMode { get; set; } = 1;
         // Legion Performance Mode (1=Quiet, 2=Balanced, 3=Performance, 255=Custom)
         public int LegionPerformanceMode { get; set; } = 2;
-        // TDP Mode Index in the TDPModeComboBox (for user-made presets)
-        // -1 means use LegionPerformanceMode to determine index (backwards compatibility)
-        public int TDPModeIndex { get; set; } = -1;
-        // Overlay Level (0=Off, 1-4 for RTSS/AMD)
+        // Overlay (0=Off, 1=On, -1 = not recorded)
         public int OverlayLevel { get; set; } = 0;
-        // CPU Affinity as "pCores,eCores" string
-        public string CPUAffinity { get; set; } = "";
-        // AutoTDP. AutoTDPEnabled is null for a profile saved before AutoTDP was stored here:
-        // loading such a profile leaves AutoTDP as it is instead of switching it off.
         public bool? AutoTDPEnabled { get; set; } = null;
         public int AutoTDPTargetFPS { get; set; } = 60;
         public int AutoTDPMinTDP { get; set; } = 8;
         public int AutoTDPMaxTDP { get; set; } = 30;
-
-        public PerformanceProfile Clone()
-        {
-            return new PerformanceProfile
-            {
-                TDP = this.TDP,
-                TDPFast = this.TDPFast,
-                TDPPeak = this.TDPPeak,
-                CPUBoost = this.CPUBoost,
-                CPUEPP = this.CPUEPP,
-                MaxCPUState = this.MaxCPUState,
-                MinCPUState = this.MinCPUState,
-                FPSLimitEnabled = this.FPSLimitEnabled,
-                FPSLimitValue = this.FPSLimitValue,
-                OSPowerMode = this.OSPowerMode,
-                LegionPerformanceMode = this.LegionPerformanceMode,
-                TDPModeIndex = this.TDPModeIndex,
-                OverlayLevel = this.OverlayLevel,
-                CPUAffinity = this.CPUAffinity,
-                AutoTDPEnabled = this.AutoTDPEnabled,
-                AutoTDPTargetFPS = this.AutoTDPTargetFPS,
-                AutoTDPMinTDP = this.AutoTDPMinTDP,
-                AutoTDPMaxTDP = this.AutoTDPMaxTDP
-            };
-        }
     }
 
     /// <summary>
@@ -686,34 +654,14 @@ namespace XboxGamingBar
         private int fpsLimitPendingValue;
         private const int FPS_LIMIT_DEBOUNCE_MS = 300;
 
-        // Debounces SettingChanged for slider drags (CPU EPP, AMD sharpness/resolution/FPS
-        // sliders) so a drag writes the profile once when it settles instead of on every tick.
-        private DispatcherTimer settingsSaveDebounceTimer;
-        private const int SETTINGS_SAVE_DEBOUNCE_MS = 300;
-
-        // Profile management
-        private PerformanceProfile globalProfile = new PerformanceProfile();
-        private PerformanceProfile acProfile = new PerformanceProfile();
-        private PerformanceProfile dcProfile = new PerformanceProfile();
-        private PerformanceProfile gameProfile = new PerformanceProfile();
-        private PerformanceProfile gameACProfile = new PerformanceProfile();
-        private PerformanceProfile gameDCProfile = new PerformanceProfile();
-        private string currentProfileName = ""; // Empty so first SwitchProfile() loads settings
+        // Active profile (display only; the helper owns the profiles since 1.9.7a)
+        private string currentProfileName = "Global"; // Shown profile: "Global" or "Game_<name>" (the helper decides)
         private string currentGameName = "";
         private string currentGameExePath = "";
         private string currentGameIconPath = ""; // Cache icon path to preserve it across foreground changes
-        private bool isLoadingProfile = false;
-        private bool isSwitchingProfile = false;
         private bool isApplyingHelperUpdate = false; // Prevents saves when helper echoes values back
         private bool isInitialSync = true; // Prevents saves during initial app startup sync
-        private bool isCleanInstall = false; // True if no saved Global profile existed on startup
-        private bool isInternalToggleDisable = false; // Indicates toggle is being disabled internally (game close)
-        private bool isUserInitiatedProfileToggle = false; // Indicates user clicked Profile tile to toggle
         private bool isUserInitiatedTDPModeChange = false; // Indicates user clicked TDP Mode tile in Quick Tab
-        private int savedLegionPerformanceMode = -1; // Stores Legion mode before per-game profile (-1 = not saved)
-        private bool isUpdatingPowerSourceProfileToggle = false; // Prevents programmatic toggle sync from triggering profile writes
-        private const string GlobalPowerSourceProfileSettingKey = "PowerSourceProfileEnabled";
-        private const string PerGamePowerSourceProfileSettingPrefix = "PerGamePowerSourceProfileEnabled_";
 
         // Controller profile state
         private ControllerProfile globalControllerProfile = new ControllerProfile();
@@ -721,7 +669,6 @@ namespace XboxGamingBar
         private bool isLoadingControllerProfile = false;
         private bool isSwitchingControllerProfile = false;
         private DateTime lastProfileApplyTime = DateTime.MinValue; // Prevents duplicate sends from queued UI events
-        private int profileSwitchEpoch = 0; // Incremented on each LoadProfileSettings; used to skip stale deferred callbacks
 
         // Debounces the controller-profile save/send for slider drags (gyro sensitivity/
         // deadzone, stick deadzones, trigger travel, joystick-mouse sens, light brightness/
@@ -758,185 +705,6 @@ namespace XboxGamingBar
             return gameName.Trim();
         }
 
-        private string GetPerGamePowerSourceProfileSettingKey(string gameName)
-        {
-            return $"{PerGamePowerSourceProfileSettingPrefix}{gameName}";
-        }
-
-        private bool HasGameSingleProfile(string gameName)
-        {
-            if (!HasValidGame(gameName))
-                return false;
-
-            var settings = ApplicationData.Current.LocalSettings;
-            return settings.Containers.ContainsKey($"Profile_Game_{gameName}");
-        }
-
-        private bool HasGamePowerSplitProfiles(string gameName)
-        {
-            if (!HasValidGame(gameName))
-                return false;
-
-            var settings = ApplicationData.Current.LocalSettings;
-            return settings.Containers.ContainsKey($"Profile_Game_{gameName}_AC")
-                || settings.Containers.ContainsKey($"Profile_Game_{gameName}_DC");
-        }
-
-        private bool HasAnyGameProfile(string gameName)
-        {
-            return HasGameSingleProfile(gameName) || HasGamePowerSplitProfiles(gameName);
-        }
-
-        private bool GetGlobalPowerSourceProfileEnabled()
-        {
-            var settings = ApplicationData.Current.LocalSettings;
-            if (settings.Values.TryGetValue(GlobalPowerSourceProfileSettingKey, out object val) && val is bool enabled)
-            {
-                return enabled;
-            }
-
-            return false;
-        }
-
-        private bool GetPerGamePowerSourceProfileEnabled(string gameName)
-        {
-            if (!HasValidGame(gameName))
-            {
-                return GetGlobalPowerSourceProfileEnabled();
-            }
-
-            var settings = ApplicationData.Current.LocalSettings;
-            string settingKey = GetPerGamePowerSourceProfileSettingKey(gameName);
-            if (settings.Values.TryGetValue(settingKey, out object val) && val is bool enabled)
-            {
-                return enabled;
-            }
-
-            bool hasSplitProfiles = HasGamePowerSplitProfiles(gameName);
-            bool hasSingleProfile = HasGameSingleProfile(gameName);
-
-            // Prefer single-profile mode when both profile shapes exist and no explicit
-            // per-game split setting has been saved yet.
-            if (hasSingleProfile)
-            {
-                return false;
-            }
-
-            if (hasSplitProfiles)
-            {
-                return true;
-            }
-
-            return GetGlobalPowerSourceProfileEnabled();
-        }
-
-        private void SavePerGamePowerSourceProfileSetting(string gameName, bool enabled)
-        {
-            if (!HasValidGame(gameName))
-            {
-                return;
-            }
-
-            var settings = ApplicationData.Current.LocalSettings;
-            settings.Values[GetPerGamePowerSourceProfileSettingKey(gameName)] = enabled;
-        }
-
-        private bool GetPowerSourceProfileEnabledForCurrentContext()
-        {
-            bool perGameEnabled = PerGameProfileToggle?.IsOn == true;
-            if (perGameEnabled && HasValidGame(currentGameName))
-            {
-                return GetPerGamePowerSourceProfileEnabled(currentGameName);
-            }
-
-            return GetGlobalPowerSourceProfileEnabled();
-        }
-
-        private void UpdateGlobalProfileDisplayMode()
-        {
-            bool globalPowerSourceSplit = GetGlobalPowerSourceProfileEnabled();
-
-            if (GlobalProfileSimple != null)
-            {
-                GlobalProfileSimple.Visibility = globalPowerSourceSplit ? Visibility.Collapsed : Visibility.Visible;
-            }
-
-            if (GlobalProfileACDC != null)
-            {
-                GlobalProfileACDC.Visibility = globalPowerSourceSplit ? Visibility.Visible : Visibility.Collapsed;
-            }
-        }
-
-        private void UpdatePowerSourceProfileScopeText()
-        {
-            if (PowerSourceProfileScopeText == null)
-            {
-                return;
-            }
-
-            bool hasGame = HasValidGame(currentGameName);
-            bool perGameContext = PerGameProfileToggle?.IsOn == true && hasGame;
-
-            if (perGameContext)
-            {
-                bool splitEnabled = GetPerGamePowerSourceProfileEnabled(currentGameName);
-                PowerSourceProfileScopeText.Text = $"Scope: {currentGameName} (per-game). AC/DC split: {(splitEnabled ? "On" : "Off")} (auto-saved).";
-            }
-            else
-            {
-                bool splitEnabled = GetGlobalPowerSourceProfileEnabled();
-                PowerSourceProfileScopeText.Text = $"Scope: Global profiles. AC/DC split: {(splitEnabled ? "On" : "Off")}. Enable Per-Game Profile to set this per game.";
-            }
-        }
-
-        private void SyncPowerSourceProfileToggleForCurrentContext()
-        {
-            if (PowerSourceProfileToggle == null)
-            {
-                return;
-            }
-
-            bool targetValue = GetPowerSourceProfileEnabledForCurrentContext();
-            if (PowerSourceProfileToggle.IsOn != targetValue)
-            {
-                isUpdatingPowerSourceProfileToggle = true;
-                try
-                {
-                    PowerSourceProfileToggle.IsOn = targetValue;
-                }
-                finally
-                {
-                    isUpdatingPowerSourceProfileToggle = false;
-                }
-            }
-
-            UpdateGlobalProfileDisplayMode();
-            UpdatePowerSourceProfileScopeText();
-        }
-
-        // Profile save settings - backed by fields to avoid UI thread access issues
-        // These are updated in LoadProfileCustomizationSettings and ProfileSettingsCheckBox_Changed
-        private bool _saveTDP = true;
-        private bool _saveCPUBoost = true;
-        private bool _saveCPUEPP = true;
-        private bool _saveCPUState = true;
-        private bool _saveFPSLimit = true;
-        private bool _saveOSPowerMode = true;
-        private bool _saveOverlayLevel = false;
-        // Legion controller settings (lighting, vibration, button mappings, gyro) have no save
-        // flags any more: they are always global. The helper's flags for them stay at their
-        // default (false), which routes writes to GlobalProfile.
-
-        private bool SaveTDP => _saveTDP;
-        private bool SaveCPUBoost => _saveCPUBoost;
-        private bool SaveCPUEPP => _saveCPUEPP;
-        private bool SaveCPUState => _saveCPUState;
-        private bool SaveFPSLimit => _saveFPSLimit;
-        private bool SaveOSPowerMode => _saveOSPowerMode;
-        private bool SaveOverlayLevel => _saveOverlayLevel;
-
-        private bool isLoadingProfileSettings = false;
-
         private readonly WidgetProperties properties;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -948,8 +716,6 @@ namespace XboxGamingBar
 
             // Prevent OSD checkbox events from saving during XAML initialization
             isLoadingOSDConfig = true;
-            // Prevent profile settings checkbox events from saving during XAML initialization
-            isLoadingProfileSettings = true;
             // Prevent controller profile events from saving during XAML initialization
             // This MUST be set before InitializeComponent() to prevent button ComboBox events
             // from overwriting stored button mappings with defaults
@@ -1062,6 +828,9 @@ namespace XboxGamingBar
             legionCustomTDPSlow = new LegionCustomTDPSlowProperty();
             legionCustomTDPFast = new LegionCustomTDPFastProperty();
             legionCustomTDPPeak = new LegionCustomTDPPeakProperty();
+            legionCustomTDPSlow.PropertyChanged += LegionCustomTDP_PropertyChanged;
+            legionCustomTDPFast.PropertyChanged += LegionCustomTDP_PropertyChanged;
+            legionCustomTDPPeak.PropertyChanged += LegionCustomTDP_PropertyChanged;
             legionFanFullSpeed = new LegionFanFullSpeedProperty(LegionFanFullSpeedToggle, this);
 
             // Fan curve graph properties
@@ -1347,40 +1116,15 @@ namespace XboxGamingBar
             // even when UWP's RadioButton marks the input event Handled internally.
             AttachNavInteractionTracking();
 
-            // Load profile customization settings
-            LoadProfileCustomizationSettings();
-
             // Populate the fixed TDP mode dropdown (Quiet/Balanced/Performance/Custom)
             PopulateTdpModeComboBox();
 
             // Initialize CPU State comboboxes with percentage values
             InitializeCPUStateComboBoxes();
 
-            // Check if this is a clean install (no saved Global profile)
-            var settings = ApplicationData.Current.LocalSettings;
-            isCleanInstall = !settings.Containers.ContainsKey("Profile_Global");
-            if (isCleanInstall)
-            {
-                Logger.Info("Clean install detected - will initialize profile with current system values after helper sync");
-            }
-
-            // Load profiles from storage
-            LoadProfileFromStorage("Global", globalProfile);
-            LoadProfileFromStorage("AC", acProfile);
-            LoadProfileFromStorage("DC", dcProfile);
-
+            // Performance profiles live in the helper (1.9.7a); the widget only shows them.
             // Load global controller profile from storage
             LoadControllerProfileFromStorage("Global", globalControllerProfile);
-
-            // Clean up any invalid "No game detected" profiles
-            CleanupInvalidProfiles();
-
-            // Load saved Power Source Profile toggle state BEFORE attaching event handler
-            LoadPowerSourceProfileSetting();
-
-            // Initialize power source profile
-            PowerSourceProfileToggle.Toggled += PowerSourceProfileToggle_Toggled;
-            SyncPowerSourceProfileToggleForCurrentContext();
 
             UpdateActiveProfileIndicator();
 
@@ -1394,15 +1138,9 @@ namespace XboxGamingBar
             // UI initialization events from triggering saves that overwrite stored values
             isLoadingControllerProfile = true;
 
-            // Subscribe to settings changes for auto-save
-            SubscribeToSettingsChanges();
-
             // Apply global controller profile to UI controls
             // (ApplyControllerProfile will clear isLoadingControllerProfile when done)
             ApplyControllerProfile(globalControllerProfile);
-
-            // Subscribe to power source profile toggle changes to update game profile card
-            PowerSourceProfileToggle.Toggled += PowerSourceToggle_Changed;
 
             // Subscribe to per-game profile toggle changes
             PerGameProfileToggle.Toggled += PerGameProfileToggle_Changed;
@@ -1428,7 +1166,6 @@ namespace XboxGamingBar
 
             // Update profile display
             UpdateProfileDisplay();
-            UpdateGameProfileCardVisibility();
 
             // Load Device TDP limits
             LoadTDPLimitsFromStorage();
@@ -1830,190 +1567,49 @@ namespace XboxGamingBar
             UpdateCompactMode(e.NewSize.Width);
         }
 
-        private void PowerSourceToggle_Changed(object sender, RoutedEventArgs e)
-        {
-            UpdateGameProfileCardVisibility();
-        }
-
+        /// <summary>
+        /// Per-game profile toggle. The toggle is bound to the helper's PerGameProfile property:
+        /// a user change is sent to the helper (which creates / turns on the game's profile, or
+        /// goes back to Global), and the helper's own switches (game start / exit) update it.
+        /// </summary>
         private void PerGameProfileToggle_Changed(object sender, RoutedEventArgs e)
         {
-            // Skip when toggle is being updated by helper pipe sync (not user interaction).
-            // This prevents creating profiles for the wrong game when currentGameName
-            // hasn't been updated yet (RunningGame pipe message may still be queued).
-            // The helper already manages profile switching; OnGameTextChanged will update the UI.
-            if (perGameProfile?.IsUpdatingUI == true)
+            bool on = PerGameProfileToggle.IsOn;
+            bool fromHelper = perGameProfile?.IsUpdatingUI == true;
+
+            if (on && !fromHelper && !HasValidGame(currentGameName))
             {
-                Logger.Info($"Skipping PerGameProfileToggle_Changed - toggle set by helper sync (currentGameName='{currentGameName}')");
-                SyncPowerSourceProfileToggleForCurrentContext();
-                UpdateGameProfileCardVisibility();
-                UpdateProfileDisplay();
+                Logger.Warn($"Cannot enable per-game profile without a valid game (currentGameName='{currentGameName}'), forcing toggle OFF");
+                PerGameProfileToggle.IsOn = false;
                 return;
             }
 
-            // Protect entire toggle change sequence from auto-saves
-            isSwitchingProfile = true;
-
-            try
+            if (!isInitialSync && (on || fromHelper))
             {
-                var settings = ApplicationData.Current.LocalSettings;
-
-                if (PerGameProfileToggle.IsOn)
-                {
-                    // Per-game profiles enabled - only proceed if we have a valid game
-                    if (HasValidGame(currentGameName))
-                    {
-                        // Clear the disabled preference since user is enabling it
-                        string disabledKey = $"PerGameProfileDisabled_{currentGameName}";
-                        if (settings.Values.ContainsKey(disabledKey))
-                        {
-                            settings.Values.Remove(disabledKey);
-                            Logger.Info($"Cleared per-game profile disabled preference for {currentGameName}");
-                        }
-                        LoadOrCreateGameProfiles();
-
-                        // Show notification for per-game profile
-                        _ = ShowProfileNotificationAsync(currentGameName, isPerGameProfile: true);
-                    }
-                    else
-                    {
-                        // No valid game, turn toggle back off
-                        Logger.Warn($"Cannot enable per-game profile without a valid game (currentGameName='{currentGameName}'), forcing toggle OFF");
-                        PerGameProfileToggle.IsOn = false;
-                        return;
-                    }
-                }
-                else
-                {
-                    // Toggle is being turned OFF - check if we should reject this
-                    // (Prevents helper messages from disabling auto-enabled toggle)
-                    // But ALLOW internal disables (when game closes) and user-initiated toggles
-                    if (HasValidGame(currentGameName) && isApplyingHelperUpdate && !isInternalToggleDisable && !isUserInitiatedProfileToggle)
-                    {
-                        bool hasExistingProfile = HasAnyGameProfile(currentGameName);
-
-                        if (hasExistingProfile)
-                        {
-                            Logger.Info($"Ignoring helper request to disable toggle - game '{currentGameName}' has saved profile");
-                            PerGameProfileToggle.IsOn = true; // Keep it on
-                            return;
-                        }
-                    }
-
-                    // Save user's preference to disable per-game profile for this game
-                    // (only for valid games and user-initiated toggles, not internal/game-close disables)
-                    if (HasValidGame(currentGameName) && !isInternalToggleDisable)
-                    {
-                        string disabledKey = $"PerGameProfileDisabled_{currentGameName}";
-                        settings.Values[disabledKey] = true;
-                        Logger.Info($"Saved per-game profile disabled preference for {currentGameName}");
-                    }
-                }
-
-                SyncPowerSourceProfileToggleForCurrentContext();
-                UpdateActiveProfileIndicator();
-                // Refresh the active profile card so it hides immediately when the
-                // user flips the toggle off — otherwise the card lingers showing
-                // per-game default values that aren't actually being applied.
-                UpdateGameProfileCardVisibility();
-                UpdateProfileDisplay();
+                _ = ShowProfileNotificationAsync(on ? currentGameName : "", isPerGameProfile: on);
             }
-            finally
-            {
-                isSwitchingProfile = false;
-            }
+
+            UpdateActiveProfileIndicator();
+            UpdateProfileDisplay();
         }
 
         private void OnGameTextChanged(DependencyObject sender, DependencyProperty dp)
         {
-            string rawGameName = RunningGameText.Text;
-            string sanitizedName = SanitizeGameName(rawGameName);
-
-            // Validate the game name - if invalid, use empty string instead
+            string sanitizedName = SanitizeGameName(RunningGameText.Text);
             string newGameName = HasValidGame(sanitizedName) ? sanitizedName : "";
+            if (newGameName == currentGameName) return;
 
-            if (newGameName != currentGameName)
+            Logger.Info($"Game changed from '{currentGameName}' to '{newGameName}'");
+
+            // A game that changed the resolution may have closed: refresh the display tile.
+            if (HasValidGame(currentGameName) && !HasValidGame(newGameName))
             {
-                Logger.Info($"Game changed from '{currentGameName}' to '{newGameName}' (raw: '{rawGameName}')");
-
-                // IMPORTANT: Disable toggle BEFORE changing currentGameName
-                // This prevents race condition where profile switching happens with invalid state
-                if (!HasValidGame(newGameName) && PerGameProfileToggle?.IsOn == true)
-                {
-                    Logger.Info($"No valid game detected (was: '{rawGameName}'), disabling per-game toggle BEFORE updating game name");
-                    isInternalToggleDisable = true; // Flag this as internal disable
-                    PerGameProfileToggle.IsOn = false;  // This triggers UpdateActiveProfileIndicator which switches to Global
-                    isInternalToggleDisable = false;
-
-                    // Show notification for global profile revert
-                    _ = ShowProfileNotificationAsync("", isPerGameProfile: false);
-                }
-
-                // When game closes (going from valid game to no game), refresh display settings
-                // This ensures the resolution tile updates after a game that changed resolution exits
-                if (HasValidGame(currentGameName) && !HasValidGame(newGameName))
-                {
-                    _ = RequestDisplaySettingsRefreshAsync();
-                }
-
-                // Now safe to update currentGameName
-                currentGameName = newGameName;
-
-                // Check if we have a valid game
-                if (HasValidGame(currentGameName))
-                {
-                    // Valid game detected
-                    var settings = ApplicationData.Current.LocalSettings;
-                    bool hasExistingProfile = HasAnyGameProfile(currentGameName);
-
-                    // Check if user explicitly disabled per-game profile for this game
-                    string disabledKey = $"PerGameProfileDisabled_{currentGameName}";
-                    bool userDisabledProfile = settings.Values.ContainsKey(disabledKey) && (bool)settings.Values[disabledKey];
-
-                    // Auto-enable per-game toggle ONLY if profile already exists for this game
-                    // Do NOT carry over toggle state from previous game - that causes unwanted profile creation
-                    // Respect user's preference if they explicitly disabled it
-                    if (hasExistingProfile && !userDisabledProfile)
-                    {
-                        if (!PerGameProfileToggle.IsOn)
-                        {
-                            Logger.Info($"Auto-enabling per-game profile for {currentGameName} (profile exists)");
-                            PerGameProfileToggle.IsOn = true;  // This will trigger PerGameProfileToggle_Changed
-                        }
-                        else
-                        {
-                            // Already on, need to switch to new game's profile
-                            // Protect this sequence from auto-saves
-                            isSwitchingProfile = true;
-                            try
-                            {
-                                LoadOrCreateGameProfiles();
-                                UpdateActiveProfileIndicator();  // Critical: switch to the new game's profile!
-
-                                // Show notification for per-game profile
-                                _ = ShowProfileNotificationAsync(currentGameName, isPerGameProfile: true);
-                            }
-                            finally
-                            {
-                                isSwitchingProfile = false;
-                            }
-                        }
-                    }
-                    else if (PerGameProfileToggle?.IsOn == true)
-                    {
-                        // New game doesn't have a profile - turn off toggle to prevent auto-creation
-                        Logger.Info($"Disabling per-game toggle for {currentGameName} (no existing profile)");
-                        isInternalToggleDisable = true;
-                        PerGameProfileToggle.IsOn = false;
-                        isInternalToggleDisable = false;
-                    }
-                }
-
-                SyncPowerSourceProfileToggleForCurrentContext();
-
-                // Update game profile card visibility and display
-                UpdateGameProfileCardVisibility();
-                UpdateProfileDisplay();
+                _ = RequestDisplaySettingsRefreshAsync();
             }
+
+            currentGameName = newGameName;
+            UpdateActiveProfileIndicator();
+            UpdateProfileDisplay();
         }
 
         /// <summary>
@@ -2052,76 +1648,19 @@ namespace XboxGamingBar
             }
         }
 
+        /// <summary>
+        /// Shows which profile is active in the header. The helper decides that (per-game profile
+        /// in use for the running game, else Global); the per-game toggle mirrors its state.
+        /// </summary>
         private void UpdateActiveProfileIndicator()
         {
-            bool hasGame = HasValidGame(currentGameName);
-            bool perGameEnabled = PerGameProfileToggle?.IsOn ?? false;
-
-            // Check if we should use per-game profiles
-            if (perGameEnabled && hasGame)
-            {
-                // Per-game profile is active
-                if (GetPerGamePowerSourceProfileEnabled(currentGameName))
-                {
-                    // Check power status for AC/DC
-                    // Only consider DC (battery) when power supply is NotPresent (actually unplugged)
-                    // Inadequate means charger is connected but can't keep up - still treat as AC
-                    var powerSupplyStatus = PowerManager.PowerSupplyStatus;
-                    bool isOnAC = powerSupplyStatus != PowerSupplyStatus.NotPresent;
-
-                    if (isOnAC)
-                    {
-                        ActiveProfileText.Text = $"{currentGameName} (AC)";
-                    }
-                    else
-                    {
-                        ActiveProfileText.Text = $"{currentGameName} (DC)";
-                    }
-                }
-                else
-                {
-                    // Game profile without power source split
-                    ActiveProfileText.Text = currentGameName;
-                }
-            }
-            else
-            {
-                // Global profiles
-                if (!GetGlobalPowerSourceProfileEnabled())
-                {
-                    // Power source profiles disabled, show global
-                    ActiveProfileText.Text = "Global Settings";
-                }
-                else
-                {
-                    // Check power status
-                    // Only consider DC (battery) when power supply is NotPresent (actually unplugged)
-                    // Inadequate means charger is connected but can't keep up - still treat as AC
-                    var powerSupplyStatus = PowerManager.PowerSupplyStatus;
-                    var remainingCharge = PowerManager.RemainingChargePercent;
-
-                    Logger.Info($"Power status - PowerSupply: {powerSupplyStatus}, Charge: {remainingCharge}%");
-
-                    bool isOnAC = powerSupplyStatus != PowerSupplyStatus.NotPresent;
-
-                    if (isOnAC)
-                    {
-                        ActiveProfileText.Text = "AC Profile (Plugged In)";
-                    }
-                    else
-                    {
-                        ActiveProfileText.Text = "DC Profile (Battery)";
-                    }
-                }
-            }
-
+            bool perGame = (PerGameProfileToggle?.IsOn ?? false) && HasValidGame(currentGameName);
+            ActiveProfileText.Text = perGame ? currentGameName : "Global Settings";
+            currentProfileName = perGame ? $"Game_{currentGameName}" : "Global";
             Logger.Info($"Active profile updated to: {ActiveProfileText.Text}");
 
             // Start scrolling animation if text is too long
             UpdateActiveProfileScrollAnimation();
-
-            // Switch profile if needed
-            SwitchProfile();
         }
 
         // Marquee storyboards for header text fields. Cached so successive calls can
@@ -2420,15 +1959,8 @@ namespace XboxGamingBar
                     {
                         isApplyingHelperUpdate = true;
 
-                        // Accept helper's LegionPerformanceMode as-is - helper is source of truth
-
-                        // Skip OS Power Mode sync if profile has it saved
-                        // This prevents sync from overwriting profile-loaded OS Power Mode with hardware state
-                        if (SaveOSPowerMode && osPowerMode != null)
-                        {
-                            osPowerMode.SkipSync = true;
-                            Logger.Info("OSPowerMode sync will be skipped - profile has OS Power Mode saved");
-                        }
+                        // The helper is the source of truth for every synced value (TDP mode, OS
+                        // power mode, ...): take them as they come.
 
                         await properties.Sync();
                         Logger.Info("Property sync completed.");
@@ -2447,12 +1979,6 @@ namespace XboxGamingBar
 
                     // Stop any pending slider updates from the sync
                     properties.StopPendingUpdates();
-
-                    // Re-enable OS Power Mode sync for future syncs
-                    if (osPowerMode != null)
-                    {
-                        osPowerMode.SkipSync = false;
-                    }
 
                     // Don't apply profile TDP mode to helper - helper is source of truth
                     // Helper already has correct mode from its own profile
@@ -2790,8 +2316,7 @@ namespace XboxGamingBar
                 Logger.Info("[PIPE] Sending Quick Metrics and Screen Saver enabled states to helper...");
                 SendQuickMetricsEnabledToHelper();
                 SendScreenSaverEnabledToHelper();
-                SendProfileSaveFlagsToHelper();
-                SendPowerSourceProfileValuesToHelper();
+                MigrateWidgetProfilesToHelperOnce(); // one-time hand-over of the old widget profile copies (1.9.7a)
                 // AutoTDP's SPPT/FPPT boosts live on the Custom card's sliders (widget-owned).
                 _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => SendAutoTDPBoostsToHelper(force: true));
                 // Without this, the helper's ControllerHotkeyMonitor only learns the
@@ -2820,25 +2345,6 @@ namespace XboxGamingBar
                 {
                     Logger.Info("[PIPE] Inside dispatcher - calling HideConnectionBanner()");
                     HideConnectionBanner();
-
-                    // Update current profile's TDP and mode from helper's synced values
-                    // This prevents stale profile values from being loaded in subsequent LoadProfileSettings calls
-                    if (tdp != null && !string.IsNullOrEmpty(currentProfileName))
-                    {
-                        var profile = GetProfile(currentProfileName);
-                        if (profile != null && legionPerformanceMode != null)
-                        {
-                            int helperMode = legionPerformanceMode.Value;
-                            double helperTDP = tdp.Value;
-                            if (profile.LegionPerformanceMode != helperMode || Math.Abs(profile.TDP - helperTDP) > 0.5)
-                            {
-                                Logger.Info($"[PIPE] Syncing profile '{currentProfileName}' with helper: TDP {profile.TDP}→{helperTDP}W, Mode {profile.LegionPerformanceMode}→{helperMode}");
-                                profile.LegionPerformanceMode = helperMode;
-                                profile.TDP = helperTDP;
-                                SaveProfileToStorage(currentProfileName, profile);
-                            }
-                        }
-                    }
 
                     Logger.Info("[PIPE] Inside dispatcher - calling UpdateProfileDisplay()");
                     UpdateProfileDisplay();

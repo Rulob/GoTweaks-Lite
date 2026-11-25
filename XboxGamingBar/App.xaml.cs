@@ -594,13 +594,6 @@ namespace XboxGamingBar
             Logger.Info("App suspending");
             var deferral = e.SuspendingOperation.GetDeferral();
 
-            // Flush any pending debounced profile-save timers (e.g. Custom TDP sliders, 300ms
-            // debounce) before the instance is discarded below - otherwise a change made just
-            // before suspend/recreate is silently lost and the profile reverts to the previous
-            // saved value on next load.
-            try { gamingWidget?.FlushPendingProfileSaves(); }
-            catch (Exception ex) { Logger.Warn($"FlushPendingProfileSaves on suspend threw: {ex.Message}"); }
-
             // Don't manually complete widget activity here - let the widget's disconnect handler manage it
             // to avoid race conditions and double-disposal
             gamingXboxGameBarWidget = null;

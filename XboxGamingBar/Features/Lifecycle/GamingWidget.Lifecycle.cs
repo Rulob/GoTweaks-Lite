@@ -106,10 +106,6 @@ namespace XboxGamingBar
             TearDownStep("power source events", () =>
             {
                 PowerManager.PowerSupplyStatusChanged -= PowerManager_PowerSourceChanged;
-                if (PowerSourceProfileToggle != null)
-                {
-                    PowerSourceProfileToggle.Toggled -= PowerSourceProfileToggle_Toggled;
-                }
             });
 
             TearDownStep("Game Bar widget events", () =>

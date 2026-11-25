@@ -87,7 +87,6 @@ namespace XboxGamingBar
                 KeepAutoTDPCardInView();
             }
 
-            SaveCurrentSettingsToProfile(currentProfileName);
         }
 
         /// <summary>
@@ -164,67 +163,6 @@ namespace XboxGamingBar
                 autoTDPSpptBoost?.SetValue(sppt);
                 autoTDPFpptBoost?.SetValue(fppt);
             }
-        }
-
-        /// <summary>
-        /// Applies a profile's saved AutoTDP setup to the controls, and to the helper for profiles
-        /// the widget switches itself (game profiles are applied by the helper from its own copy;
-        /// the post-switch reconcile pushes ours). Profiles saved before AutoTDP was stored leave
-        /// AutoTDP alone.
-        /// </summary>
-        private void ApplyAutoTDPFromProfile(PerformanceProfile profile, string profileName)
-        {
-            if (!profile.AutoTDPEnabled.HasValue || legionGoDetected?.Value != true || isInitialSync) return;
-
-            bool on = profile.AutoTDPEnabled.Value;
-            bool helperDrivenSwitch = isApplyingHelperUpdate;
-
-            isApplyingHelperUpdate = true;
-            try
-            {
-                SetAutoTDPSlidersSilent(profile.AutoTDPTargetFPS, profile.AutoTDPMinTDP, profile.AutoTDPMaxTDP);
-                if (AutoTDPToggle != null && AutoTDPToggle.IsOn != on)
-                {
-                    AutoTDPToggle.IsOn = on;
-                }
-            }
-            finally
-            {
-                isApplyingHelperUpdate = helperDrivenSwitch;
-            }
-
-            // The profile now decides the mode; there is nothing to restore when AutoTDP goes off.
-            tdpModeIndexBeforeAutoTDP = null;
-            UpdateAutoTDPToggleUI(on);
-            Logger.Info($"Applied profile AutoTDP for {profileName}: {(on ? "On" : "Off")}, target={profile.AutoTDPTargetFPS} FPS, {profile.AutoTDPMinTDP}-{profile.AutoTDPMaxTDP}W");
-
-            if (!profileName.StartsWith("Game_") && !helperDrivenSwitch)
-            {
-                PushAutoTDPSettingsToHelper(profile);
-            }
-        }
-
-        /// <summary>Sends a profile's AutoTDP setup to the helper (settings first, then on/off).</summary>
-        private void PushAutoTDPSettingsToHelper(PerformanceProfile profile)
-        {
-            if (!profile.AutoTDPEnabled.HasValue) return;
-            SendAutoTDPBoostsToHelper();
-            autoTDPTargetFPS?.SetValue(profile.AutoTDPTargetFPS);
-            autoTDPMinTDP?.SetValue(profile.AutoTDPMinTDP);
-            autoTDPMaxTDP?.SetValue(profile.AutoTDPMaxTDP);
-            autoTDPEnabled?.SetValue(profile.AutoTDPEnabled.Value);
-        }
-
-        /// <summary>Sets the AutoTDP sliders and labels without sending anything.</summary>
-        private void SetAutoTDPSlidersSilent(int targetFps, int minTdp, int maxTdp)
-        {
-            if (AutoTDPMinSlider != null) AutoTDPMinSlider.Value = minTdp;
-            if (AutoTDPMaxSlider != null) AutoTDPMaxSlider.Value = maxTdp;
-            if (AutoTDPTargetFPSSlider != null) AutoTDPTargetFPSSlider.Value = targetFps;
-            if (AutoTDPTargetFPSValue != null) AutoTDPTargetFPSValue.Text = $"{targetFps} FPS";
-            // Labels show the values the sliders actually took (clamped to the device range).
-            if (AutoTDPMinValue != null) AutoTDPMinValue.Text = $"{(int)(AutoTDPMinSlider?.Value ?? minTdp)}W";
-            if (AutoTDPMaxValue != null) AutoTDPMaxValue.Text = $"{(int)(AutoTDPMaxSlider?.Value ?? maxTdp)}W";
         }
 
         /// <summary>
@@ -312,7 +250,6 @@ namespace XboxGamingBar
             Logger.Info($"AutoTDP target FPS changed to: {pendingAutoTDPTargetFPS} (debounced)");
 
             autoTDPTargetFPS?.SetValue(pendingAutoTDPTargetFPS);
-            SaveCurrentSettingsToProfile(currentProfileName);
         }
 
         private void AutoTDPMinSlider_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
@@ -351,7 +288,6 @@ namespace XboxGamingBar
             autoTDPMinDebounceTimer.Stop();
             Logger.Info($"AutoTDP min TDP changed to: {pendingAutoTDPMinTDP}W (debounced)");
             autoTDPMinTDP?.SetValue(pendingAutoTDPMinTDP);
-            SaveCurrentSettingsToProfile(currentProfileName);
         }
 
         private void AutoTDPMaxSlider_ValueChanged(object sender, Windows.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
@@ -389,7 +325,6 @@ namespace XboxGamingBar
             autoTDPMaxDebounceTimer.Stop();
             Logger.Info($"AutoTDP max TDP changed to: {pendingAutoTDPMaxTDP}W (debounced)");
             autoTDPMaxTDP?.SetValue(pendingAutoTDPMaxTDP);
-            SaveCurrentSettingsToProfile(currentProfileName);
         }
 
         private void AutoTDPPauseWhenUnfocusedToggle_Toggled(object sender, RoutedEventArgs e)

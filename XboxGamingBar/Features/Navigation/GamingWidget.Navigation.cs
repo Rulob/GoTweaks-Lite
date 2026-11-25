@@ -211,6 +211,8 @@ namespace XboxGamingBar
                     case "Game":
                         GameScrollViewer.Visibility = Visibility.Visible;
                         GameScrollViewer.ChangeView(null, 0, null, true);
+                        // Setting changes are saved by the helper without telling this tab: re-read it.
+                        UpdateProfileDisplay();
                         break;
                     case "Legion":
                         LegionScrollViewer.Visibility = Visibility.Visible;

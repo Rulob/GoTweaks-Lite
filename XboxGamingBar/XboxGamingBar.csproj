@@ -203,10 +203,13 @@
     <Compile Include="Features\Performance\GamingWidget.CPUState.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileDeletion.cs">
+    <Compile Include="Features\Lifecycle\GamingWidget.Lifecycle.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\Lifecycle\GamingWidget.Lifecycle.cs">
+    <Compile Include="Features\Profile\GamingWidget.ProfileList.cs">
+      <DependentUpon>GamingWidget.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Features\Profile\GamingWidget.ProfileMigration.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Hotkeys\GamingWidget.HotkeyInit.cs">
@@ -218,31 +221,7 @@
     <Compile Include="Features\Lifecycle\GamingWidget.WidgetStyle.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileManagement.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileSettingsSubscription.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileSwitching.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileStorage.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileDisplay.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileCards.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Profile\GamingWidget.ProfileCustomization.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Features\Performance\GamingWidget.PerformanceOverlay.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Performance\GamingWidget.PowerSource.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Performance\GamingWidget.PowerSourceEvents.cs">

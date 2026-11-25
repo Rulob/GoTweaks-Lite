@@ -66,12 +66,11 @@ namespace XboxGamingBar
 
                 // Only reapply TDP after power source change if:
                 // 1. On Legion Go in Custom mode (255) - system changes TDP, need to restore
-                // 2. Power Source Profile toggle is enabled - user wants different profiles per power state
+                // (the helper does the same on its own; this covers it while the widget is open)
                 // For Legion preset modes (Quiet=1, Balanced=2, Performance=3), let the system handle TDP
                 bool isLegionCustomMode = legionGoDetected?.Value == true && legionPerformanceMode?.Value == 255;
-                bool powerSourceProfileEnabled = GetPowerSourceProfileEnabledForCurrentContext();
 
-                if (isLegionCustomMode || powerSourceProfileEnabled)
+                if (isLegionCustomMode)
                 {
                     SchedulePowerSourceTdpReapply();
                 }

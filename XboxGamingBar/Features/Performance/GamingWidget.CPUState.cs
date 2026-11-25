@@ -111,7 +111,7 @@ namespace XboxGamingBar
             if (MinCPUStateComboBox == null || MaxCPUStateComboBox == null)
                 return;
 
-            if (isLoadingProfile || isSwitchingProfile || isApplyingHelperUpdate || isInitialSync)
+            if (isApplyingHelperUpdate || isInitialSync)
                 return;
 
             int minValue = GetSelectedCPUStateValue(MinCPUStateComboBox);
@@ -138,7 +138,7 @@ namespace XboxGamingBar
             if (MinCPUStateComboBox == null || MaxCPUStateComboBox == null)
                 return;
 
-            if (isLoadingProfile || isSwitchingProfile || isApplyingHelperUpdate || isInitialSync)
+            if (isApplyingHelperUpdate || isInitialSync)
                 return;
 
             int minValue = GetSelectedCPUStateValue(MinCPUStateComboBox);

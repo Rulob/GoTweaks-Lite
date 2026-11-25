@@ -79,19 +79,6 @@ namespace XboxGamingBar
             }
 
             SavePerformanceOverlaySetting();
-
-            // Also update current profile's OverlayLevel if SaveOverlayLevel is enabled
-            // This ensures the profile stays in sync with the user's selection
-            if (SaveOverlayLevel && !string.IsNullOrEmpty(currentProfileName))
-            {
-                var profile = GetProfile(currentProfileName);
-                if (profile != null)
-                {
-                    profile.OverlayLevel = isOn ? 1 : 0;
-                    SaveProfileToStorage(currentProfileName, profile);
-                    Logger.Debug($"Updated profile '{currentProfileName}' OverlayLevel to {(isOn ? 1 : 0)}");
-                }
-            }
         }
 
         private void LoadPerformanceOverlaySetting()
@@ -107,9 +94,8 @@ namespace XboxGamingBar
                 {
                     bool isOn = level > 0;
                     PerformanceOverlayToggle.IsOn = isOn;
-                    // Also set the osd property value directly to avoid debounce delay
-                    // This ensures Quick Settings and helper have the correct value immediately
-                    osd?.SetValue(isOn ? 1 : 0);
+                    // Display only: the helper owns the overlay state (it is saved per profile and pushed
+                    // back on connect). Pushing this cached value used to override it on every widget load.
                     Logger.Debug($"Loaded PerformanceOverlay state: {(isOn ? "On" : "Off")}");
                 }
             }
@@ -164,11 +150,8 @@ namespace XboxGamingBar
 
             bool isOn = e.NewValue > 0;
 
-            // The Quick Settings tile and the helper's hotkey change the overlay without going
-            // through PerformanceOverlayToggle_Toggled, so the profile kept its old OverlayLevel.
-            // The Profiles tab then showed the wrong state, and the next profile re-apply (e.g.
-            // LoadProfileSettings each time Game Bar opens) flipped the overlay back.
-            SyncOverlayStateToProfile(isOn);
+            // The helper records the overlay state in the active profile; show it in the list.
+            UpdateProfileDisplay();
 
             if (PerformanceOverlayToggle.IsOn == isOn) return;
 
@@ -180,36 +163,6 @@ namespace XboxGamingBar
             finally
             {
                 isApplyingHelperUpdate = false;
-            }
-        }
-
-        /// <summary>
-        /// Records the overlay's actual on/off state in the active profile (when the profile
-        /// saves the overlay), whatever changed it. Skipped while a profile is being loaded or
-        /// switched, so a change that belongs to one profile never lands in another; a value the
-        /// profile already has is not rewritten.
-        /// </summary>
-        private void SyncOverlayStateToProfile(bool isOn)
-        {
-            try
-            {
-                if (!SaveOverlayLevel || string.IsNullOrEmpty(currentProfileName)) return;
-                if (isLoadingProfile || isSwitchingProfile || isInitialSync) return;
-                if (currentProfileName.IndexOf("No game detected", StringComparison.OrdinalIgnoreCase) >= 0) return;
-
-                var profile = GetProfile(currentProfileName);
-                if (profile == null) return;
-                int level = isOn ? 1 : 0;
-                if ((profile.OverlayLevel > 0) == isOn) return;
-
-                profile.OverlayLevel = level;
-                SaveProfileToStorage(currentProfileName, profile);
-                UpdateProfileDisplay();
-                Logger.Info($"Overlay {(isOn ? "on" : "off")} saved to profile '{currentProfileName}'");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"SyncOverlayStateToProfile failed: {ex.Message}");
             }
         }
 

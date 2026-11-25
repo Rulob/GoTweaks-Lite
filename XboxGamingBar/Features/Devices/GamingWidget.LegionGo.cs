@@ -1243,13 +1243,13 @@ namespace XboxGamingBar
             int selectedIndex = TDPModeComboBox.SelectedIndex;
             if (selectedIndex < 0) return;
 
-            Logger.Debug($"TDPModeComboBox_SelectionChanged: selectedIndex={selectedIndex}, lastTDPModeIndex={lastTDPModeIndex}, isApplyingHelperUpdate={isApplyingHelperUpdate}, isLoadingProfile={isLoadingProfile}");
+            Logger.Debug($"TDPModeComboBox_SelectionChanged: selectedIndex={selectedIndex}, lastTDPModeIndex={lastTDPModeIndex}, isApplyingHelperUpdate={isApplyingHelperUpdate}");
 
             // Block only during active pipe operations (sync/message handling) or profile loading.
             // Use isApplyingHelperUpdate instead of isInitialSync so user clicks work during the
             // init window (20-50s). Programmatic changes from pipe sync are blocked by isApplyingHelperUpdate,
             // and post-sync ComboBox updates are blocked by the equality check (lastTDPModeIndex set first).
-            if (isApplyingHelperUpdate || isLoadingProfile)
+            if (isApplyingHelperUpdate)
             {
                 lastTDPModeIndex = selectedIndex;
                 return;
@@ -1298,7 +1298,7 @@ namespace XboxGamingBar
             // FPPT boosts the user last chose (or +2 / +5 if none yet) BEFORE the Custom limits are
             // pushed to the hardware below. Not for profile loads or helper-driven changes - those
             // carry their own saved values.
-            bool userDrivenModeChange = !isInitialSync && !isLoadingProfile
+            bool userDrivenModeChange = !isInitialSync
                                         && (!isApplyingHelperUpdate || isUserInitiatedTDPModeChange);
             if (isLegion && isCustomMode && !wasCustomMode && userDrivenModeChange)
             {
@@ -1351,31 +1351,6 @@ namespace XboxGamingBar
 
             // Update Custom card visibility / display based on mode
             UpdateTDPSliderEnabledState();
-
-            // Save profile when TDP Mode changes (if not during initialization or helper update)
-            // Allow save if user-initiated from Quick Tab tile (bypasses isApplyingHelperUpdate)
-            if (!isInitialSync && !isLoadingProfile && SaveTDP && (!isApplyingHelperUpdate || isUserInitiatedTDPModeChange))
-            {
-                // Don't save to game profile if per-game profile is disabled.
-                // During game close, helper sends global mode via pipe → ComboBox changes → handler fires.
-                // At this point, perGameProfile.Value is already false (pipe message processed) but
-                // currentProfileName still points to the game profile (SwitchProfile hasn't run yet).
-                // Without this check, the global mode gets saved to the game profile, corrupting it.
-                bool isGameProfile = currentProfileName?.StartsWith("Game_") == true;
-                if (isGameProfile && perGameProfile?.Value != true)
-                {
-                    Logger.Warn($"TDP Mode save skipped: per-game profile is disabled but currentProfileName is still '{currentProfileName}' (game closing)");
-                }
-                else
-                {
-                    Logger.Info($"Saving TDP Mode change to profile: {currentProfileName}");
-                    SaveCurrentSettingsToProfile(currentProfileName);
-                }
-            }
-            else
-            {
-                Logger.Warn($"TDP Mode save skipped: isInitialSync={isInitialSync}, isApplyingHelperUpdate={isApplyingHelperUpdate}, isLoadingProfile={isLoadingProfile}, SaveTDP={SaveTDP}, isUserInitiatedTDPModeChange={isUserInitiatedTDPModeChange}");
-            }
         }
 
         /// <summary>
@@ -1422,7 +1397,7 @@ namespace XboxGamingBar
                     // push on entering Custom so the hardware matches the sliders even if the triplet
                     // equals the last push (e.g. Performance↔Custom round-trip). Skip during helper
                     // sync / profile load (those drive their own values).
-                    if (!isLoadingProfile && !isHelperModeSync)
+                    if (!isHelperModeSync)
                     {
                         ApplyCustomTDPSlidersToHelper(force: true);
                     }
@@ -1577,46 +1552,6 @@ namespace XboxGamingBar
             }
         }
 
-        /// <summary>
-        /// Sets the three Custom sliders (and their value labels) from a profile's absolute
-        /// SPL/SPPT/FPPT without triggering a send to the helper. SPPT/FPPT are converted back to
-        /// boosts (clamped to the slider ranges). Used during profile load; the hardware apply is
-        /// driven separately by the Legion mode-apply flow.
-        /// </summary>
-        private void SetCustomTDPSlidersSilent(double spl, double sppt, double fppt)
-        {
-            int splV = (int)spl;
-            int spptBoost = (int)Math.Round(sppt - spl);
-            int fpptBoost = (int)Math.Round(fppt - spl);
-            if (fpptBoost < spptBoost) fpptBoost = spptBoost; // keep the invariant on load too
-
-            isUpdatingCustomTDPSliders = true;
-            try
-            {
-                SetOneSliderClamped(CustomTDPSlowSlider, splV);
-                // Cap the boost maxima to the loaded SPL's headroom BEFORE placing the boost values,
-                // so they clamp into the valid range (effective <= 50 W).
-                UpdateCustomTDPBoostRanges();
-                SetOneSliderClamped(CustomTDPPeakSlider, fpptBoost); // set FPPT first so SPPT clamps against it
-                SetOneSliderClamped(CustomTDPFastSlider, spptBoost);
-            }
-            finally
-            {
-                isUpdatingCustomTDPSliders = false;
-            }
-
-            UpdateCustomTDPValueLabels();
-            // Keep the wire-channel cache aligned with what we loaded so the next live push isn't
-            // skipped as "unchanged" against a stale triplet, and the OSD/tile read the right SPL.
-            var (a, b, c) = ComputeCustomTDPAbsolute();
-            lastSentCustomTDP = (a, b, c);
-            legionCustomTDPSlow?.SetValueSilent(a);
-            legionCustomTDPFast?.SetValueSilent(b);
-            legionCustomTDPPeak?.SetValueSilent(c);
-            // The loaded profile's boosts also apply to AutoTDP.
-            SendAutoTDPBoostsToHelper();
-        }
-
         private static void SetOneSliderClamped(Windows.UI.Xaml.Controls.Slider slider, int value)
         {
             if (slider == null) return;
@@ -1700,6 +1635,65 @@ namespace XboxGamingBar
             UpdateCustomTDPValueLabels();
             SendAutoTDPBoostsToHelper();
             Logger.Info($"Custom TDP: restored remembered boosts SPPT +{(int)CustomTDPFastSlider.Value}W / FPPT +{(int)CustomTDPPeakSlider.Value}W");
+        }
+
+        /// <summary>
+        /// Sets the three Custom sliders (and their value labels) from absolute SPL/SPPT/FPPT
+        /// without sending anything back. SPPT/FPPT are converted to boosts (clamped to the slider
+        /// ranges).
+        /// </summary>
+        private void SetCustomTDPSlidersSilent(double spl, double sppt, double fppt)
+        {
+            int splV = (int)spl;
+            int spptBoost = (int)Math.Round(sppt - spl);
+            int fpptBoost = (int)Math.Round(fppt - spl);
+            if (fpptBoost < spptBoost) fpptBoost = spptBoost; // keep the SPPT <= FPPT invariant
+
+            isUpdatingCustomTDPSliders = true;
+            try
+            {
+                SetOneSliderClamped(CustomTDPSlowSlider, splV);
+                // Cap the boost maxima to this SPL's headroom BEFORE placing the boost values,
+                // so they clamp into the valid range (effective <= 50 W).
+                UpdateCustomTDPBoostRanges();
+                SetOneSliderClamped(CustomTDPPeakSlider, fpptBoost); // FPPT first so SPPT clamps against it
+                SetOneSliderClamped(CustomTDPFastSlider, spptBoost);
+            }
+            finally
+            {
+                isUpdatingCustomTDPSliders = false;
+            }
+
+            UpdateCustomTDPValueLabels();
+            // Keep the wire-channel cache aligned so the next live push isn't skipped as
+            // "unchanged" against a stale triplet.
+            var (a, b, c) = ComputeCustomTDPAbsolute();
+            lastSentCustomTDP = (a, b, c);
+            legionCustomTDPSlow?.SetValueSilent(a);
+            legionCustomTDPFast?.SetValueSilent(b);
+            legionCustomTDPPeak?.SetValueSilent(c);
+        }
+
+        private bool customTDPHelperSyncQueued;
+
+        /// <summary>
+        /// The helper owns the Custom limits (it applies a profile's SPL/SPPT/FPPT when a game
+        /// starts or closes and pushes them here). Show them on the Custom card. The three values
+        /// arrive as separate pushes; one coalesced update follows them.
+        /// </summary>
+        private void LegionCustomTDP_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (!isApplyingHelperUpdate || customTDPHelperSyncQueued) return; // only the helper's own pushes
+            customTDPHelperSyncQueued = true;
+            _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, () =>
+            {
+                customTDPHelperSyncQueued = false;
+                if (legionCustomTDPSlow == null || legionCustomTDPFast == null || legionCustomTDPPeak == null) return;
+                int spl = legionCustomTDPSlow.Value, sppt = legionCustomTDPFast.Value, fppt = legionCustomTDPPeak.Value;
+                if (spl <= 0) return;
+                SetCustomTDPSlidersSilent(spl, Math.Max(spl, sppt), Math.Max(Math.Max(spl, sppt), fppt));
+                Logger.Info($"Custom card follows the helper: {spl}/{sppt}/{fppt} W");
+            });
         }
 
         /// <summary>
@@ -1799,15 +1793,15 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Applies the Custom power limits to the helper live (via WMI) and persists them to the
-        /// current profile after a user-driven slider change. Skipped during helper sync / profile
-        /// loads (which set the sliders themselves).
+        /// Applies the Custom power limits to the helper live (via WMI; the helper also records them
+        /// in the active profile) after a user-driven slider change. Skipped during helper sync
+        /// (which sets the sliders itself).
         /// </summary>
         /// <param name="boostChanged">True when the user moved a boost slider (not the base TDP):
         /// the new boosts are then remembered for the next time Custom is entered.</param>
         private void OnCustomTDPSliderChanged(bool boostChanged = false)
         {
-            if (isApplyingHelperUpdate || isLoadingProfile || isInitialSync) return;
+            if (isApplyingHelperUpdate || isInitialSync) return;
             if (WidgetSliderProperty.HelperSyncCount > 0) return;
 
             if (boostChanged) RememberCustomTDPBoosts();
@@ -1824,60 +1818,6 @@ namespace XboxGamingBar
             else if (legionGoDetected?.Value == true && IsCustomTdpModeSelected())
             {
                 RequestCustomTDPApply();
-            }
-
-            // Profile-storage save is a separate, much heavier operation (a full ~24-key
-            // ApplicationData.LocalSettings write) than the hardware apply above, and unlike it
-            // was never debounced - a full SPL drag (5-50W, 45 ticks) used to fire ~45 full
-            // profile writes in under a second. Debounce it on its own timer, independent of the
-            // already-throttled RequestCustomTDPApply.
-            if (customTDPSaveDebounceTimer == null)
-            {
-                customTDPSaveDebounceTimer = new DispatcherTimer();
-                customTDPSaveDebounceTimer.Interval = TimeSpan.FromMilliseconds(CUSTOM_TDP_SAVE_DEBOUNCE_MS);
-                customTDPSaveDebounceTimer.Tick += CustomTDPSaveDebounceTimer_Tick;
-            }
-            customTDPSaveDebounceTimer.Stop();
-            customTDPSaveDebounceTimer.Start();
-        }
-
-        private void CustomTDPSaveDebounceTimer_Tick(object sender, object e)
-        {
-            customTDPSaveDebounceTimer?.Stop();
-            FlushPendingCustomTDPSave();
-        }
-
-        /// <summary>
-        /// Performs the debounced Custom TDP profile save immediately (same guards as the debounce
-        /// timer tick). Shared by the timer and by <see cref="FlushPendingProfileSaves"/> so a
-        /// pending change isn't silently lost if the widget instance is torn down before the timer
-        /// fires - Game Bar can recreate GamingWidget at any time (see App.xaml.cs OnSuspending).
-        /// </summary>
-        private void FlushPendingCustomTDPSave()
-        {
-            // Re-check the same guards - state may have changed during the debounce wait.
-            if (isApplyingHelperUpdate || isLoadingProfile || isInitialSync) return;
-            if (WidgetSliderProperty.HelperSyncCount > 0) return;
-            if (!SaveTDP) return;
-
-            bool isGameProfile = currentProfileName?.StartsWith("Game_") == true;
-            if (isGameProfile && perGameProfile?.Value != true) return;
-
-            SaveCurrentSettingsToProfile(currentProfileName);
-        }
-
-        /// <summary>
-        /// Flushes any pending debounced profile-save timers immediately. Called from
-        /// App.xaml.cs's OnSuspending right before the GamingWidget instance is discarded, so a
-        /// slider change made just before Game Bar suspends/recreates the widget still gets
-        /// persisted instead of silently reverting to the previous saved value.
-        /// </summary>
-        internal void FlushPendingProfileSaves()
-        {
-            if (customTDPSaveDebounceTimer != null && customTDPSaveDebounceTimer.IsEnabled)
-            {
-                customTDPSaveDebounceTimer.Stop();
-                FlushPendingCustomTDPSave();
             }
         }
 

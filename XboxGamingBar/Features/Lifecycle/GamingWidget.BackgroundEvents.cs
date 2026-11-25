@@ -126,33 +126,19 @@ namespace XboxGamingBar
                 // Update FPS Limit controls based on RTSS installed status
                 UpdateFPSLimitControls();
 
-                // Re-evaluate which profile should be active and reload its settings
-                // This is needed because the game may have closed while widget was in background
-                // and the UI may still show stale game profile values
-                // Must run on UI thread since GetTargetProfileName and LoadProfileSettings access UI controls
+                // The helper owns the profiles: the property sync above already brought the
+                // live values (including a game closing while the widget was in the background).
+                // Only the active-profile header and the Profiles tab need refreshing.
                 await Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                 {
                     try
                     {
-                        string expectedProfile = GetTargetProfileName();
-                        if (expectedProfile != currentProfileName)
-                        {
-                            // Profile changed (game started/closed) - explicit switch, apply HDR/Resolution
-                            Logger.Info($"Profile changed while in background: '{currentProfileName}' -> '{expectedProfile}'");
-                            currentProfileName = expectedProfile;
-                            LoadProfileSettings(currentProfileName, isExplicitSwitch: true);
-                        }
-                        else
-                        {
-                            // Same profile, just reloading UI - don't override game's resolution
-                            // (e.g., TDP slider may show game value instead of global profile value)
-                            Logger.Info($"Reloading profile settings after returning from background: {currentProfileName}");
-                            LoadProfileSettings(currentProfileName);
-                        }
+                        UpdateActiveProfileIndicator();
+                        UpdateProfileDisplay();
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error($"Error reloading profile after returning from background: {ex.Message}");
+                        Logger.Error($"Error refreshing profile display after returning from background: {ex.Message}");
                     }
                 });
             }

@@ -304,9 +304,7 @@ namespace XboxGamingBar
             if (perGameProfile != null && runningGame != null && runningGame.Value.IsValid())
             {
                 bool newValue = !perGameProfile.Value;
-                isUserInitiatedProfileToggle = true; // Flag this as user-initiated
                 perGameProfile.SetValue(newValue);
-                isUserInitiatedProfileToggle = false;
                 Logger.Info($"Per-game profile toggled to {newValue}");
             }
             else
@@ -528,11 +526,6 @@ namespace XboxGamingBar
                 Logger.Info($"Power Mode cycled to {OSPowerModeNames[nextMode]}");
 
                 // Save the change to profile
-                if (!isInitialSync && !isApplyingHelperUpdate && !isLoadingProfile && SaveOSPowerMode)
-                {
-                    Logger.Info($"Saving OS Power Mode change to profile: {currentProfileName}");
-                    SaveCurrentSettingsToProfile(currentProfileName);
-                }
             }
         }
 
@@ -552,30 +545,13 @@ namespace XboxGamingBar
                 }
                 cpuEPP.SetValue(nextValue);
 
-                // Update slider to match (SaveCurrentSettingsToProfile reads from it)
+                // Update slider to match (the helper saves the value in the active profile)
                 if (CPUEPPSlider != null)
                 {
                     CPUEPPSlider.Value = nextValue;
                 }
 
                 Logger.Info($"EPP cycled from {currentValue} to {nextValue}");
-
-                // Save the change to profile
-                // Use direct save to bypass isApplyingHelperUpdate check - this is a user-initiated action
-                if (!isInitialSync && !isLoadingProfile && SaveCPUEPP && !string.IsNullOrEmpty(currentProfileName))
-                {
-                    try
-                    {
-                        var profile = GetProfile(currentProfileName);
-                        profile.CPUEPP = nextValue;
-                        SaveProfileToStorage(currentProfileName, profile);
-                        Logger.Info($"Saved EPP {nextValue} to profile: {currentProfileName}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Failed to save EPP to profile: {ex.Message}");
-                    }
-                }
             }
         }
 
@@ -611,9 +587,8 @@ namespace XboxGamingBar
                     Logger.Info("AMD Overlay toggled OFF");
                 }
                 UpdateQuickSettingsTileStates();
-                // RTSS changes reach the profile via PerformanceOverlaySlider_ValueChanged; the
-                // AMD overlay doesn't use that slider.
-                SyncOverlayStateToProfile(amdOverlayLevel > 0);
+                // Refresh the Profiles tab (the AMD overlay itself is not stored in profiles).
+                UpdateProfileDisplay();
             }
             else // RTSS
             {
@@ -691,10 +666,6 @@ namespace XboxGamingBar
             }
 
             // Save to profile if FPS Limit saving is enabled
-            if (SaveFPSLimit && !isLoadingProfile && !isSwitchingProfile)
-            {
-                SaveCurrentSettingsToProfile(currentProfileName);
-            }
         }
 
         /// <summary>
@@ -745,10 +716,6 @@ namespace XboxGamingBar
             }
 
             // Save to profile if FPS Limit saving is enabled
-            if (SaveFPSLimit && !isLoadingProfile && !isSwitchingProfile)
-            {
-                SaveCurrentSettingsToProfile(currentProfileName);
-            }
         }
 
         /// <summary>
@@ -796,10 +763,6 @@ namespace XboxGamingBar
                 Logger.Info($"FPS Limit changed (debounced): {fpsLimitPendingValue}");
 
                 // Save to profile if FPS Limit saving is enabled
-                if (SaveFPSLimit && !isLoadingProfile && !isSwitchingProfile)
-                {
-                    SaveCurrentSettingsToProfile(currentProfileName);
-                }
             }
         }
 
