@@ -209,6 +209,10 @@ upstream, and why.
   game starts or closes, records every change in the active one, and the widget just shows them.
   On the first start of this version the widget hands its FPS limit, power mode, overlay and
   Custom SPPT / FPPT values over to the helper once.
+- **Controller settings: one device-wide copy.** Button remaps, gyro, deadzones, triggers,
+  joystick mouse, vibration and lighting are kept only by the helper, the same for every game,
+  and applied at startup. Starting a game with its own profile no longer resets the gyro to its
+  defaults, and deadzone / trigger changes made during a game are no longer lost.
 
 ---
 
