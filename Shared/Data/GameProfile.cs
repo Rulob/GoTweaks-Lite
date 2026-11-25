@@ -19,7 +19,8 @@ namespace Shared.Data
         /// Lock object for thread-safe cache and file operations.
         /// Prevents race conditions during profile switching.
         /// </summary>
-        private static readonly object ProfileLock = new object();
+        // Guards the shared profile cache; public so readers can take a consistent snapshot.
+        public static readonly object ProfileLock = new object();
 
         [XmlElement("GameId")]
         public GameId GameId;

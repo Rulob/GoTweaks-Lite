@@ -103,6 +103,40 @@ namespace XboxGamingBar
         }
 
         /// <summary>
+        /// The helper owns the CPU state (it applies a profile's min / max when a game starts or
+        /// closes, and pushes the values here). Show them in the two dropdowns without sending
+        /// them back.
+        /// </summary>
+        private void CPUStateProperty_Changed(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                if (isUnloading || MinCPUStateComboBox == null || MaxCPUStateComboBox == null) return;
+                bool prev = isApplyingHelperUpdate;
+                isApplyingHelperUpdate = true; // the SelectionChanged handlers must not echo it
+                try
+                {
+                    if (minCPUState != null) SetCPUStateComboBoxValue(MinCPUStateComboBox, minCPUState.Value);
+                    if (maxCPUState != null) SetCPUStateComboBoxValue(MaxCPUStateComboBox, maxCPUState.Value);
+                    UpdateCPUBoostEnabledState();
+                }
+                finally
+                {
+                    isApplyingHelperUpdate = prev;
+                }
+            });
+        }
+
+        /// <summary>The FPS limit toggle / slider follow the limit the helper applies.</summary>
+        private void FPSLimitProperty_Changed(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+            {
+                if (!isUnloading) UpdateFPSLimitControls();
+            });
+        }
+
+        /// <summary>
         /// Handler for Min CPU State ComboBox selection change
         /// </summary>
         private void MinCPUStateComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

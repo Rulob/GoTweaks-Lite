@@ -38,8 +38,8 @@ upstream, and why.
 
 ### 🎯 Focus
 
-- **Legion Go 2 first.** The build is tuned for the Legion Go 2 (Ryzen Z2 Extreme). Other
-  handhelds may still work, but they aren't a priority — decisions optimize for the Legion Go 2.
+- **Legion Go 2 only.** The build is tuned for, and since 1.9.7a only supports, the Legion Go 2
+  (Ryzen Z2 Extreme). The GPD, Legion Go (1st gen) and Legion Go S code was removed.
 
 ### ⚡ Rebuilt TDP control
 
@@ -58,6 +58,10 @@ upstream, and why.
 - The beta **Sidebar overlay** — _Focus GoTweaks Lite_ now simply opens the Game Bar.
 - **GoTweaks Haptics** (per-button controller clicks) and the **Brightness Gesture** (hold a button
   + tilt a stick). For brightness, bind _Brightness Up / Down_ to a controller hotkey instead.
+- **Power Source (AC / DC) profiles** and the Profiles tab's **"save to profile" checkboxes**:
+  there is one profile per game plus Global, and every profile saves all performance settings.
+  Existing AC / DC profiles keep their AC (plugged-in) copy. Support for **GPD** handhelds and the
+  **Legion Go (1st gen) / Go S** was removed too (Legion Go 2 only).
 - **Microsoft / bundled Default Game Profiles** — only your own per-game profiles remain.
 - The **Advanced panel** (core parking / affinity), the **AC/DC Power Plan** selector, and the
   debug **Themes** selector — niche, no-ops on the Legion Go 2, or superseded.
@@ -104,7 +108,7 @@ upstream, and why.
 - **Controller-combo tile hotkeys** — assign a 2-or-more-button controller combo (including the
   Legion back paddles) to any Quick Settings tile to activate it without touching the widget.
   _(Ported from upstream corando98/GoTweaks.)_
-- **Controller Mode (X-Input / D-Input)** — a Legion Space style switch for the Legion Go / Go 2
+- **Controller Mode (X-Input / D-Input)** — a Legion Space style switch for the Legion Go 2
   controllers, on the Legion tab and as an _Input Mode_ Quick Settings tile (see
   [Controller Mode](#-controller-mode-x-input--d-input)).
 - **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
@@ -198,6 +202,13 @@ upstream, and why.
   Bar is already open, including in the slot left of Home; before, it always landed on Home. With
   _Show GoTweaks first_ on, _Open Game Bar_ opens on GoTweaks too, like Legion L does for Legion
   Space. If the link doesn't open Game Bar within 3 seconds, Win+G is used as before.
+- **One copy of every profile.** The widget and the background helper used to keep their own
+  copies of each profile and re-sync them constantly, the source of settings that changed by
+  themselves (e.g. the overlay or TDP mode flipping when Game Bar opened, or the Profiles tab
+  showing values that weren't applied). Now only the helper keeps profiles: it applies them when a
+  game starts or closes, records every change in the active one, and the widget just shows them.
+  On the first start of this version the widget hands its FPS limit, power mode, overlay and
+  Custom SPPT / FPPT values over to the helper once.
 
 ---
 
@@ -234,11 +245,12 @@ Fine-tune power and CPU settings for performance or battery life.
 
 Automatically apply your preferred settings when each game launches.
 
-- Automatic profile switching on game detection
-- Saves all performance settings per game:
+- Automatic profile switching on game detection, done by the background helper (it works with
+  Game Bar closed)
+- Every profile (Global and each game) saves all performance settings:
   - TDP Mode, TDP (SPL / SPPT / FPPT) and CPU settings
   - AutoTDP (on/off, target FPS, min/max TDP)
-  - FPS limit and OS power mode
+  - FPS limit, OS power mode and the overlay on/off
 
 ### 🕹️ Legion Go 2 Support
 
@@ -279,7 +291,7 @@ restored on uninstall.
 
 ### 🎮 Controller Mode (X-Input / D-Input)
 
-The same switch Legion Space has, for the Legion Go / Go 2 controllers: flip them between
+The same switch Legion Space has, for the Legion Go 2 controllers: flip them between
 **X-Input** (the standard Xbox-style pad) and **D-Input** (a generic gamepad that a few games
 and emulators prefer).
 
@@ -363,7 +375,7 @@ powershell -ExecutionPolicy Bypass -File ".\Uninstall-GoTweaks.ps1"
 | --- | --- |
 | **OS** | Windows 10 / 11 |
 | **Required** | Xbox Game Bar |
-| **Optional** | [RivaTuner Statistics Server](https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/) (OSD overlay) · Legion Go 2 / Legion Go (device features) · Lossless Scaling (Quick Settings toggle) |
+| **Optional** | [RivaTuner Statistics Server](https://www.guru3d.com/download/rtss-rivatuner-statistics-server-download/) (OSD overlay) · Legion Go 2 (device features) · Lossless Scaling (Quick Settings toggle) |
 
 > [!IMPORTANT]
 > **Smart App Control** may interfere with this application. If it doesn't work correctly, you may

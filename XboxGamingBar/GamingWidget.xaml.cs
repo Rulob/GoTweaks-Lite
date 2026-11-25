@@ -790,6 +790,8 @@ namespace XboxGamingBar
             cpuEPP = new CPUEPPProperty(80, CPUEPPSlider, this);
             maxCPUState = new MaxCPUStateProperty();
             minCPUState = new MinCPUStateProperty();
+            maxCPUState.PropertyChanged += CPUStateProperty_Changed;
+            minCPUState.PropertyChanged += CPUStateProperty_Changed;
             // GPU Clock - DISABLED: Not supported by RyzenAdj on this hardware (returns error -1)
             //limitGPUClock = new LimitGPUClockProperty(LimitGPUClockToggle, this);
             //gpuClockMin = new GPUClockMinProperty(GPUClockMinSlider, this);
@@ -939,6 +941,7 @@ namespace XboxGamingBar
 
             // FPS Limit property
             fpsLimit = new FPSLimitProperty();
+            fpsLimit.PropertyChanged += FPSLimitProperty_Changed;
 
             // Profile Detection Settings
             profileMatchByExe = new ProfileMatchByExeProperty(ProfileMatchByExeToggle, this);

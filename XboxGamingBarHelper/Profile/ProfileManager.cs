@@ -264,6 +264,15 @@ namespace XboxGamingBarHelper.Profile
             newGameProfile.AutoTDPMinTDP = CurrentProfile.AutoTDPMinTDP;
             newGameProfile.AutoTDPMaxTDP = CurrentProfile.AutoTDPMaxTDP;
             newGameProfile.AutoTDPPauseWhenUnfocused = CurrentProfile.AutoTDPPauseWhenUnfocused;
+            // And from the rest of what every profile stores since 1.9.7a: TDP mode, the Custom
+            // SPPT / FPPT, FPS limit, Windows power mode and overlay.
+            var current = CurrentProfile.Value;
+            newGameProfile.LegionPerformanceMode = current.LegionPerformanceMode;
+            newGameProfile.TDPFast = current.TDPFast;
+            newGameProfile.TDPPeak = current.TDPPeak;
+            newGameProfile.FPSLimit = current.FPSLimit;
+            newGameProfile.OSPowerMode = current.OSPowerMode;
+            newGameProfile.OverlayLevel = current.OverlayLevel;
             newGameProfile.Save();
             Logger.Info($"Add new profile for {gameId.Name} at {newGameProfilePath}.");
             return newGameProfile;

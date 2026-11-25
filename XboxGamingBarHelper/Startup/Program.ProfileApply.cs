@@ -173,11 +173,18 @@ namespace XboxGamingBarHelper
             profileManager.RefreshGlobalProfile();
             var current = profileManager.CurrentProfile.Value;
 
+            // Snapshot under the cache lock: a profile save on another thread updates the cache.
+            List<GameProfile> cached;
+            lock (GameProfile.ProfileLock)
+            {
+                cached = profileManager.GameProfiles.Values.ToList();
+            }
+
             var list = new List<Dictionary<string, object>>();
             list.Add(DescribeProfile(current.IsGlobalProfile ? current : profileManager.GlobalProfile, true));
-            foreach (var kv in profileManager.GameProfiles)
+            foreach (var cachedProfile in cached)
             {
-                var p = kv.Value;
+                var p = cachedProfile;
                 if (p.IsGlobalProfile) continue;
                 // The live copy is newer than the cache's when it is the active profile.
                 if (!current.IsGlobalProfile && current.GameId.Equals(p.GameId)) p = current;
@@ -269,7 +276,9 @@ namespace XboxGamingBarHelper
                     }
                     else
                     {
-                        var match = profileManager.GameProfiles.Values.FirstOrDefault(p => !p.IsGlobalProfile
+                        List<GameProfile> cached;
+                        lock (GameProfile.ProfileLock) { cached = profileManager.GameProfiles.Values.ToList(); }
+                        var match = cached.FirstOrDefault(p => !p.IsGlobalProfile
                             && string.Equals((p.GameId.Name ?? "").Trim(), entry.name.Trim(), StringComparison.OrdinalIgnoreCase));
                         if (match.GameId.Name == null)
                         {
@@ -294,6 +303,15 @@ namespace XboxGamingBarHelper
                     if (isCurrent) profileManager.CurrentProfile.SetValueSilent(target);
                     if (isGlobal || target.IsGlobalProfile) profileManager.GlobalProfile = target;
                     migrated++;
+
+                    // The helper applied this profile at startup, before these values existed
+                    // (e.g. no FPS limit): apply it again now that it is complete.
+                    if (isCurrent)
+                    {
+                        isApplyingProfile = true;
+                        try { ApplyPerformanceSettings(target, defaultToCustom: !target.IsGlobalProfile); }
+                        finally { isApplyingProfile = false; }
+                    }
                 }
                 Logger.Info($"MigrateWidgetProfiles: migrated {migrated} of {entries.Count} profile(s)");
             }
