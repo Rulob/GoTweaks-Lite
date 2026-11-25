@@ -58,28 +58,8 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Toggles Fan Full Speed mode on/off for Legion or GPD devices.
+        /// Toggles Fan Full Speed mode on/off.
         /// </summary>
-        private bool gpdFanMaxActive = false;
-
-        // GPD Software Fan Curve graph state
-        private bool isGPDFanCurveExpanded = false;
-        private bool gpdFanCurveGraphInitialized = false;
-        private readonly Windows.UI.Xaml.Shapes.Ellipse[] gpdFanCurvePoints = new Windows.UI.Xaml.Shapes.Ellipse[10];
-        private int[] currentGPDFanCurveValues = new int[10];
-        private int gpdDraggedPointIndex = -1;
-        private bool isGPDDraggingPoint = false;
-        private static readonly int[] GPDFanCurveTemps = { 30, 38, 46, 54, 62, 70, 78, 86, 94, 100 };
-        private static readonly Dictionary<string, int[]> GPDFanCurvePresets = new Dictionary<string, int[]>
-        {
-            { "Silent",      new int[] { 0, 0, 0, 30, 35, 45, 55, 65, 80, 100 } },
-            { "Balanced",    new int[] { 0, 30, 35, 45, 55, 65, 75, 85, 95, 100 } },
-            { "Performance", new int[] { 30, 40, 50, 55, 60, 70, 80, 90, 95, 100 } },
-            { "MaxCooling",  new int[] { 40, 50, 60, 65, 70, 80, 85, 95, 100, 100 } }
-        };
-        private string currentGPDFanCurvePreset = "Custom";
-        private bool isGPDFanCurvePresetLoading = false;
-
         private void ToggleLegionFanFullSpeed()
         {
             if (legionGoDetected?.Value == true && legionFanFullSpeed != null)
@@ -93,35 +73,6 @@ namespace XboxGamingBar
                 }
 
                 Logger.Info($"Fan Full Speed toggled (Legion): {(newState ? "On" : "Off")}");
-            }
-            else if (gpdDetected?.Value == true && gpdFanMode != null && gpdFanSpeed != null)
-            {
-                gpdFanMaxActive = !gpdFanMaxActive;
-                if (gpdFanMaxActive)
-                {
-                    gpdFanMode.SetMode(1); // Manual
-                    gpdFanSpeed.SetSpeed(100); // 100%
-                    if (GPDFanModeToggle != null)
-                    {
-                        GPDFanModeToggle.Toggled -= GPDFanModeToggle_Toggled;
-                        GPDFanModeToggle.IsOn = true;
-                        GPDFanModeToggle.Toggled += GPDFanModeToggle_Toggled;
-                    }
-                    if (GPDFanSpeedSlider != null) GPDFanSpeedSlider.Value = 100;
-                }
-                else
-                {
-                    gpdFanMode.SetMode(0); // Auto
-                    gpdFanSpeed.SetSpeed(0);
-                    if (GPDFanModeToggle != null)
-                    {
-                        GPDFanModeToggle.Toggled -= GPDFanModeToggle_Toggled;
-                        GPDFanModeToggle.IsOn = false;
-                        GPDFanModeToggle.Toggled += GPDFanModeToggle_Toggled;
-                    }
-                }
-
-                Logger.Info($"Fan Full Speed toggled (GPD): {(gpdFanMaxActive ? "On" : "Off")}");
             }
         }
 

@@ -107,19 +107,6 @@
     <Compile Include="Data\LosslessScaling\LosslessScalingRunningProperty.cs" />
     <Compile Include="Data\LosslessScaling\LosslessScalingEnabledProperty.cs" />
     <Compile Include="Data\Legion\LegionGoDetectedProperty.cs" />
-    <Compile Include="Data\GPD\GPDDetectedProperty.cs" />
-    <Compile Include="Data\GPD\GPDWin5ConnectedProperty.cs" />
-    <Compile Include="Data\GPD\GPDDeviceNameProperty.cs" />
-    <Compile Include="Data\GPD\GPDSupportsFanControlProperty.cs" />
-    <Compile Include="Data\GPD\GPDFanSpeedProperty.cs" />
-    <Compile Include="Data\GPD\GPDFanRPMProperty.cs" />
-    <Compile Include="Data\GPD\GPDFanModeProperty.cs" />
-    <Compile Include="Data\GPD\GPDFanCurveProperty.cs" />
-    <Compile Include="Data\GPD\GPDButtonProperty.cs" />
-    <Compile Include="Data\GPD\GPDRestoreDefaultsProperty.cs" />
-    <Compile Include="Data\GPD\GPDApplyMappingsProperty.cs" />
-    <Compile Include="Data\GPD\GPDButtonL4Property.cs" />
-    <Compile Include="Data\GPD\GPDButtonR4Property.cs" />
     <Compile Include="Data\Legion\LegionTouchpadEnabledProperty.cs" />
     <Compile Include="Data\Legion\LegionLightModeProperty.cs" />
     <Compile Include="Data\Legion\LegionLightColorProperty.cs" />
@@ -310,9 +297,6 @@
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Data\Legion\LegionControllerModeProperty.cs" />
-    <Compile Include="Features\Devices\GamingWidget.GpdFanCurve.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Features\Hotkeys\GamingWidget.KeyDropdowns.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
@@ -332,12 +316,6 @@
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Performance\GamingWidget.AutoTDP.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Devices\GamingWidget.GpdTabCallbacks.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Devices\GamingWidget.GpdTabEventHandlers.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Controller\GamingWidget.GamepadButtonRemapping.cs">

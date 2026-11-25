@@ -661,37 +661,6 @@ namespace XboxGamingBar
         private readonly DeviceHasDetachableControllersProperty deviceHasDetachableControllers;
         private readonly DeviceHasTouchpadProperty deviceHasTouchpad;
 
-        // GPD properties
-        private readonly GPDDetectedProperty gpdDetected;
-        private readonly GPDWin5ConnectedProperty gpdWin5Connected;
-        private readonly GPDWin5HidDebugProperty gpdWin5HidDebug;
-        private readonly GPDWin5HidDevicesProperty gpdWin5HidDevices;
-        private readonly GPDDeviceNameProperty gpdDeviceName;
-        private readonly GPDSupportsFanControlProperty gpdSupportsFanControl;
-        private readonly GPDFanSpeedProperty gpdFanSpeed;
-        private readonly GPDFanRPMProperty gpdFanRPM;
-        private readonly GPDFanModeProperty gpdFanMode;
-        private readonly GPDRestoreDefaultsProperty gpdRestoreDefaults;
-        private readonly GPDApplyMappingsProperty gpdApplyMappings;
-        private readonly GPDButtonL4Property gpdButtonL4;
-        private readonly GPDButtonR4Property gpdButtonR4;
-        private readonly GPDButtonProperty gpdButtonA;
-        private readonly GPDButtonProperty gpdButtonB;
-        private readonly GPDButtonProperty gpdButtonX;
-        private readonly GPDButtonProperty gpdButtonY;
-        private readonly GPDButtonProperty gpdButtonDPadUp;
-        private readonly GPDButtonProperty gpdButtonDPadDown;
-        private readonly GPDButtonProperty gpdButtonDPadLeft;
-        private readonly GPDButtonProperty gpdButtonDPadRight;
-        private readonly GPDButtonProperty gpdButtonL3;
-        private readonly GPDButtonProperty gpdButtonR3;
-        private readonly GPDButtonProperty gpdButtonLSLeft;
-        private readonly GPDButtonProperty gpdButtonLSRight;
-        private bool isApplyingGpdRestoreDefaults = false;
-        private readonly GPDFanCurveGraphProperty gpdFanCurveGraph;
-        private readonly GPDCPUTempProperty gpdCPUTemp;
-        private readonly GPDFanCurveVisibleProperty gpdFanCurveVisible;
-        private readonly GPDFanCurveEnabledProperty gpdFanCurveEnabled;
 
         // Settings properties
         private readonly PowerButtonActionProperty powerButtonActionAC;
@@ -1185,38 +1154,6 @@ namespace XboxGamingBar
             deviceHasDetachableControllers = new DeviceHasDetachableControllersProperty(this);
             deviceHasTouchpad = new DeviceHasTouchpadProperty(this);
 
-            // GPD properties
-            gpdDetected = new GPDDetectedProperty(this);
-            gpdWin5Connected = new GPDWin5ConnectedProperty(this);
-            gpdWin5HidDebug = new GPDWin5HidDebugProperty();
-            gpdWin5HidDevices = new GPDWin5HidDevicesProperty(this);
-            gpdDeviceName = new GPDDeviceNameProperty(this);
-            gpdSupportsFanControl = new GPDSupportsFanControlProperty(this);
-            gpdFanSpeed = new GPDFanSpeedProperty(this);
-            gpdFanRPM = new GPDFanRPMProperty(this);
-            gpdFanMode = new GPDFanModeProperty(this);
-            gpdRestoreDefaults = new GPDRestoreDefaultsProperty();
-            gpdApplyMappings = new GPDApplyMappingsProperty();
-            gpdButtonL4 = new GPDButtonL4Property(this);
-            gpdButtonR4 = new GPDButtonR4Property(this);
-            gpdButtonA = new GPDButtonProperty(this, Function.GPDButtonA);
-            gpdButtonB = new GPDButtonProperty(this, Function.GPDButtonB);
-            gpdButtonX = new GPDButtonProperty(this, Function.GPDButtonX);
-            gpdButtonY = new GPDButtonProperty(this, Function.GPDButtonY);
-            gpdButtonDPadUp = new GPDButtonProperty(this, Function.GPDButtonDPadUp);
-            gpdButtonDPadDown = new GPDButtonProperty(this, Function.GPDButtonDPadDown);
-            gpdButtonDPadLeft = new GPDButtonProperty(this, Function.GPDButtonDPadLeft);
-            gpdButtonDPadRight = new GPDButtonProperty(this, Function.GPDButtonDPadRight);
-            gpdButtonL3 = new GPDButtonProperty(this, Function.GPDButtonL3);
-            gpdButtonR3 = new GPDButtonProperty(this, Function.GPDButtonR3);
-            gpdButtonLSLeft = new GPDButtonProperty(this, Function.GPDButtonLSLeft);
-            gpdButtonLSRight = new GPDButtonProperty(this, Function.GPDButtonLSRight);
-            gpdFanCurveGraph = new GPDFanCurveGraphProperty(this);
-            gpdFanCurveGraph.SetGraphUpdateCallback(OnGPDFanCurveUpdated);
-            gpdCPUTemp = new GPDCPUTempProperty(this);
-            gpdCPUTemp.SetTempUpdateCallback(OnGPDCPUTempUpdated);
-            gpdFanCurveVisible = new GPDFanCurveVisibleProperty();
-            gpdFanCurveEnabled = new GPDFanCurveEnabledProperty(this);
 
             // Settings properties
             powerButtonActionAC = new PowerButtonActionProperty(Shared.Enums.Function.SystemPowerButtonActionAC, PowerButtonActionACComboBox, this);
@@ -1256,13 +1193,6 @@ namespace XboxGamingBar
             deviceHasDetachableControllers.SetVisibilityCallback(SetControllerBatterySectionVisibility);
             deviceHasTouchpad.SetVisibilityCallback(SetTouchpadVibrationSectionVisibility);
 
-            // GPD tab callbacks
-            gpdDetected.SetVisibilityCallback(SetGPDTabVisibility);
-            gpdDeviceName.SetNameCallback(SetGPDDeviceName);
-            gpdSupportsFanControl.SetVisibilityCallback(SetGPDFanControlVisibility);
-            gpdWin5Connected.SetConnectionCallback(SetGPDButtonRemapVisibility);
-            gpdFanRPM.SetRPMCallback(UpdateGPDFanRPM);
-            gpdFanMode.SetModeCallback(UpdateGPDFanMode);
 
             propertiesTimer.Stop();
             Logger.Info($"[TIMING] Property creation: {propertiesTimer.ElapsedMilliseconds}ms");
@@ -1383,36 +1313,6 @@ namespace XboxGamingBar
                 deviceHasScrollWheel,
                 deviceHasDetachableControllers,
                 deviceHasTouchpad,
-                // GPD properties
-                gpdDetected,
-                gpdWin5Connected,
-                gpdWin5HidDebug,
-                gpdWin5HidDevices,
-                gpdDeviceName,
-                gpdSupportsFanControl,
-                gpdFanSpeed,
-                gpdFanRPM,
-                gpdFanMode,
-                gpdRestoreDefaults,
-                gpdApplyMappings,
-                gpdButtonL4,
-                gpdButtonR4,
-                gpdButtonA,
-                gpdButtonB,
-                gpdButtonX,
-                gpdButtonY,
-                gpdButtonDPadUp,
-                gpdButtonDPadDown,
-                gpdButtonDPadLeft,
-                gpdButtonDPadRight,
-                gpdButtonL3,
-                gpdButtonR3,
-                gpdButtonLSLeft,
-                gpdButtonLSRight,
-                gpdFanCurveGraph,
-                gpdCPUTemp,
-                gpdFanCurveVisible,
-                gpdFanCurveEnabled,
                 // Profile Detection Settings
                 profileMatchByExe,
                 profileGamesOnly

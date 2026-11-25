@@ -789,17 +789,13 @@ namespace XboxGamingBar
                     }
                 }
 
-                // Fan Full Speed tile (Legion or GPD)
+                // Fan Full Speed tile
                 if (qsTileMap.TryGetValue("LegionFanFullSpeed", out var fanFullSpeedTile) && fanFullSpeedTile.TileButton != null)
                 {
                     bool enabled = false;
                     if (legionGoDetected?.Value == true)
                     {
                         enabled = legionFanFullSpeed?.Value ?? false;
-                    }
-                    else if (gpdDetected?.Value == true)
-                    {
-                        enabled = gpdFanMaxActive;
                     }
                     fanFullSpeedTile.StateText.Text = enabled ? "On" : "Off";
                     fanFullSpeedTile.StateText.Foreground = enabled ? accentForeground : offForeground;

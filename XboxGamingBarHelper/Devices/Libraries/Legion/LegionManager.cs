@@ -22,14 +22,12 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
 
         // Legion Go services
         private LegionControllerService controllerService;
-        private LegionGoSController goSController;  // Legion Go S uses different HID protocol
         private LenovoWMIService wmiService;
 
         // Device detection
         private DeviceInfo deviceInfo;
         private bool isLegionGoDetected = false;
         private bool isControllerConnected = false;
-        private bool isGoSControllerConnected = false;  // Tracks Go S RGB controller connection
 
         // Current settings state (cached)
         private bool touchpadEnabled = true;
@@ -751,45 +749,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                             Logger.Info($"Legion Go controller not connected (not supported for this device): {connectResult.Message}");
                         }
                     }
-
-                    // Step 4: For Legion Go S, try to connect to the RGB controller (uses different HID protocol)
-                    if (deviceInfo.DeviceType == Shared.Enums.DeviceType.LegionGoS && deviceInfo.SupportsRgbLighting)
-                    {
-                        try
-                        {
-                            Logger.Info("Attempting to connect Legion Go S RGB controller...");
-                            goSController = new LegionGoSController();
-                            if (goSController.Connect())
-                            {
-                                isGoSControllerConnected = true;
-                                isLegionGoDetected = true;
-                                Logger.Info("Legion Go S RGB controller connected successfully");
-                            }
-                            else
-                            {
-                                // In debug mode, don't disable RGB capability - the UI should still show
-                                // RGB controls even if we can't connect to actual hardware
-                                if (DeviceDetector.IsDebugModeActive)
-                                {
-                                    Logger.Info("Legion Go S RGB controller not found (debug mode - keeping RGB UI enabled)");
-                                    isLegionGoDetected = true;  // Mark as detected so UI shows
-                                }
-                                else
-                                {
-                                    Logger.Warn("Legion Go S RGB controller not found - RGB lighting disabled");
-                                    deviceInfo.SupportsRgbLighting = false;
-                                }
-                            }
-                        }
-                        catch (Exception goSEx)
-                        {
-                            Logger.Error($"Error connecting Legion Go S RGB controller: {goSEx.Message}");
-                            if (!DeviceDetector.IsDebugModeActive)
-                            {
-                                deviceInfo.SupportsRgbLighting = false;
-                            }
-                        }
-                    }
                 }
             }
             catch (Exception ex)
@@ -943,10 +902,9 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         public void SetLightMode(int mode)
         {
             // Check if we have a valid controller for RGB
-            bool hasGoSController = isGoSControllerConnected && goSController != null;
             bool hasStandardController = isControllerConnected && controllerService != null;
 
-            if (!hasGoSController && !hasStandardController)
+            if (!hasStandardController)
             {
                 Logger.Warn("Cannot set light mode: no RGB controller connected");
                 return;
@@ -958,83 +916,45 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 ParseHexColor(lightColor, out byte r, out byte g, out byte b);
 
                 // Use Go S controller if available (Legion Go S uses different HID protocol)
-                if (hasGoSController)
+                // Standard Legion Go controller. Widget sends mode=0 to mean "Off" but
+                // RgbMode enum starts at Solid=1, so casting (RgbMode)0 produces an
+                // invalid byte that the firmware silently rejects (and leaves the light
+                // in whatever state it was previously). Route mode=0 through SetRgbEnabled
+                // for both controllers, mirroring the Go S branch above.
+                bool success;
+                if (mode == 0)
                 {
-                    bool success = false;
-                    switch (mode)
-                    {
-                        case 0: // Disabled/Off
-                            success = goSController.DisableRgb();
-                            break;
-                        case 1: // Solid
-                            success = goSController.SetSolidColor(r, g, b, lightBrightness);
-                            break;
-                        case 2: // Pulse
-                            success = goSController.SetPulseMode(r, g, b, lightBrightness, lightSpeed);
-                            break;
-                        case 3: // Dynamic/Rainbow
-                            success = goSController.SetRainbowMode(lightBrightness, lightSpeed);
-                            break;
-                        case 4: // Spiral
-                            success = goSController.SetSpiralMode(lightBrightness, lightSpeed);
-                            break;
-                        default:
-                            success = goSController.SetSolidColor(r, g, b, lightBrightness);
-                            break;
-                    }
-
+                    var leftOff = controllerService.SetRgbEnabled(Controller.Left, false);
+                    var rightOff = controllerService.SetRgbEnabled(Controller.Right, false);
+                    success = leftOff.Success && rightOff.Success;
                     if (success)
                     {
                         lightMode = mode;
-                        Logger.Info($"Light mode set to {mode} (Go S controller)");
+                        Logger.Info("Light mode set to Off (SetRgbEnabled false on both controllers)");
                     }
                     else
                     {
-                        Logger.Error($"Failed to set light mode on Go S controller");
+                        Logger.Error($"Failed to disable stick lights: L={leftOff.Message}, R={rightOff.Message}");
                     }
                 }
                 else
                 {
-                    // Standard Legion Go controller. Widget sends mode=0 to mean "Off" but
-                    // RgbMode enum starts at Solid=1, so casting (RgbMode)0 produces an
-                    // invalid byte that the firmware silently rejects (and leaves the light
-                    // in whatever state it was previously). Route mode=0 through SetRgbEnabled
-                    // for both controllers, mirroring the Go S branch above.
-                    bool success;
-                    if (mode == 0)
+                    // Re-enable the light first in case it was previously off — writing
+                    // a profile alone doesn't re-enable a disabled light per the firmware.
+                    controllerService.SetRgbEnabled(Controller.Left, true);
+                    controllerService.SetRgbEnabled(Controller.Right, true);
+
+                    RgbMode rgbMode = (RgbMode)mode;
+                    var result = controllerService.SetStickLightMode(rgbMode, r, g, b, lightBrightness / 100f, lightSpeed / 100f);
+                    success = result.Success;
+                    if (success)
                     {
-                        var leftOff = controllerService.SetRgbEnabled(Controller.Left, false);
-                        var rightOff = controllerService.SetRgbEnabled(Controller.Right, false);
-                        success = leftOff.Success && rightOff.Success;
-                        if (success)
-                        {
-                            lightMode = mode;
-                            Logger.Info("Light mode set to Off (SetRgbEnabled false on both controllers)");
-                        }
-                        else
-                        {
-                            Logger.Error($"Failed to disable stick lights: L={leftOff.Message}, R={rightOff.Message}");
-                        }
+                        lightMode = mode;
+                        Logger.Info($"Light mode set to {rgbMode}");
                     }
                     else
                     {
-                        // Re-enable the light first in case it was previously off — writing
-                        // a profile alone doesn't re-enable a disabled light per the firmware.
-                        controllerService.SetRgbEnabled(Controller.Left, true);
-                        controllerService.SetRgbEnabled(Controller.Right, true);
-
-                        RgbMode rgbMode = (RgbMode)mode;
-                        var result = controllerService.SetStickLightMode(rgbMode, r, g, b, lightBrightness / 100f, lightSpeed / 100f);
-                        success = result.Success;
-                        if (success)
-                        {
-                            lightMode = mode;
-                            Logger.Info($"Light mode set to {rgbMode}");
-                        }
-                        else
-                        {
-                            Logger.Error($"Failed to set light mode: {result.Message}");
-                        }
+                        Logger.Error($"Failed to set light mode: {result.Message}");
                     }
                 }
             }
@@ -1102,9 +1022,8 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         /// </summary>
         public void SetReactiveStickColor(byte r, byte g, byte b, int brightnessPercent)
         {
-            bool hasGoSController = isGoSControllerConnected && goSController != null;
             bool hasStandardController = isControllerConnected && controllerService != null;
-            if (!hasGoSController && !hasStandardController) return;
+            if (!hasStandardController) return;
 
             int bright = Math.Max(0, Math.Min(100, brightnessPercent));
             // Preserve the user's configured speed in the profile. For a Solid reactive frame
@@ -1113,24 +1032,16 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             float speed = Math.Max(0, Math.Min(100, lightSpeed)) / 100f;
             try
             {
-                if (hasGoSController)
+                // The static light may be Off (RGB disabled at firmware level); writing a
+                // profile alone won't re-enable it. Enable first so reactive flashes show
+                // even when the user's static mode is Off. ReleaseReactiveLighting ->
+                // RestoreLightSettings will disable it again when the effect ends if Off.
+                if (lightMode == 0)
                 {
-                    // SetSolidColor re-enables the Go S RGB as part of the write.
-                    goSController.SetSolidColor(r, g, b, bright);
+                    controllerService.SetRgbEnabled(Controller.Left, true);
+                    controllerService.SetRgbEnabled(Controller.Right, true);
                 }
-                else
-                {
-                    // The static light may be Off (RGB disabled at firmware level); writing a
-                    // profile alone won't re-enable it. Enable first so reactive flashes show
-                    // even when the user's static mode is Off. ReleaseReactiveLighting ->
-                    // RestoreLightSettings will disable it again when the effect ends if Off.
-                    if (lightMode == 0)
-                    {
-                        controllerService.SetRgbEnabled(Controller.Left, true);
-                        controllerService.SetRgbEnabled(Controller.Right, true);
-                    }
-                    controllerService.SetStickLightMode(RgbMode.Solid, r, g, b, bright / 100f, speed);
-                }
+                controllerService.SetStickLightMode(RgbMode.Solid, r, g, b, bright / 100f, speed);
             }
             catch (Exception ex) { Logger.Debug($"SetReactiveStickColor failed: {ex.Message}"); }
         }
@@ -1168,10 +1079,9 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             // An external color set is a real source of truth for the light state.
             _lightStateKnown = true;
 
-            bool hasGoSController = isGoSControllerConnected && goSController != null;
             bool hasStandardController = isControllerConnected && controllerService != null;
 
-            if (!hasGoSController && !hasStandardController)
+            if (!hasStandardController)
             {
                 Logger.Warn("Cannot set light color: no RGB controller connected");
                 return;
@@ -1181,54 +1091,27 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             {
                 ParseHexColor(hexColor, out byte r, out byte g, out byte b);
 
-                if (hasGoSController)
+                // When the user has the light mode set to Off (lightMode=0), don't
+                // push a profile — that would write an invalid (RgbMode)0 byte and
+                // leak through to the firmware as garbage. Just remember the color
+                // so the next mode change (back to Solid/Pulse/etc.) can apply it.
+                if (lightMode == 0)
                 {
-                    // Map light mode to Go S RGB mode
-                    var goSMode = lightMode switch
-                    {
-                        0 => LegionGoSController.RgbMode.Solid,
-                        1 => LegionGoSController.RgbMode.Solid,
-                        2 => LegionGoSController.RgbMode.Pulse,
-                        3 => LegionGoSController.RgbMode.Dynamic,
-                        4 => LegionGoSController.RgbMode.Spiral,
-                        _ => LegionGoSController.RgbMode.Solid
-                    };
-
-                    bool success = goSController.SetRgbMode(goSMode, r, g, b, lightBrightness, lightSpeed);
-                    if (success)
-                    {
-                        lightColor = hexColor;
-                        Logger.Info($"Light color set to {hexColor} (Go S controller)");
-                    }
-                    else
-                    {
-                        Logger.Error($"Failed to set light color on Go S controller");
-                    }
+                    lightColor = hexColor;
+                    Logger.Info($"Light color cached as {hexColor} (mode is Off, not pushing profile)");
                 }
                 else
                 {
-                    // When the user has the light mode set to Off (lightMode=0), don't
-                    // push a profile — that would write an invalid (RgbMode)0 byte and
-                    // leak through to the firmware as garbage. Just remember the color
-                    // so the next mode change (back to Solid/Pulse/etc.) can apply it.
-                    if (lightMode == 0)
+                    RgbMode rgbMode = (RgbMode)lightMode;
+                    var result = controllerService.SetStickLightMode(rgbMode, r, g, b, lightBrightness / 100f, lightSpeed / 100f);
+                    if (result.Success)
                     {
                         lightColor = hexColor;
-                        Logger.Info($"Light color cached as {hexColor} (mode is Off, not pushing profile)");
+                        Logger.Info($"Light color set to {hexColor}");
                     }
                     else
                     {
-                        RgbMode rgbMode = (RgbMode)lightMode;
-                        var result = controllerService.SetStickLightMode(rgbMode, r, g, b, lightBrightness / 100f, lightSpeed / 100f);
-                        if (result.Success)
-                        {
-                            lightColor = hexColor;
-                            Logger.Info($"Light color set to {hexColor}");
-                        }
-                        else
-                        {
-                            Logger.Error($"Failed to set light color: {result.Message}");
-                        }
+                        Logger.Error($"Failed to set light color: {result.Message}");
                     }
                 }
             }
@@ -1263,10 +1146,9 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             // An external brightness set is a real source of truth for the light state.
             _lightStateKnown = true;
 
-            bool hasGoSController = isGoSControllerConnected && goSController != null;
             bool hasStandardController = isControllerConnected && controllerService != null;
 
-            if (!hasGoSController && !hasStandardController)
+            if (!hasStandardController)
             {
                 Logger.Warn("Cannot set light brightness: no RGB controller connected");
                 return;
@@ -1277,52 +1159,26 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 brightness = Math.Max(0, Math.Min(100, brightness));
                 ParseHexColor(lightColor, out byte r, out byte g, out byte b);
 
-                if (hasGoSController)
+                // Skip the wire push when the light is in Off mode — writing
+                // (RgbMode)0 is invalid and the firmware will reject or
+                // misinterpret it. Just cache for the next mode change.
+                if (lightMode == 0)
                 {
-                    var goSMode = lightMode switch
-                    {
-                        0 => LegionGoSController.RgbMode.Solid,
-                        1 => LegionGoSController.RgbMode.Solid,
-                        2 => LegionGoSController.RgbMode.Pulse,
-                        3 => LegionGoSController.RgbMode.Dynamic,
-                        4 => LegionGoSController.RgbMode.Spiral,
-                        _ => LegionGoSController.RgbMode.Solid
-                    };
-
-                    bool success = goSController.SetRgbMode(goSMode, r, g, b, brightness, lightSpeed);
-                    if (success)
-                    {
-                        lightBrightness = brightness;
-                        Logger.Info($"Light brightness set to {brightness}% (Go S controller)");
-                    }
-                    else
-                    {
-                        Logger.Error($"Failed to set light brightness on Go S controller");
-                    }
+                    lightBrightness = brightness;
+                    Logger.Info($"Light brightness cached as {brightness}% (mode is Off, not pushing profile)");
                 }
                 else
                 {
-                    // Skip the wire push when the light is in Off mode — writing
-                    // (RgbMode)0 is invalid and the firmware will reject or
-                    // misinterpret it. Just cache for the next mode change.
-                    if (lightMode == 0)
+                    RgbMode rgbMode = (RgbMode)lightMode;
+                    var result = controllerService.SetStickLightMode(rgbMode, r, g, b, brightness / 100f, lightSpeed / 100f);
+                    if (result.Success)
                     {
                         lightBrightness = brightness;
-                        Logger.Info($"Light brightness cached as {brightness}% (mode is Off, not pushing profile)");
+                        Logger.Info($"Light brightness set to {brightness}%");
                     }
                     else
                     {
-                        RgbMode rgbMode = (RgbMode)lightMode;
-                        var result = controllerService.SetStickLightMode(rgbMode, r, g, b, brightness / 100f, lightSpeed / 100f);
-                        if (result.Success)
-                        {
-                            lightBrightness = brightness;
-                            Logger.Info($"Light brightness set to {brightness}%");
-                        }
-                        else
-                        {
-                            Logger.Error($"Failed to set light brightness: {result.Message}");
-                        }
+                        Logger.Error($"Failed to set light brightness: {result.Message}");
                     }
                 }
             }
@@ -1337,10 +1193,9 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             // An external speed set is a real source of truth for the light state.
             _lightStateKnown = true;
 
-            bool hasGoSController = isGoSControllerConnected && goSController != null;
             bool hasStandardController = isControllerConnected && controllerService != null;
 
-            if (!hasGoSController && !hasStandardController)
+            if (!hasStandardController)
             {
                 Logger.Warn("Cannot set light speed: no RGB controller connected");
                 return;
@@ -1351,49 +1206,23 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 speed = Math.Max(0, Math.Min(100, speed));
                 ParseHexColor(lightColor, out byte r, out byte g, out byte b);
 
-                if (hasGoSController)
+                if (lightMode == 0)
                 {
-                    var goSMode = lightMode switch
-                    {
-                        0 => LegionGoSController.RgbMode.Solid,
-                        1 => LegionGoSController.RgbMode.Solid,
-                        2 => LegionGoSController.RgbMode.Pulse,
-                        3 => LegionGoSController.RgbMode.Dynamic,
-                        4 => LegionGoSController.RgbMode.Spiral,
-                        _ => LegionGoSController.RgbMode.Solid
-                    };
-
-                    bool success = goSController.SetRgbMode(goSMode, r, g, b, lightBrightness, speed);
-                    if (success)
-                    {
-                        lightSpeed = speed;
-                        Logger.Info($"Light speed set to {speed}% (Go S controller)");
-                    }
-                    else
-                    {
-                        Logger.Error($"Failed to set light speed on Go S controller");
-                    }
+                    lightSpeed = speed;
+                    Logger.Info($"Light speed cached as {speed}% (mode is Off, not pushing profile)");
                 }
                 else
                 {
-                    if (lightMode == 0)
+                    RgbMode rgbMode = (RgbMode)lightMode;
+                    var result = controllerService.SetStickLightMode(rgbMode, r, g, b, lightBrightness / 100f, speed / 100f);
+                    if (result.Success)
                     {
                         lightSpeed = speed;
-                        Logger.Info($"Light speed cached as {speed}% (mode is Off, not pushing profile)");
+                        Logger.Info($"Light speed set to {speed}%");
                     }
                     else
                     {
-                        RgbMode rgbMode = (RgbMode)lightMode;
-                        var result = controllerService.SetStickLightMode(rgbMode, r, g, b, lightBrightness / 100f, speed / 100f);
-                        if (result.Success)
-                        {
-                            lightSpeed = speed;
-                            Logger.Info($"Light speed set to {speed}%");
-                        }
-                        else
-                        {
-                            Logger.Error($"Failed to set light speed: {result.Message}");
-                        }
+                        Logger.Error($"Failed to set light speed: {result.Message}");
                     }
                 }
             }
