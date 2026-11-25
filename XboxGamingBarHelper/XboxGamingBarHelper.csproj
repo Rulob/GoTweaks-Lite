@@ -508,6 +508,7 @@
     <Compile Include="Startup\Program.PowerSourceHandler.cs" />
     <Compile Include="Startup\Program.AutoTDPIdleMode.cs" />
     <Compile Include="Startup\Program.GameBarOpen.cs" />
+    <Compile Include="Startup\Program.ProfileApply.cs" />
     <Compile Include="Startup\Program.HotkeyHandlers.cs" />
     <Compile Include="Startup\Program.Labs.cs" />
     <Compile Include="Startup\Program.MigrationStaging.cs" />

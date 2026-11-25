@@ -22,6 +22,72 @@ namespace XboxGamingBarHelper.Profile
             }
         }
 
+        // Custom-mode SPPT / FPPT (absolute watts). TDP above is the SPL.
+        public int TDPFast
+        {
+            get { return value.TDPFast; }
+            set
+            {
+                if (this.value.TDPFast != value)
+                {
+                    this.value.TDPFast = value;
+                }
+            }
+        }
+
+        public int TDPPeak
+        {
+            get { return value.TDPPeak; }
+            set
+            {
+                if (this.value.TDPPeak != value)
+                {
+                    this.value.TDPPeak = value;
+                }
+            }
+        }
+
+        // RTSS FPS limit; 0 = no limit.
+        public int FPSLimit
+        {
+            get { return value.FPSLimit; }
+            set
+            {
+                if (this.value.FPSLimit != value)
+                {
+                    this.value.FPSLimit = value;
+                }
+            }
+        }
+
+        // Windows power mode (0 Best Power Efficiency, 1 Balanced, 2 Best Performance), stored as
+        // text in the profile XML; null when the profile never recorded one.
+        public int? OSPowerMode
+        {
+            get { return int.TryParse(value.OSPowerMode, out int mode) ? mode : (int?)null; }
+            set
+            {
+                string text = value?.ToString();
+                if (this.value.OSPowerMode != text)
+                {
+                    this.value.OSPowerMode = text;
+                }
+            }
+        }
+
+        // Performance overlay on (1) / off (0); null when the profile never recorded it.
+        public int? OverlayLevel
+        {
+            get { return value.OverlayLevel; }
+            set
+            {
+                if (this.value.OverlayLevel != value)
+                {
+                    this.value.OverlayLevel = value;
+                }
+            }
+        }
+
         public bool CPUBoost
         {
             get { return value.CPUBoost; }

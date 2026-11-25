@@ -234,14 +234,6 @@ namespace XboxGamingBarHelper
                     return;
                 }
 
-                // Widget pushes its saved copy of the active per-game profile (CPU boost / EPP /
-                // CPU state) so the helper applies it AND records it in its own copy of the profile.
-                if (pipeMsg.Extra.ContainsKey("SyncGameProfile"))
-                {
-                    HandleSyncGameProfile(pipeMsg);
-                    return;
-                }
-
                 // Widget fires this on each panel open so the brightness slider always shows the
                 // real current value (in case brightness was changed from another source) and grays
                 // out when the built-in panel is off (external monitor). Helper re-reads WMI live.
@@ -942,77 +934,6 @@ namespace XboxGamingBarHelper
             SendPipeAck(pipeMsg.RequestId);
         }
 
-        // SyncGameProfile: payload "boost=1;epp=0;max=100;min=5" (only the settings the widget
-        // captures per-game). The widget and helper each keep their own copy of a game profile; the
-        // helper's only learns of changes through property-change events, which are skipped during the
-        // post-switch cooldown and when a value already matches, so it drifts from what the Profiles
-        // tab shows - and the helper re-applies its stale copy whenever it re-detects the game. This
-        // applies the widget's values and writes them into the helper's copy explicitly.
-        private static void HandleSyncGameProfile(Shared.IPC.PipeMessage pipeMsg)
-        {
-            try
-            {
-                string payload = pipeMsg.Extra.TryGetValue("SyncGameProfile", out var v) ? v?.ToString() : null;
-                if (!string.IsNullOrEmpty(payload))
-                {
-                    lock (profileApplicationLock)
-                    {
-                        var current = profileManager.CurrentProfile;
-                        if (current.IsGlobalProfile || !current.Use)
-                        {
-                            Logger.Info("Pipe: SyncGameProfile ignored - no per-game profile is active");
-                        }
-                        else
-                        {
-                            // Keeps the CPUBoost_/CPUEPP_/CPUState_PropertyChanged handlers from also
-                            // saving these (they'd route by flag; we write the profile directly below).
-                            isApplyingProfile = true;
-                            try
-                            {
-                                foreach (var pair in payload.Split(';'))
-                                {
-                                    var kv = pair.Split('=');
-                                    if (kv.Length != 2) continue;
-
-                                    if (kv[0] == "boost" && ProfileSaveFlagsState.CPUBoost)
-                                    {
-                                        bool boost = kv[1] == "1";
-                                        powerManager.CPUBoost.SetValue(boost);
-                                        current.CPUBoost = boost;
-                                    }
-                                    else if (kv[0] == "epp" && ProfileSaveFlagsState.CPUEPP && int.TryParse(kv[1], out int epp))
-                                    {
-                                        powerManager.CPUEPP.SetValue(epp);
-                                        current.CPUEPP = epp;
-                                    }
-                                    else if (kv[0] == "max" && ProfileSaveFlagsState.CPUState && int.TryParse(kv[1], out int maxState))
-                                    {
-                                        powerManager.MaxCPUState.SetValue(maxState);
-                                        current.MaxCPUState = maxState;
-                                    }
-                                    else if (kv[0] == "min" && ProfileSaveFlagsState.CPUState && int.TryParse(kv[1], out int minState))
-                                    {
-                                        powerManager.MinCPUState.SetValue(minState);
-                                        current.MinCPUState = minState;
-                                    }
-                                }
-                                Logger.Info($"Pipe: SyncGameProfile applied to '{current.GameId.Name}': {payload}");
-                            }
-                            finally
-                            {
-                                isApplyingProfile = false;
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Pipe: SyncGameProfile threw: {ex.Message}");
-            }
-            SendPipeAck(pipeMsg.RequestId);
-        }
-
         // RefreshPanelBrightness: re-read the built-in panel brightness + availability from WMI and
         // push both to the widget, so the slider always reflects the true current value (even if it
         // was changed elsewhere) and grays out when the internal panel is off. ForceSetValue pushes
@@ -1165,11 +1086,20 @@ namespace XboxGamingBarHelper
                 {
                     response = HandleProfileSaveFlags(request);
                 }
-                // Per-state TDP / TDPBoost values from the widget. Cached so the helper
-                // can apply them on AC/DC transitions independent of widget lifecycle.
-                else if (functionValue == (int)Function.PowerSourceProfileValues)
+                // Profiles tab data (the helper owns all profiles since 1.9.7a).
+                else if (functionValue == (int)Function.ProfileList)
                 {
-                    response = HandlePowerSourceProfileValues(request);
+                    response = new global::Windows.Foundation.Collections.ValueSet
+                    {
+                        { "Command", (int)Command.Response },
+                        { "Function", (int)Function.ProfileList },
+                        { "Content", BuildProfileListJson() },
+                    };
+                }
+                // One-time import of the widget's pre-1.9.7a profile copies.
+                else if (functionValue == (int)Function.MigrateWidgetProfiles)
+                {
+                    if (request.Content != null) MigrateWidgetProfiles(request.Content.ToString());
                 }
                 // Quick Metrics: Enable/disable metrics push timer
                 else if (functionValue == (int)Function.QuickMetricsEnabled)
@@ -1327,17 +1257,6 @@ namespace XboxGamingBarHelper
             if (request.Content != null)
             {
                 ApplyProfileSaveFlags(request.Content.ToString());
-            }
-            return response;
-        }
-
-        // Per-state TDP / TDPBoost values from the widget.
-        private static global::Windows.Foundation.Collections.ValueSet HandlePowerSourceProfileValues(Shared.IPC.PipeMessage request)
-        {
-            global::Windows.Foundation.Collections.ValueSet response = null;
-            if (request.Content != null)
-            {
-                ApplyPowerSourceProfileValues(request.Content.ToString());
             }
             return response;
         }

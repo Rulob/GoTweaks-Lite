@@ -35,9 +35,10 @@ namespace XboxGamingBarHelper
 {
     internal partial class Program
     {
-        // Snapshot of the widget's Profiles-tab save checkboxes. Defaults match the widget's
-        // initial-field defaults so any handler that runs before the widget has pushed flags
-        // falls back to the same behavior the UI shows to the user.
+        // Where each setting is saved:
+        // TDP, CPU Boost / EPP / state, FPS limit, Windows power mode and the overlay are always
+        // saved in the active profile (1.9.7a: profiles store all of them, no widget checkboxes).
+        // The controller / lighting / gyro flags below still come from the widget (all false).
         // - true  => setting is captured per-game; mid-session writes land in CurrentProfile.
         // - false => setting is global; mid-session writes land in GlobalProfile regardless of
         //            whether a game is active, so reboots don't pull stale per-game values back.
@@ -53,7 +54,7 @@ namespace XboxGamingBarHelper
             public static bool HDR = false;
             public static bool Resolution = false;
             public static bool RefreshRate = false;
-            public static bool OverlayLevel = false;
+            public static bool OverlayLevel = true;
             public static bool CPUAffinity = false;
             public static bool NintendoLayout = false;
             public static bool Vibration = false;
@@ -68,17 +69,10 @@ namespace XboxGamingBarHelper
             {
                 var cfg = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, bool>>(configJson);
                 if (cfg == null) return;
-                if (cfg.TryGetValue("TDP", out var v1)) ProfileSaveFlagsState.TDP = v1;
-                if (cfg.TryGetValue("CPUBoost", out var v2)) ProfileSaveFlagsState.CPUBoost = v2;
-                if (cfg.TryGetValue("CPUEPP", out var v3)) ProfileSaveFlagsState.CPUEPP = v3;
-                if (cfg.TryGetValue("CPUState", out var v4)) ProfileSaveFlagsState.CPUState = v4;
                 if (cfg.TryGetValue("AMDFeatures", out var v5)) ProfileSaveFlagsState.AMDFeatures = v5;
-                if (cfg.TryGetValue("FPSLimit", out var v6)) ProfileSaveFlagsState.FPSLimit = v6;
-                if (cfg.TryGetValue("OSPowerMode", out var v8)) ProfileSaveFlagsState.OSPowerMode = v8;
                 if (cfg.TryGetValue("HDR", out var v9)) ProfileSaveFlagsState.HDR = v9;
                 if (cfg.TryGetValue("Resolution", out var v10)) ProfileSaveFlagsState.Resolution = v10;
                 if (cfg.TryGetValue("RefreshRate", out var v11)) ProfileSaveFlagsState.RefreshRate = v11;
-                if (cfg.TryGetValue("OverlayLevel", out var v13)) ProfileSaveFlagsState.OverlayLevel = v13;
                 if (cfg.TryGetValue("CPUAffinity", out var v14)) ProfileSaveFlagsState.CPUAffinity = v14;
                 if (cfg.TryGetValue("NintendoLayout", out var v15)) ProfileSaveFlagsState.NintendoLayout = v15;
                 if (cfg.TryGetValue("Vibration", out var v16)) ProfileSaveFlagsState.Vibration = v16;
@@ -345,37 +339,7 @@ namespace XboxGamingBarHelper
 
             profileManager.CurrentProfile.SetValue(profileManager.GlobalProfile);
 
-            Logger.Info($"Applying global profile settings: TDP={profileManager.GlobalProfile.TDP}, CPUBoost={profileManager.GlobalProfile.CPUBoost}, EPP={profileManager.GlobalProfile.CPUEPP}");
-
-            // Restore LegionPerformanceMode from global profile if set
-            if (legionManager != null)
-            {
-                int? savedMode = profileManager.GlobalProfile.LegionPerformanceMode;
-                if (savedMode.HasValue)
-                {
-                    int currentMode = legionManager.LegionPerformanceMode.Value;
-                    if (currentMode != savedMode.Value)
-                    {
-                        Logger.Info($"Restoring global profile performance mode ({savedMode.Value}) (was {currentMode})");
-                        legionManager.LegionPerformanceMode.SetValue(savedMode.Value);
-                    }
-                }
-            }
-
-            // Restore AutoTDP settings before TDP so IsAutoTDPActive is cleared (or re-armed on
-            // the manager's next tick) before the profile's flat TDP value is applied below.
-            ApplyAutoTDPSettings(
-                profileManager.GlobalProfile.AutoTDPEnabled,
-                profileManager.GlobalProfile.AutoTDPTargetFPS,
-                profileManager.GlobalProfile.AutoTDPMinTDP,
-                profileManager.GlobalProfile.AutoTDPMaxTDP,
-                profileManager.GlobalProfile.AutoTDPPauseWhenUnfocused);
-
-            performanceManager.TDP.SetProfileValue(profileManager.GlobalProfile.TDP);
-            powerManager.CPUBoost.SetValue(profileManager.GlobalProfile.CPUBoost);
-            powerManager.CPUEPP.SetValue(profileManager.GlobalProfile.CPUEPP);
-            powerManager.MaxCPUState.SetValue(profileManager.GlobalProfile.MaxCPUState);
-            powerManager.MinCPUState.SetValue(profileManager.GlobalProfile.MinCPUState);
+            ApplyPerformanceSettings(profileManager.GlobalProfile, defaultToCustom: false);
             profileManager.PerGameProfile.SetValue(false);
 
             // Apply Legion controller settings from global profile
@@ -405,53 +369,8 @@ namespace XboxGamingBarHelper
                         isApplyingProfile = true;
                         Logger.Info($"Profile changed to {profileManager.CurrentProfile.GameId.Name}, apply it.");
 
-                        // For per-game profiles, apply the saved LegionPerformanceMode if set
-                        // This ensures the correct TDP mode is applied when the game is detected
-                        if (profileManager.CurrentProfile.Use && legionManager != null)
-                        {
-                            int? savedMode = profileManager.CurrentProfile.LegionPerformanceMode;
-                            if (savedMode.HasValue)
-                            {
-                                int currentMode = legionManager.LegionPerformanceMode.Value;
-                                if (currentMode != savedMode.Value)
-                                {
-                                    Logger.Info($"Switching to saved performance mode ({savedMode.Value}) for per-game profile (was {currentMode})");
-                                    legionManager.LegionPerformanceMode.SetValue(savedMode.Value);
-                                }
-                            }
-                            else
-                            {
-                                // Profile has no saved LegionPerformanceMode - auto-switch to Custom mode (255)
-                                // if not already in Custom mode, so that custom TDP values can be applied
-                                int currentMode = legionManager.LegionPerformanceMode.Value;
-                                if (currentMode != 255)
-                                {
-                                    Logger.Info($"Per-game profile has no saved LegionPerformanceMode, auto-switching to Custom mode (was {currentMode}) to enable TDP control");
-                                    legionManager.LegionPerformanceMode.SetValue(255);
-                                }
-                                else
-                                {
-                                    Logger.Debug($"Per-game profile has no saved LegionPerformanceMode, already in Custom mode");
-                                }
-                            }
-                        }
-
-                        // Restore AutoTDP settings before TDP so IsAutoTDPActive is cleared (or
-                        // re-armed on the manager's next tick) before the flat TDP value below.
-                        ApplyAutoTDPSettings(
-                            profileManager.CurrentProfile.AutoTDPEnabled,
-                            profileManager.CurrentProfile.AutoTDPTargetFPS,
-                            profileManager.CurrentProfile.AutoTDPMinTDP,
-                            profileManager.CurrentProfile.AutoTDPMaxTDP,
-                            profileManager.CurrentProfile.AutoTDPPauseWhenUnfocused);
-
-                        // Use SetProfileValue to ensure profile TDP takes precedence over in-flight widget messages
-                        // All settings applied atomically under lock to prevent cross-contamination
-                        performanceManager.TDP.SetProfileValue(profileManager.CurrentProfile.TDP);
-                        powerManager.CPUBoost.SetValue(profileManager.CurrentProfile.CPUBoost);
-                        powerManager.CPUEPP.SetValue(profileManager.CurrentProfile.CPUEPP);
-                        powerManager.MaxCPUState.SetValue(profileManager.CurrentProfile.MaxCPUState);
-                        powerManager.MinCPUState.SetValue(profileManager.CurrentProfile.MinCPUState);
+                        // A per-game profile with no saved mode starts in Custom; Global keeps its mode.
+                        ApplyPerformanceSettings(profileManager.CurrentProfile.Value, defaultToCustom: profileManager.CurrentProfile.Use);
                         profileManager.PerGameProfile.SetValue(profileManager.CurrentProfile.Use);
 
                         // Apply Legion controller settings from profile (both global and per-game)
@@ -503,47 +422,10 @@ namespace XboxGamingBarHelper
                     Logger.Info($"Enable per-game profile for {systemManager.RunningGame.Value.GameId}");
                     gameProfile.Use = true;
 
-                    // Apply saved LegionPerformanceMode from game profile, or default to Custom (255) for new profiles.
-                    // Previously this always switched to Custom, which overrode user-saved preset modes.
-                    if (legionManager != null)
-                    {
-                        int? savedMode = gameProfile.LegionPerformanceMode;
-                        if (savedMode.HasValue && savedMode.Value > 0)
-                        {
-                            if (legionManager.LegionPerformanceMode.Value != savedMode.Value)
-                            {
-                                Logger.Info($"Applying saved performance mode ({savedMode.Value}) for per-game profile '{systemManager.RunningGame.Value.GameId.Name}'");
-                                legionManager.LegionPerformanceMode.SetValue(savedMode.Value);
-                            }
-                            else
-                            {
-                                Logger.Debug($"Per-game profile already in saved mode ({savedMode.Value})");
-                            }
-                        }
-                        else if (legionManager.LegionPerformanceMode.Value != 255)
-                        {
-                            Logger.Info("Switching to Custom TDP mode for new per-game profile (no saved mode)");
-                            legionManager.LegionPerformanceMode.SetValue(255);
-                        }
-                    }
-
-                    // Set current profile and apply settings from per-game profile.
-                    // CurrentProfile_PropertyChanged is blocked by isApplyingProfile, so we
-                    // must apply settings explicitly here (same pattern as RestoreGlobalProfileSettings).
+                    // Make it the current profile and apply its settings (CurrentProfile_PropertyChanged
+                    // is blocked by isApplyingProfile). A new game profile with no saved mode starts in Custom.
                     profileManager.CurrentProfile.SetValue(gameProfile);
-
-                    ApplyAutoTDPSettings(
-                        gameProfile.AutoTDPEnabled,
-                        gameProfile.AutoTDPTargetFPS,
-                        gameProfile.AutoTDPMinTDP,
-                        gameProfile.AutoTDPMaxTDP,
-                        gameProfile.AutoTDPPauseWhenUnfocused);
-
-                    performanceManager.TDP.SetProfileValue(gameProfile.TDP);
-                    powerManager.CPUBoost.SetValue(gameProfile.CPUBoost);
-                    powerManager.CPUEPP.SetValue(gameProfile.CPUEPP);
-                    powerManager.MaxCPUState.SetValue(gameProfile.MaxCPUState);
-                    powerManager.MinCPUState.SetValue(gameProfile.MinCPUState);
+                    ApplyPerformanceSettings(gameProfile, defaultToCustom: true);
                 }
                 else
                 {
@@ -701,36 +583,7 @@ namespace XboxGamingBarHelper
 
                             // Apply all settings explicitly. CurrentProfile_PropertyChanged is blocked
                             // by isApplyingProfile, so we must apply here (same as PerGameProfile_PropertyChanged).
-                            if (legionManager != null)
-                            {
-                                int? savedMode = runningGameProfile.LegionPerformanceMode;
-                                if (savedMode.HasValue && savedMode.Value > 0)
-                                {
-                                    if (legionManager.LegionPerformanceMode.Value != savedMode.Value)
-                                    {
-                                        Logger.Info($"Applying saved performance mode ({savedMode.Value}) for game '{systemManager.RunningGame.Value.GameId.Name}'");
-                                        legionManager.LegionPerformanceMode.SetValue(savedMode.Value);
-                                    }
-                                }
-                                else if (legionManager.LegionPerformanceMode.Value != 255)
-                                {
-                                    Logger.Info("Switching to Custom TDP mode for game profile (no saved mode)");
-                                    legionManager.LegionPerformanceMode.SetValue(255);
-                                }
-                            }
-
-                            ApplyAutoTDPSettings(
-                                runningGameProfile.AutoTDPEnabled,
-                                runningGameProfile.AutoTDPTargetFPS,
-                                runningGameProfile.AutoTDPMinTDP,
-                                runningGameProfile.AutoTDPMaxTDP,
-                                runningGameProfile.AutoTDPPauseWhenUnfocused);
-
-                            performanceManager.TDP.SetProfileValue(runningGameProfile.TDP);
-                            powerManager.CPUBoost.SetValue(runningGameProfile.CPUBoost);
-                            powerManager.CPUEPP.SetValue(runningGameProfile.CPUEPP);
-                            powerManager.MaxCPUState.SetValue(runningGameProfile.MaxCPUState);
-                            powerManager.MinCPUState.SetValue(runningGameProfile.MinCPUState);
+                            ApplyPerformanceSettings(runningGameProfile, defaultToCustom: true);
 
                             if (legionManager != null)
                             {

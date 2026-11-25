@@ -1317,6 +1317,7 @@ namespace XboxGamingBarHelper
             //powerManager.GPUClockMin.PropertyChanged += GPUClock_PropertyChanged;
             //powerManager.GPUClockMax.PropertyChanged += GPUClock_PropertyChanged;
             profileManager.CurrentProfile.PropertyChanged += CurrentProfile_PropertyChanged;
+            SubscribeProfileSettingSaves(); // TDP limits, FPS limit, Windows power mode, overlay (1.9.7a)
 
             // Subscribe to Legion controller property changes to save to profile
             if (legionManager != null)

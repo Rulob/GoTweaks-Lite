@@ -660,5 +660,14 @@
         // helper returns to it while no game runs and switches back to Custom when one starts.
         // Saved by the helper. Widget -> helper.
         AutoTDPIdleMode,                // int (default 0)
+
+        // 1.9.7a: the helper owns all profiles. ProfileList (Get) returns the Profiles tab's data
+        // as JSON: { current, perGame, runningGame, profiles: [ { name, path, global, use, mode,
+        // tdp, tdpFast, tdpPeak, autoTdp, autoTdpTarget, autoTdpMin, autoTdpMax, boost, epp,
+        // minState, maxState, fps, osPower, overlay } ] }.
+        ProfileList,                    // string (JSON), helper -> widget on request
+        // One-time import of the widget's pre-1.9.7a profile copies: JSON array of
+        // { name ("Global" or game), tdp, tdpFast, tdpPeak, fps, osPower, overlay }. Widget -> helper.
+        MigrateWidgetProfiles,          // string (JSON)
     }
 }
