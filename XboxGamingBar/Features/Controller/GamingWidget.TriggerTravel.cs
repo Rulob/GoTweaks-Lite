@@ -45,7 +45,7 @@ namespace XboxGamingBar
     {
         private void LegionHairTriggers_Toggled(object sender, RoutedEventArgs e)
         {
-            if (isLoadingControllerProfile || isSwitchingControllerProfile)
+            if (isLoadingControllerProfile)
                 return;
 
             bool enabled = LegionHairTriggersToggle?.IsOn ?? false;

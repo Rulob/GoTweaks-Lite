@@ -665,9 +665,7 @@ namespace XboxGamingBar
 
         // Controller profile state
         private ControllerProfile globalControllerProfile = new ControllerProfile();
-        private ControllerProfile gameControllerProfile = new ControllerProfile();
         private bool isLoadingControllerProfile = false;
-        private bool isSwitchingControllerProfile = false;
         private DateTime lastProfileApplyTime = DateTime.MinValue; // Prevents duplicate sends from queued UI events
 
         // Debounces the controller-profile save/send for slider drags (gyro sensitivity/
@@ -866,6 +864,7 @@ namespace XboxGamingBar
             legionButtonM3 = new LegionButtonM3Property(LegionButtonM3ComboBox, this);
             legionButtonDesktop = new LegionButtonDesktopProperty(LegionButtonDesktopComboBox, this);
             legionButtonPage = new LegionButtonPageProperty(LegionButtonPageComboBox, this);
+            SubscribeButtonMappingHelperSync(); // the remap UI follows the helper's mappings (1.9.7a)
             legionVibrationMode = new LegionVibrationModeProperty(LegionVibrationModeComboBox, this);
 
             // Gyro properties
@@ -1125,25 +1124,18 @@ namespace XboxGamingBar
             // Initialize CPU State comboboxes with percentage values
             InitializeCPUStateComboBoxes();
 
-            // Performance profiles live in the helper (1.9.7a); the widget only shows them.
-            // Load global controller profile from storage
-            LoadControllerProfileFromStorage("Global", globalControllerProfile);
+            // Performance profiles and controller settings live in the helper (1.9.7a); the
+            // widget only shows them.
 
             UpdateActiveProfileIndicator();
 
             // Subscribe to power source changes
             PowerManager.PowerSupplyStatusChanged += PowerManager_PowerSourceChanged;
 
-            // Subscribe to checkbox changes to save settings
-            // Event handlers are now in XAML (ProfileSettingsCheckBox_Changed)
-
-            // IMPORTANT: Set loading flag BEFORE subscribing to events to prevent
-            // UI initialization events from triggering saves that overwrite stored values
-            isLoadingControllerProfile = true;
-
-            // Apply global controller profile to UI controls
-            // (ApplyControllerProfile will clear isLoadingControllerProfile when done)
-            ApplyControllerProfile(globalControllerProfile);
+            // Controller settings are device-wide and owned by the helper (1.9.7a): the bound
+            // controls follow its values on sync, and the back-button remap UI is rebuilt from
+            // its mappings (LegionButtonMapping_PropertyChanged).
+            isLoadingControllerProfile = false;
 
             // Subscribe to per-game profile toggle changes
             PerGameProfileToggle.Toggled += PerGameProfileToggle_Changed;
@@ -2320,6 +2312,7 @@ namespace XboxGamingBar
                 SendQuickMetricsEnabledToHelper();
                 SendScreenSaverEnabledToHelper();
                 MigrateWidgetProfilesToHelperOnce(); // one-time hand-over of the old widget profile copies (1.9.7a)
+                _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, MigrateControllerSettingsToHelperOnce); // same for the controller settings
                 // AutoTDP's SPPT/FPPT boosts live on the Custom card's sliders (widget-owned).
                 _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => SendAutoTDPBoostsToHelper(force: true));
                 // Without this, the helper's ControllerHotkeyMonitor only learns the
@@ -2352,11 +2345,6 @@ namespace XboxGamingBar
                     Logger.Info("[PIPE] Inside dispatcher - calling UpdateProfileDisplay()");
                     UpdateProfileDisplay();
                     RefreshLegionEnhancedRemapUi();
-
-                    // Recover from the cold-start race: ApplyControllerProfile fires during
-                    // widget constructor before App.IsConnected, so its Send* calls drop
-                    // into a not-yet-connected pipe. Re-push now that the pipe is up.
-                    ResendActiveControllerProfileToHelper();
 
                     Logger.Info("[PIPE] Inside dispatcher - post-sync UI updates complete");
                 });

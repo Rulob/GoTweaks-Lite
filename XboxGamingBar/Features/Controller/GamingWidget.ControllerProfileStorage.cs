@@ -43,93 +43,6 @@ namespace XboxGamingBar
 {
     public sealed partial class GamingWidget
     {
-        private void SaveControllerProfileToStorage(string profileName, ControllerProfile profile)
-        {
-            // Never save to "No game detected" profile
-            if (profileName.IndexOf("No game detected", StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                Logger.Warn($"Attempted to save controller profile with invalid name: {profileName}, skipping");
-                return;
-            }
-
-            var settings = ApplicationData.Current.LocalSettings;
-            var container = settings.CreateContainer($"ControllerProfile_{profileName}", ApplicationDataCreateDisposition.Always);
-
-            // Button mappings (serialized as JSON)
-            var y1Json = profile.ButtonY1.ToJson();
-            var y2Json = profile.ButtonY2.ToJson();
-            var desktopJson = profile.ButtonDesktop.ToJson();
-            container.Values["ButtonY1"] = y1Json;
-            container.Values["ButtonY2"] = y2Json;
-            container.Values["ButtonY3"] = profile.ButtonY3.ToJson();
-            container.Values["ButtonM1"] = profile.ButtonM1.ToJson();
-            container.Values["ButtonM2"] = profile.ButtonM2.ToJson();
-            container.Values["ButtonM3"] = profile.ButtonM3.ToJson();
-            container.Values["ButtonDesktop"] = desktopJson;
-            container.Values["ButtonPage"] = profile.ButtonPage.ToJson();
-            Logger.Info($"SaveControllerProfile: {profileName} ButtonY1={y1Json}, ButtonY2={y2Json}, ButtonDesktop={desktopJson}");
-            container.Values["VibrationLevel"] = profile.VibrationLevel;
-            container.Values["VibrationMode"] = profile.VibrationMode;
-
-            // Gyro settings
-            container.Values["GyroTarget"] = profile.GyroTarget;
-            container.Values["GyroSensitivityX"] = profile.GyroSensitivityX;
-            container.Values["GyroSensitivityY"] = profile.GyroSensitivityY;
-            container.Values["GyroInvertX"] = profile.GyroInvertX;
-            container.Values["GyroInvertY"] = profile.GyroInvertY;
-            container.Values["GyroMappingType"] = profile.GyroMappingType;
-            container.Values["GyroActivationMode"] = profile.GyroActivationMode;
-            container.Values["GyroActivationButton"] = profile.GyroActivationButton;
-
-            // Advanced gyro settings
-            container.Values["GyroDeadzone"] = profile.GyroDeadzone;
-
-            // Stick deadzones
-            container.Values["LeftStickDeadzone"] = profile.LeftStickDeadzone;
-            container.Values["RightStickDeadzone"] = profile.RightStickDeadzone;
-
-            // Trigger travel
-            container.Values["LeftTriggerStart"] = profile.LeftTriggerStart;
-            container.Values["LeftTriggerEnd"] = profile.LeftTriggerEnd;
-            container.Values["RightTriggerStart"] = profile.RightTriggerStart;
-            container.Values["RightTriggerEnd"] = profile.RightTriggerEnd;
-            container.Values["HairTriggers"] = profile.HairTriggers;
-
-            // Joystick as mouse
-            container.Values["JoystickAsMouseMode"] = profile.JoystickAsMouseMode;
-            container.Values["JoystickMouseSens"] = profile.JoystickMouseSens;
-
-            // Gamepad button mappings (serialize dictionary as JSON)
-            if (profile.GamepadButtonMappings != null && profile.GamepadButtonMappings.Count > 0)
-            {
-                var gamepadMappingsJson = SerializeGamepadButtonMappings(profile.GamepadButtonMappings);
-                container.Values["GamepadButtonMappings"] = gamepadMappingsJson;
-            }
-            else
-            {
-                container.Values["GamepadButtonMappings"] = "";
-            }
-
-            // Desktop Controls preset
-            container.Values["DesktopControlsEnabled"] = profile.DesktopControlsEnabled;
-
-            // Lighting
-            container.Values["LightMode"] = profile.LightMode;
-            container.Values["LightColorR"] = profile.LightColorR;
-            container.Values["LightColorG"] = profile.LightColorG;
-            container.Values["LightColorB"] = profile.LightColorB;
-            container.Values["LightSpeed"] = profile.LightSpeed;
-            container.Values["LightBrightness"] = profile.LightBrightness;
-            container.Values["PowerLight"] = profile.PowerLight;
-
-            // Store the game exe path for game profiles (used for loading icons)
-            if (profileName.StartsWith("Game_") && !string.IsNullOrEmpty(currentGameExePath))
-            {
-                container.Values["GameExePath"] = currentGameExePath;
-            }
-
-            Logger.Info($"Saved controller profile: {profileName}, LightMode={profile.LightMode}, Color=#{profile.LightColorR:X2}{profile.LightColorG:X2}{profile.LightColorB:X2}, Brightness={profile.LightBrightness}");
-        }
 
         private ButtonMapping LoadButtonMapping(ApplicationDataContainer container, string key)
         {
@@ -372,7 +285,7 @@ namespace XboxGamingBar
             UpdateButtonGamepadComboControls(buttonName);
 
             // Update the profile and send command
-            if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+            if (!isLoadingControllerProfile)
             {
                 ControllerSettingChanged(typeCombo, null);
             }
@@ -583,7 +496,7 @@ namespace XboxGamingBar
                 UpdateGamepadComboActionTags(buttonName, GetStoredGamepadComboActions(buttonName));
             }
 
-            if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+            if (!isLoadingControllerProfile)
             {
                 ControllerSettingChanged(null, null);
             }
@@ -627,7 +540,7 @@ namespace XboxGamingBar
             }
 
             UpdateButtonGamepadComboControls(buttonName);
-            if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+            if (!isLoadingControllerProfile)
             {
                 ControllerSettingChanged(modeCombo, null);
             }
@@ -658,7 +571,7 @@ namespace XboxGamingBar
                 SetStoredGamepadComboActions(buttonName, actions);
                 UpdateGamepadComboActionTags(buttonName, actions);
 
-                if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+                if (!isLoadingControllerProfile)
                 {
                     ControllerSettingChanged(addCombo, null);
                 }
@@ -680,7 +593,7 @@ namespace XboxGamingBar
             }
 
             SetStoredButtonTurbo(buttonName, turboCheck.IsChecked == true);
-            if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+            if (!isLoadingControllerProfile)
             {
                 ControllerSettingChanged(turboCheck, null);
             }
@@ -693,7 +606,7 @@ namespace XboxGamingBar
             SetStoredGamepadComboActions(buttonName, actions);
             UpdateGamepadComboActionTags(buttonName, actions);
 
-            if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+            if (!isLoadingControllerProfile)
             {
                 ControllerSettingChanged(null, null);
             }
@@ -845,7 +758,7 @@ namespace XboxGamingBar
                 UpdateKeyboardKeyTags(buttonName, keys);
 
                 // Trigger profile save and command send
-                if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+                if (!isLoadingControllerProfile)
                 {
                     ControllerSettingChanged(keyCombo, null);
                 }
@@ -918,7 +831,7 @@ namespace XboxGamingBar
             UpdateKeyboardKeyTags(buttonName, keys);
 
             // Trigger profile save and command send
-            if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+            if (!isLoadingControllerProfile)
             {
                 ControllerSettingChanged(null, null);
             }
@@ -1538,7 +1451,9 @@ namespace XboxGamingBar
             // Update slider value displays immediately - only the save/send is debounced
             UpdateControllerSliderDisplays(sender);
 
-            if (isLoadingControllerProfile || isSwitchingControllerProfile || isUnloading || isApplyingHelperUpdate)
+            // Also until the first helper sync is in: the UI still shows defaults before it, and
+            // the sends below include every button.
+            if (isLoadingControllerProfile || isUnloading || isApplyingHelperUpdate || isInitialSync)
                 return;
             if ((DateTime.Now - lastProfileApplyTime).TotalMilliseconds < 2000)
                 return;
@@ -1567,19 +1482,19 @@ namespace XboxGamingBar
 
         private void ApplyControllerSettingChange(object sender)
         {
-            // Don't save during profile loading, switching, widget unloading, or helper sync
-            if (isLoadingControllerProfile || isSwitchingControllerProfile || isUnloading || isApplyingHelperUpdate)
+            // Don't send during a programmatic UI fill, widget unloading, or helper sync
+            // Also until the first helper sync is in: the UI still shows defaults before it, and
+            // the sends below include every button.
+            if (isLoadingControllerProfile || isUnloading || isApplyingHelperUpdate || isInitialSync)
                 return;
 
             // Skip if a profile was just applied (prevents duplicate sends from queued UI events)
             if ((DateTime.Now - lastProfileApplyTime).TotalMilliseconds < 2000)
                 return;
 
-            // Get current profile from UI
+            // Read the settings from the UI and send them; the helper saves them (device-wide).
             ControllerProfile profile;
-            // Save to global controller profile
             globalControllerProfile = GetCurrentControllerProfileFromUI();
-            SaveControllerProfileToStorage("Global", globalControllerProfile);
             profile = globalControllerProfile;
 
             // Send button mappings to helper
@@ -1648,33 +1563,6 @@ namespace XboxGamingBar
             catch (Exception ex)
             {
                 Logger.Error($"Error sending button mappings: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Re-pushes the currently active controller profile (button mappings, controller
-        /// settings, lighting) to the helper. Called from OnPipeConnectedAsync to recover
-        /// from the cold-start race where ApplyControllerProfile fires during widget
-        /// constructor before App.IsConnected becomes true — those early sends silently
-        /// drop into a not-yet-connected pipe and the helper never learns the user's
-        /// saved button remaps / gyro / vibration / triggers settings until the next
-        /// manual interaction.
-        /// </summary>
-        internal void ResendActiveControllerProfileToHelper()
-        {
-            try
-            {
-                var profile = globalControllerProfile;
-                if (profile == null) return;
-
-                Logger.Info("Re-pushing active controller profile to helper after pipe connect (recovery from cold-start race)");
-                SendButtonMappingsToHelper(profile, force: true);
-                SendControllerSettingsToHelper(profile);
-                SendLightingToHelper(profile);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"ResendActiveControllerProfileToHelper failed: {ex.Message}");
             }
         }
 

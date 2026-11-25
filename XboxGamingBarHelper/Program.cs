@@ -1532,6 +1532,8 @@ namespace XboxGamingBarHelper
                 try
                 {
                     RestoreGlobalProfileSettings();
+                    // Controller settings are device-wide: applied once here, not per profile.
+                    if (legionManager != null) ApplyLegionControllerSettingsFromProfile();
                 }
                 finally
                 {

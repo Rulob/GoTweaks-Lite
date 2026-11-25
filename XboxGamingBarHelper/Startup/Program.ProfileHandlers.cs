@@ -92,27 +92,58 @@ namespace XboxGamingBarHelper
             }
         }
 
-        // Routes a setting save to CurrentProfile (per-game capture) when saveToProfile is true,
-        // else to GlobalProfile (treat as device-wide). Caller supplies a setter action for each
-        // target; the target's own setter handles the equality check and debounced Save().
+        // Routes a setting save to CurrentProfile (the active profile) when saveToProfile is true,
+        // else to the Global profile (device-wide). The caller supplies the setter; the profile
+        // setters handle the equality check and the debounced Save().
         private static void RouteProfileSave(bool saveToProfile, string settingName,
-            Action<Profile.GameProfileProperty> onCurrent, Action<Shared.Data.GameProfile> onGlobal)
+            Action<Profile.GameProfileProperty> edit)
         {
             if (saveToProfile)
             {
                 Logger.Info($"Saving {settingName} to profile {profileManager.CurrentProfile.GameId.Name}");
-                onCurrent(profileManager.CurrentProfile);
+                edit(profileManager.CurrentProfile);
             }
             else
             {
-                Logger.Info($"Saving {settingName} to global (per-game capture disabled)");
-                onGlobal(profileManager.GlobalProfile);
+                Logger.Info($"Saving {settingName} to the Global profile (device-wide)");
+                SaveToGlobalProfile(edit);
             }
         }
 
+        /// <summary>
+        /// Writes a device-wide setting into the Global profile. Profiles are value copies: when
+        /// Global is the active profile, CurrentProfile holds its own copy, and editing only the
+        /// GlobalProfile field let CurrentProfile's next save (e.g. a TDP change) overwrite the
+        /// change with its stale copy. So the live copy is edited when Global is active, else a
+        /// wrapper around the (refreshed) GlobalProfile, and both end up on the same values.
+        /// </summary>
+        private static void SaveToGlobalProfile(Action<Profile.GameProfileProperty> edit)
+        {
+            if (profileManager.CurrentProfile.IsGlobalProfile)
+            {
+                edit(profileManager.CurrentProfile);
+                profileManager.GlobalProfile = profileManager.CurrentProfile.Value;
+            }
+            else
+            {
+                profileManager.RefreshGlobalProfile();
+                var global = new Profile.GameProfileProperty(profileManager.GlobalProfile, profileManager);
+                edit(global);
+                profileManager.GlobalProfile = global.Value;
+            }
+        }
+
+        /// <summary>
+        /// Applies the controller settings (button remaps, gyro, deadzones, triggers, joystick
+        /// mouse, vibration, lighting) at startup. They are device-wide since 1.9.7a: saved in
+        /// the Global profile (see the ProfileSaveFlagsState controller flags) and no longer
+        /// re-applied on game profile switches, where a game profile's empty controller fields
+        /// used to reset the gyro to its defaults.
+        /// </summary>
         private static void ApplyLegionControllerSettingsFromProfile()
         {
-            var profile = profileManager.CurrentProfile;
+            profileManager.RefreshGlobalProfile();
+            var profile = profileManager.GlobalProfile;
             var profileName = profile.GameId.Name;
 
             Logger.Info($"Applying Legion controller settings from profile: {profileName}");
@@ -341,12 +372,6 @@ namespace XboxGamingBarHelper
 
             ApplyPerformanceSettings(profileManager.GlobalProfile, defaultToCustom: false);
             profileManager.PerGameProfile.SetValue(false);
-
-            // Apply Legion controller settings from global profile
-            if (legionManager != null)
-            {
-                ApplyLegionControllerSettingsFromProfile();
-            }
         }
 
         private static void CurrentProfile_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -372,12 +397,6 @@ namespace XboxGamingBarHelper
                         // A per-game profile with no saved mode starts in Custom; Global keeps its mode.
                         ApplyPerformanceSettings(profileManager.CurrentProfile.Value, defaultToCustom: profileManager.CurrentProfile.Use);
                         profileManager.PerGameProfile.SetValue(profileManager.CurrentProfile.Use);
-
-                        // Apply Legion controller settings from profile (both global and per-game)
-                        if (legionManager != null)
-                        {
-                            ApplyLegionControllerSettingsFromProfile();
-                        }
                     }
                     finally
                     {
@@ -502,8 +521,7 @@ namespace XboxGamingBarHelper
             // (and the per-game TDP to remain whatever was saved before). Pre-flag baseline:
             // always wrote to CurrentProfile regardless of flag.
             RouteProfileSave(ProfileSaveFlagsState.TDP, "TDP",
-                cur => cur.TDP = performanceManager.TDP,
-                glo => glo.TDP = performanceManager.TDP);
+                cur => cur.TDP = performanceManager.TDP);
         }
 
         /// <summary>
@@ -584,11 +602,6 @@ namespace XboxGamingBarHelper
                             // Apply all settings explicitly. CurrentProfile_PropertyChanged is blocked
                             // by isApplyingProfile, so we must apply here (same as PerGameProfile_PropertyChanged).
                             ApplyPerformanceSettings(runningGameProfile, defaultToCustom: true);
-
-                            if (legionManager != null)
-                            {
-                                ApplyLegionControllerSettingsFromProfile();
-                            }
 
                             Logger.Info($"Applied per-game profile settings for {systemManager.RunningGame.Value.GameId.Name}: TDP={runningGameProfile.TDP}");
                         }

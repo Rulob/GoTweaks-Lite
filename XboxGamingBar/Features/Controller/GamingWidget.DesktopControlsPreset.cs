@@ -45,7 +45,7 @@ namespace XboxGamingBar
     {
         private void LegionDesktopControls_Toggled(object sender, RoutedEventArgs e)
         {
-            if (isLoadingControllerProfile || isSwitchingControllerProfile)
+            if (isLoadingControllerProfile)
                 return;
 
             // Skip if a profile was just applied (prevents duplicate sends from queued UI events)
@@ -79,12 +79,10 @@ namespace XboxGamingBar
 
             Logger.Info($"Desktop Controls toggled: {enabled}");
 
-            // Save the updated profile
-            if (!isLoadingControllerProfile && !isSwitchingControllerProfile)
+            // Keep the cached controller state current (the helper saves the setting itself)
+            if (!isLoadingControllerProfile)
             {
                 globalControllerProfile = GetCurrentControllerProfileFromUI();
-                SaveControllerProfileToStorage("Global", globalControllerProfile);
-                Logger.Info("Saved Desktop Controls state to global profile");
             }
         }
 

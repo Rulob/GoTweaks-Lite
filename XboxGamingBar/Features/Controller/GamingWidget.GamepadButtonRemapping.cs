@@ -87,9 +87,9 @@ namespace XboxGamingBar
 
         private void SaveAndSendGamepadMappings()
         {
-            // Don't save during profile loading - we're just applying the profile, not modifying it
-            // The profile will be fully applied and any saves will happen after isLoadingControllerProfile is cleared
-            if (isLoadingControllerProfile)
+            // Not during a programmatic UI fill, nor before the first helper sync (the UI still shows
+            // defaults then, and this sends every button).
+            if (isLoadingControllerProfile || isInitialSync)
             {
                 // Skip sending if this is a duplicate call during profile loading
                 // (the main send will happen via SendButtonMappingsToHelper at the end of ApplyControllerProfile)
@@ -107,7 +107,6 @@ namespace XboxGamingBar
             // Get current profile
             ControllerProfile currentProfile;
             globalControllerProfile = GetCurrentControllerProfileFromUI();
-            SaveControllerProfileToStorage("Global", globalControllerProfile);
             currentProfile = globalControllerProfile;
 
             // Send to helper

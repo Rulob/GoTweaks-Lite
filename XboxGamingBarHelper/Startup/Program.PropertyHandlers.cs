@@ -52,12 +52,8 @@ namespace XboxGamingBarHelper
                 return;
             }
 
-            // TEST [ProfileSaveFlags-CPUState]: With ProfileSaveCPUState unchecked, change
-            // Min/Max CPU State sliders in-game. Verify the change goes to GlobalProfile, not
-            // the per-game profile. Pre-flag baseline: always wrote to CurrentProfile.
             RouteProfileSave(ProfileSaveFlagsState.CPUState, "CPUState",
-                cur => { cur.MaxCPUState = powerManager.MaxCPUState.Value; cur.MinCPUState = powerManager.MinCPUState.Value; },
-                glo => { glo.MaxCPUState = powerManager.MaxCPUState.Value; glo.MinCPUState = powerManager.MinCPUState.Value; });
+                cur => { cur.MaxCPUState = powerManager.MaxCPUState.Value; cur.MinCPUState = powerManager.MinCPUState.Value; });
         }
 
         private static void SystemManager_ResumeFromSleep(object sender)
@@ -111,8 +107,7 @@ namespace XboxGamingBarHelper
             // CPU Boost in-game. Verify the change goes to GlobalProfile, not the per-game
             // profile. Pre-flag baseline: always wrote to CurrentProfile.
             RouteProfileSave(ProfileSaveFlagsState.CPUBoost, "CPUBoost",
-                cur => cur.CPUBoost = powerManager.CPUBoost,
-                glo => glo.CPUBoost = powerManager.CPUBoost);
+                cur => cur.CPUBoost = powerManager.CPUBoost);
         }
 
         private static void CPUEPP_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -135,8 +130,7 @@ namespace XboxGamingBarHelper
             // in-game. Verify the change goes to GlobalProfile, not the per-game profile.
             // Pre-flag baseline: always wrote to CurrentProfile.
             RouteProfileSave(ProfileSaveFlagsState.CPUEPP, "CPUEPP",
-                cur => cur.CPUEPP = powerManager.CPUEPP,
-                glo => glo.CPUEPP = powerManager.CPUEPP);
+                cur => cur.CPUEPP = powerManager.CPUEPP);
         }
 
     }
