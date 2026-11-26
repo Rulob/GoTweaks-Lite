@@ -159,6 +159,14 @@ namespace XboxGamingBarHelper.Core
         /// </summary>
         public void SetExtraButtons(uint extraBits) => _extraButtonBits = extraBits;
 
+        // Standard buttons (XInput bit layout) as the Legion controller's own HID reports give
+        // them (1.9.8c). OR-ed with XInput, so the combos also work when XInput can't see the
+        // controller (D-Input mode, Steam Input holding it, XInput unavailable).
+        private volatile int _hidButtons = 0;
+
+        /// <summary>Feed the standard-button state read from the Legion HID reports.</summary>
+        public void SetHidButtons(ushort buttons) => _hidButtons = buttons;
+
         public ControllerHotkeyMonitor()
         {
             // Try to load XInput - prefer 1.4 (Windows 8+), fall back to 9.1.0 (Vista+)
@@ -192,8 +200,8 @@ namespace XboxGamingBarHelper.Core
         {
             if (XInputGetState == null)
             {
-                Logger.Error("ControllerHotkeyMonitor: Cannot start - XInput not available");
-                return;
+                // Still run: the Legion HID reports feed the buttons (SetHidButtons).
+                Logger.Warn("ControllerHotkeyMonitor: XInput not available - using the Legion HID reports only");
             }
 
             if (_running)
@@ -237,7 +245,7 @@ namespace XboxGamingBarHelper.Core
 
                     // Poll all 4 possible controller slots and process input from any with button activity
                     // This handles cases where the emulated pad is on a different slot than the real controller
-                    for (uint i = 0; i < 4; i++)
+                    for (uint i = 0; XInputGetState != null && i < 4; i++)
                     {
                         uint result = XInputGetState(i, ref state);
 
@@ -267,6 +275,7 @@ namespace XboxGamingBarHelper.Core
                     // back up (timer reset) without firing. Each slot was also processed on its own
                     // against one shared "last buttons", so an idle second pad could reset a combo
                     // held on the real one.
+                    combinedXInput |= (ushort)_hidButtons;
                     if (combinedXInput != 0 || _lastButtons != 0)
                     {
                         ProcessButtonState(combinedXInput);

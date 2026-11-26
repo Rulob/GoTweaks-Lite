@@ -212,6 +212,17 @@ namespace XboxGamingBarHelper
         /// </summary>
         private static void OnLegionButtonEdgeForHotkeys(object sender, Labs.LegionButtonEdgeEventArgs e)
         {
+            // Standard buttons: feed the View/Menu combos straight from the controller's HID
+            // reports (1.9.8c), so they don't depend on XInput seeing the controller.
+            ushort standardBit = LegionButtonToXInputBit(e.Button);
+            if (standardBit != 0)
+            {
+                if (e.Pressed) _legionStandardBits |= standardBit;
+                else _legionStandardBits &= (ushort)~standardBit;
+                controllerHotkeyMonitor?.SetHidButtons(_legionStandardBits);
+                return;
+            }
+
             uint bit = LegionButtonToComboBit(e.Button);
             if (bit == 0) return;
             if (e.Pressed) _legionExtraBits |= bit;
@@ -220,6 +231,31 @@ namespace XboxGamingBarHelper
             // Debug-level trace of paddle edges reaching the combo bridge (kept for future
             // diagnosis; not logged at INFO to avoid noise on every paddle press).
             Logger.Debug($"ControllerHotkey: paddle {e.Button} {(e.Pressed ? "down" : "up")} -> bit=0x{bit:X}, extraBits=0x{_legionExtraBits:X}");
+        }
+
+        private static ushort _legionStandardBits = 0;
+
+        /// <summary>The XInput bit of a standard button (0 for paddles, triggers and the rest).</summary>
+        private static ushort LegionButtonToXInputBit(Labs.LegionInputButton b)
+        {
+            switch (b)
+            {
+                case Labs.LegionInputButton.A: return 0x1000;
+                case Labs.LegionInputButton.B: return 0x2000;
+                case Labs.LegionInputButton.X: return 0x4000;
+                case Labs.LegionInputButton.Y: return 0x8000;
+                case Labs.LegionInputButton.DpadUp: return 0x0001;
+                case Labs.LegionInputButton.DpadDown: return 0x0002;
+                case Labs.LegionInputButton.DpadLeft: return 0x0004;
+                case Labs.LegionInputButton.DpadRight: return 0x0008;
+                case Labs.LegionInputButton.Start: return 0x0010;  // Menu
+                case Labs.LegionInputButton.Back: return 0x0020;   // View
+                case Labs.LegionInputButton.LeftThumb: return 0x0040;
+                case Labs.LegionInputButton.RightThumb: return 0x0080;
+                case Labs.LegionInputButton.LeftShoulder: return 0x0100;
+                case Labs.LegionInputButton.RightShoulder: return 0x0200;
+                default: return 0;
+            }
         }
 
         private static uint LegionButtonToComboBit(Labs.LegionInputButton b)
@@ -476,6 +512,7 @@ namespace XboxGamingBarHelper
                 Logger.Info($"Controller hotkey config applied - View+ABXY: A={controllerHotkeyMonitor.ViewAEnabled}, B={controllerHotkeyMonitor.ViewBEnabled}, X={controllerHotkeyMonitor.ViewXEnabled}, Y={controllerHotkeyMonitor.ViewYEnabled}");
 
                 SyncControllerHotkeyMonitorRunState();
+                Logger.Info($"Controller hotkey monitor running: {controllerHotkeyMonitor.IsRunning}");
             }
             catch (Exception ex)
             {
