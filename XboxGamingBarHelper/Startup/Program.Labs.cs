@@ -270,12 +270,11 @@ namespace XboxGamingBarHelper
                 Logger.Info("Exported Q-learning model");
             }
 
-            // 4. Export helper settings (from LocalCache/settings.json)
-            var localCachePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Packages", PackageConstants.PackageFamilyName, "LocalCache"
-            );
-            var helperSettingsPath = Path.Combine(localCachePath, "settings.json");
+            // 4. Export helper settings. The live file is LocalState\settings.json; the old
+            // LocalCache copy is only used when that one doesn't exist.
+            var helperSettingsPath = LocalSettingsHelper.SettingsFilePath;
+            if (string.IsNullOrEmpty(helperSettingsPath) || !File.Exists(helperSettingsPath))
+                helperSettingsPath = LocalSettingsHelper.LegacySettingsFilePath;
             if (File.Exists(helperSettingsPath))
             {
                 var destPath = Path.Combine(exportPath, "helper_settings.json");
@@ -390,12 +389,12 @@ namespace XboxGamingBarHelper
             {
                 try
                 {
-                    var localCachePath = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                        "Packages", PackageConstants.PackageFamilyName, "LocalCache"
-                    );
-                    Directory.CreateDirectory(localCachePath);
-                    var destPath = Path.Combine(localCachePath, "settings.json");
+                    // Write the live file (LocalState). The helper reads it at its next start, so
+                    // the helper has to restart before these settings take effect.
+                    var destPath = LocalSettingsHelper.SettingsFilePath ?? LocalSettingsHelper.LegacySettingsFilePath;
+                    var destDir = Path.GetDirectoryName(destPath);
+                    if (!string.IsNullOrEmpty(destDir))
+                        Directory.CreateDirectory(destDir);
                     File.Copy(srcHelperSettings, destPath, true);
                     importedCount++;
                     summary.AppendLine("✓ Imported helper settings");

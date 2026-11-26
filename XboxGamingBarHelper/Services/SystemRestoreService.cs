@@ -385,6 +385,40 @@ namespace XboxGamingBarHelper.Services
                 results.AppendLine($"✗ Failed to remove scheduled task: {ex.Message}");
             }
 
+            RestoreOriginalSystemSettings(results, systemManager, includeDAService: true);
+
+            results.AppendLine();
+            results.AppendLine("Uninstall preparation complete.");
+            results.AppendLine("You can now uninstall the app from Windows Settings.");
+
+            string resultText = results.ToString();
+            Logger.Info(resultText);
+
+            return resultText;
+        }
+
+        /// <summary>
+        /// "Reset all settings" (1.9.7d): puts back the Windows settings GoTweaks changed, like
+        /// Prepare for Uninstall, but keeps the scheduled task and leaves Legion Space's DAService
+        /// alone (re-enabling it would make it fight GoTweaks for the controller and TDP).
+        /// </summary>
+        public static string RestoreForSettingsReset(SystemManager systemManager)
+        {
+            Initialize();
+            var results = new System.Text.StringBuilder();
+            RestoreOriginalSystemSettings(results, systemManager, includeDAService: false);
+            string resultText = results.ToString();
+            Logger.Info("Settings reset - Windows settings restored:\n" + resultText);
+            return resultText;
+        }
+
+        /// <summary>
+        /// Puts back every Windows setting GoTweaks saved an original value for (CPU boost, EPP,
+        /// CPU states, OS power mode, power button, display and sleep timeouts), re-enables the
+        /// touchscreen and gives Game Bar's device-maker slot back. DAService only when asked.
+        /// </summary>
+        private static void RestoreOriginalSystemSettings(System.Text.StringBuilder results, SystemManager systemManager, bool includeDAService)
+        {
             // 1b. Give Game Bar's device-maker slot back (only acts if GoTweaks holds it)
             try
             {
@@ -446,7 +480,11 @@ namespace XboxGamingBarHelper.Services
             }
 
             // 4. Re-enable DAService if it was originally enabled
-            if (_restoreData.DAServiceSaved)
+            if (!includeDAService)
+            {
+                // Settings reset: leave Legion Space's service as it is.
+            }
+            else if (_restoreData.DAServiceSaved)
             {
                 if (_restoreData.OriginalDAServiceEnabled == true)
                 {
@@ -663,15 +701,6 @@ namespace XboxGamingBarHelper.Services
             {
                 results.AppendLine("- Sleep Timeout: No original value saved (was not modified)");
             }
-
-            results.AppendLine();
-            results.AppendLine("Uninstall preparation complete.");
-            results.AppendLine("You can now uninstall the app from Windows Settings.");
-
-            string resultText = results.ToString();
-            Logger.Info(resultText);
-
-            return resultText;
         }
 
         /// <summary>

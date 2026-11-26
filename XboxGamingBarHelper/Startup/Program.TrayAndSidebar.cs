@@ -132,7 +132,9 @@ namespace XboxGamingBarHelper
             });
         }
 
-        private static bool TryRestartHelperProcess()
+        /// <param name="beforeRelaunchScript">Optional PowerShell lines run after this process has
+        /// exited and before the new helper starts (Reset all settings deletes files there).</param>
+        private static bool TryRestartHelperProcess(string beforeRelaunchScript = null)
         {
             try
             {
@@ -155,6 +157,7 @@ while (Get-Process -Id $pidToWait -ErrorAction SilentlyContinue) {{
     Start-Sleep -Milliseconds 250
 }}
 
+{beforeRelaunchScript ?? string.Empty}
 try {{
     Start-Process -FilePath $exePath -ErrorAction Stop | Out-Null
 }}

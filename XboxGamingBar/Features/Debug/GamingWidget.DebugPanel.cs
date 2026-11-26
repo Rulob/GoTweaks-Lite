@@ -897,6 +897,130 @@ namespace XboxGamingBar
             }
         }
 
+        // Key in the exported widget settings JSON that lists the non-int number types.
+        private const string WidgetSettingsTypesKey = "__types";
+
+        // One-time migration markers that must stay set after a reset: the old copies they
+        // migrated are gone, so running the migrations again would only push stale defaults.
+        private static readonly string[] KeepAfterSettingsReset =
+        {
+            "ProfilesMigratedToHelper_197a",
+            "ControllerSettingsMigratedToHelper_197a",
+        };
+
+        /// <summary>
+        /// "Reset All Settings" (1.9.7d). The helper backs everything up to the Desktop, puts the
+        /// Windows and controller settings back to default and restarts with its settings deleted;
+        /// the widget then clears its own storage and closes, so it reopens with the defaults.
+        /// </summary>
+        private async void ResetAllSettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            const string ResetEverything = "Reset everything";
+            const string KeepGameProfiles = "Keep game profiles";
+            const string Cancel = "Cancel";
+            try
+            {
+                var dialog = new Windows.UI.Popups.MessageDialog(
+                    "This puts GoTweaks back to how it was on a fresh install:\n\n" +
+                    "• Every GoTweaks setting goes back to its default, including the Global profile, " +
+                    "the Quick Settings and overlay layouts, and the hotkeys\n" +
+                    "• The controller goes back to the default buttons, deadzones, triggers, vibration and lighting\n" +
+                    "• Windows settings GoTweaks changed are put back as they were before GoTweaks: power " +
+                    "button, screen and sleep timeouts, OS power mode, CPU boost and the Game Bar slot\n" +
+                    "• Game profiles are deleted, unless you choose \"Keep game profiles\"\n\n" +
+                    "A backup is saved to your Desktop first. \"Import All Data\" brings it back.\n\n" +
+                    "GoTweaks closes when it's done; reopen it from Game Bar.",
+                    "Reset All Settings");
+                dialog.Commands.Add(new Windows.UI.Popups.UICommand(ResetEverything));
+                dialog.Commands.Add(new Windows.UI.Popups.UICommand(KeepGameProfiles));
+                dialog.Commands.Add(new Windows.UI.Popups.UICommand(Cancel));
+                dialog.DefaultCommandIndex = 2;
+                dialog.CancelCommandIndex = 2;
+
+                var choice = await dialog.ShowAsync();
+                if (choice == null || choice.Label == Cancel) return;
+                bool keepGameProfiles = choice.Label == KeepGameProfiles;
+
+                if (!App.IsConnected)
+                {
+                    await new Windows.UI.Popups.MessageDialog(
+                        "The GoTweaks helper isn't running, so nothing was reset. Try again once it has started.",
+                        "Reset All Settings").ShowAsync();
+                    return;
+                }
+
+                ResetAllSettingsButton.IsEnabled = false;
+                ResetAllSettingsButton.Content = "Resetting...";
+
+                var message = new Windows.Foundation.Collections.ValueSet();
+                message.Add("Command", (int)Shared.Enums.Command.Set);
+                message.Add("Function", (int)Shared.Enums.Function.ResetAllSettings);
+                message.Add("Content", GatherWidgetSettingsForExport());
+                message.Add("KeepGameProfiles", keepGameProfiles);
+                var result = await App.SendMessageAsync(message);
+
+                string reply = null;
+                if (result != null && result.TryGetValue("Content", out object contentObj))
+                {
+                    reply = contentObj?.ToString();
+                }
+                if (string.IsNullOrEmpty(reply) || reply.StartsWith("Error:"))
+                {
+                    Logger.Error($"Reset all settings failed: {reply ?? "no reply"}");
+                    ResetAllSettingsButton.Content = "Reset All Settings";
+                    ResetAllSettingsButton.IsEnabled = true;
+                    await new Windows.UI.Popups.MessageDialog(
+                        "Nothing was reset.\n\n" + (reply ?? "The helper didn't answer."),
+                        "Reset All Settings").ShowAsync();
+                    return;
+                }
+
+                Logger.Info($"Reset all settings: helper backed up to {reply} and is restarting");
+                ClearWidgetSettingsForReset();
+
+                await new Windows.UI.Popups.MessageDialog(
+                    "GoTweaks has been reset. Your previous settings were saved to:\n" + reply + "\n\n" +
+                    "GoTweaks will now close. Reopen it from Game Bar in a few seconds, once the helper has restarted.",
+                    "Reset All Settings").ShowAsync();
+
+                // Clear once more in case anything was saved while the message was showing.
+                ClearWidgetSettingsForReset();
+                Application.Current.Exit();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Reset all settings failed: {ex.Message}");
+                ResetAllSettingsButton.Content = "Reset All Settings";
+                ResetAllSettingsButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Deletes every widget setting (values and containers) except the migration markers.
+        /// Leaves files alone: the helper's profiles and system restore data live in the same folder.
+        /// </summary>
+        private void ClearWidgetSettingsForReset()
+        {
+            try
+            {
+                var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
+                foreach (var name in settings.Containers.Keys.ToList())
+                {
+                    settings.DeleteContainer(name);
+                }
+                settings.Values.Clear();
+                foreach (var key in KeepAfterSettingsReset)
+                {
+                    settings.Values[key] = true;
+                }
+                Logger.Info("Reset all settings: widget settings cleared");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Reset all settings: clearing widget settings failed: {ex.Message}");
+            }
+        }
+
         /// <summary>
         /// Gathers widget LocalSettings as JSON for export.
         /// </summary>
@@ -907,37 +1031,32 @@ namespace XboxGamingBar
                 var settings = Windows.Storage.ApplicationData.Current.LocalSettings;
                 var jsonObj = new Windows.Data.Json.JsonObject();
 
-                // Export all known settings keys
-                var keysToExport = new[]
+                // Every widget setting (1.9.7d; it used to be a short list, which left the Quick
+                // Settings layout, overlay layout, hotkeys and more out of the backup). JSON numbers
+                // lose their type, so non-int numbers are listed in "__types" and restored as such.
+                var types = new Windows.Data.Json.JsonObject();
+                foreach (var pair in settings.Values)
                 {
-                    // OSD settings
-                    "OSDConfig", "OLEDConfig",
-                    // Profile settings
-                    "ProfileMatchByExe", "ProfileGamesOnly", "ProfileCustomGamePath", "ProfileBlacklistPaths",
-                    // Legion settings
-                    "LegionL_Action", "LegionL_Shortcut", "LegionL_Command",
-                    "LegionR_Action", "LegionR_Shortcut", "LegionR_Command",
-                    "LegionTouchpadVibration",
-                    // Controller hotkey settings
-                    "ControllerHotkeyConfig",
-                    // Display settings
-                    "RefreshRateProfile"
-                };
+                    string key = pair.Key;
+                    object value = pair.Value;
+                    if (key == WidgetSettingsTypesKey) continue;
 
-                foreach (var key in keysToExport)
-                {
-                    if (settings.Values.ContainsKey(key))
+                    if (value is bool boolVal)
+                        jsonObj[key] = Windows.Data.Json.JsonValue.CreateBooleanValue(boolVal);
+                    else if (value is string strVal)
+                        jsonObj[key] = Windows.Data.Json.JsonValue.CreateStringValue(strVal);
+                    else if (value is int intVal)
+                        jsonObj[key] = Windows.Data.Json.JsonValue.CreateNumberValue(intVal);
+                    else if (value is double || value is float || value is long || value is uint || value is byte || value is short)
                     {
-                        var value = settings.Values[key];
-                        if (value is bool boolVal)
-                            jsonObj[key] = Windows.Data.Json.JsonValue.CreateBooleanValue(boolVal);
-                        else if (value is int intVal)
-                            jsonObj[key] = Windows.Data.Json.JsonValue.CreateNumberValue(intVal);
-                        else if (value is double doubleVal)
-                            jsonObj[key] = Windows.Data.Json.JsonValue.CreateNumberValue(doubleVal);
-                        else if (value is string strVal)
-                            jsonObj[key] = Windows.Data.Json.JsonValue.CreateStringValue(strVal);
+                        jsonObj[key] = Windows.Data.Json.JsonValue.CreateNumberValue(Convert.ToDouble(value));
+                        types[key] = Windows.Data.Json.JsonValue.CreateStringValue(value.GetType().Name);
                     }
+                    // Other types (composite values, arrays) are skipped.
+                }
+                if (types.Count > 0)
+                {
+                    jsonObj[WidgetSettingsTypesKey] = types;
                 }
 
                 return jsonObj.Stringify();
@@ -964,9 +1083,18 @@ namespace XboxGamingBar
                     return;
                 }
 
+                // Number types saved by GatherWidgetSettingsForExport (older backups have none).
+                Windows.Data.Json.JsonObject types = null;
+                if (jsonObj.ContainsKey(WidgetSettingsTypesKey)
+                    && jsonObj[WidgetSettingsTypesKey].ValueType == Windows.Data.Json.JsonValueType.Object)
+                {
+                    types = jsonObj[WidgetSettingsTypesKey].GetObject();
+                }
+
                 int importedCount = 0;
                 foreach (var key in jsonObj.Keys)
                 {
+                    if (key == WidgetSettingsTypesKey) continue;
                     try
                     {
                         var jsonValue = jsonObj[key];
@@ -978,12 +1106,26 @@ namespace XboxGamingBar
                                 value = jsonValue.GetBoolean();
                                 break;
                             case Windows.Data.Json.JsonValueType.Number:
-                                // Try to preserve int vs double
                                 double numVal = jsonValue.GetNumber();
-                                if (numVal == Math.Floor(numVal) && numVal >= int.MinValue && numVal <= int.MaxValue)
-                                    value = (int)numVal;
-                                else
-                                    value = numVal;
+                                string typeName = types != null && types.ContainsKey(key)
+                                    && types[key].ValueType == Windows.Data.Json.JsonValueType.String
+                                    ? types[key].GetString() : null;
+                                switch (typeName)
+                                {
+                                    case "Double": value = numVal; break;
+                                    case "Single": value = (float)numVal; break;
+                                    case "Int64": value = (long)numVal; break;
+                                    case "UInt32": value = (uint)numVal; break;
+                                    case "Byte": value = (byte)numVal; break;
+                                    case "Int16": value = (short)numVal; break;
+                                    default:
+                                        // No type saved: int when whole, else double
+                                        if (numVal == Math.Floor(numVal) && numVal >= int.MinValue && numVal <= int.MaxValue)
+                                            value = (int)numVal;
+                                        else
+                                            value = numVal;
+                                        break;
+                                }
                                 break;
                             case Windows.Data.Json.JsonValueType.String:
                                 value = jsonValue.GetString();

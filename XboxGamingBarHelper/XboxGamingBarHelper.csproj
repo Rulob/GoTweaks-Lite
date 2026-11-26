@@ -511,6 +511,7 @@
     <Compile Include="Startup\Program.ProfileApply.cs" />
     <Compile Include="Startup\Program.HotkeyHandlers.cs" />
     <Compile Include="Startup\Program.Labs.cs" />
+    <Compile Include="Startup\Program.ResetSettings.cs" />
     <Compile Include="Startup\Program.MigrationStaging.cs" />
     <Compile Include="Startup\Program.ScreenSaver.cs" />
     <Compile Include="Startup\Program.HibernateTimeout.cs" />

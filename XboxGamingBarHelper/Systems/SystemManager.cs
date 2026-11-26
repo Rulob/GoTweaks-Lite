@@ -1077,6 +1077,9 @@ namespace XboxGamingBarHelper.Systems
         /// Sets Windows adaptive brightness (auto-adjust based on ambient light sensor).
         /// Note: This setting only has effect if the device has an ambient light sensor.
         /// </summary>
+        /// <summary>True while GoTweaks has adaptive brightness turned on.</summary>
+        public bool IsAdaptiveBrightnessRequested => adaptiveBrightnessRequested;
+
         public void SetAdaptiveBrightness(bool enabled)
         {
             adaptiveBrightnessRequested = enabled;

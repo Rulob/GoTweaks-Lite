@@ -119,19 +119,33 @@ namespace XboxGamingBarHelper.Settings
             }
         }
 
-        private static void TryMigrateLegacySettings(string localAppData, string newSettingsFolder)
+        /// <summary>The helper's settings file (LocalState\settings.json), or null if it couldn't be set up.</summary>
+        internal static string SettingsFilePath => _fallbackSettingsPath;
+
+        /// <summary>
+        /// The old LocalCache\settings.json. It is copied to LocalState when LocalState has none, so
+        /// "Reset all settings" deletes it too, or it would bring the old settings back.
+        /// </summary>
+        internal static string LegacySettingsFilePath
         {
-            try
+            get
             {
                 var legacyFolder = GetLocalCacheFromExePath()
                     ?? Path.Combine(
-                        localAppData,
+                        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                         "Packages",
                         Shared.Constants.PackageConstants.PackageFamilyName,
                         "LocalCache"
                     );
+                return Path.Combine(legacyFolder, "settings.json");
+            }
+        }
 
-                var legacyPath = Path.Combine(legacyFolder, "settings.json");
+        private static void TryMigrateLegacySettings(string localAppData, string newSettingsFolder)
+        {
+            try
+            {
+                var legacyPath = LegacySettingsFilePath;
                 if (!File.Exists(legacyPath))
                     return;
 

@@ -227,6 +227,15 @@ upstream, and why.
   both sticks at startup), the 80% Charge Limit, and the fan curve editor. The fan always follows
   the firmware curve of the TDP mode; in Custom, GoTweaks writes Lenovo's stock curve (the
   firmware doesn't expose its Balanced curve to copy).
+- **Reset All Settings** (Settings → Debug). Puts GoTweaks back to a fresh install: every setting,
+  the Global profile, the Quick Settings and overlay layouts and the hotkeys go back to their
+  defaults; the controller gets the default buttons, deadzones, triggers, vibration and lighting;
+  and the Windows settings GoTweaks changed (power button, screen and sleep timeouts, OS power
+  mode, CPU boost, Game Bar slot) are put back as they were before GoTweaks. Game profiles are
+  deleted unless you choose "Keep game profiles". Everything is backed up to a Desktop folder first
+  (Import All Data brings it back), then the helper restarts and GoTweaks closes.
+- **Export All Data now saves all widget settings** (it used to save a short list) and the
+  helper's real settings file (it was saving an old copy).
 ---
 
 ## 🧩 Features

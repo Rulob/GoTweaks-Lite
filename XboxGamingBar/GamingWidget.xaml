@@ -3063,6 +3063,15 @@
                                                 Click="ImportAllDataButton_Click"/>
                                     </Grid>
 
+                                    <!-- Reset All Settings: backs up to the Desktop, then puts every GoTweaks
+                                         setting back to default (GamingWidget.DebugPanel.cs, helper Program.ResetSettings.cs) -->
+                                    <Button x:Name="ResetAllSettingsButton"
+                                            Content="Reset All Settings"
+                                            HorizontalAlignment="Stretch"
+                                            Margin="0,8,0,0"
+                                            Style="{StaticResource StandaloneButtonStyle}"
+                                            Click="ResetAllSettingsButton_Click"/>
+
                                     <!-- Prepare for Uninstall Button -->
                                     <Button x:Name="PrepareForUninstallButton"
                                             Content="Prepare for Uninstall"

@@ -1155,6 +1155,11 @@ namespace XboxGamingBarHelper
                 {
                     response = HandleImportAllData(request);
                 }
+                // Reset all settings (Program.ResetSettings.cs)
+                else if (functionValue == (int)Function.ResetAllSettings)
+                {
+                    response = HandleResetAllSettings(request);
+                }
                 else
                 {
                     // Convert to ValueSet and use the existing property handling
