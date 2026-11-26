@@ -250,19 +250,7 @@ namespace XboxGamingBarHelper.Core
                             }
 
                             combinedXInput |= state.Gamepad.wButtons;
-
-                            // Process if state changed for this controller
-                            if (state.dwPacketNumber != lastPacketNumbers[i])
-                            {
-                                lastPacketNumbers[i] = state.dwPacketNumber;
-
-                                // Only process if there are actual button presses
-                                // This filters out virtual controllers with no input
-                                if (state.Gamepad.wButtons != 0 || _lastButtons != 0)
-                                {
-                                    ProcessButtonState(state.Gamepad.wButtons);
-                                }
-                            }
+                            lastPacketNumbers[i] = state.dwPacketNumber;
                         }
                         else if (result == ERROR_DEVICE_NOT_CONNECTED && wasConnected[i])
                         {
@@ -270,6 +258,18 @@ namespace XboxGamingBarHelper.Core
                             wasConnected[i] = false;
                             lastPacketNumbers[i] = 0;
                         }
+                    }
+
+                    // View+ABXY / Menu+D-Pad combos: evaluated every pass on the buttons of all
+                    // pads together (1.9.8b). They used to run only when a pad sent a new packet,
+                    // but a pad sends nothing while its state doesn't change, so the 50 ms hold was
+                    // never re-checked after the press: View+B went down (timer started) and came
+                    // back up (timer reset) without firing. Each slot was also processed on its own
+                    // against one shared "last buttons", so an idle second pad could reset a combo
+                    // held on the real one.
+                    if (combinedXInput != 0 || _lastButtons != 0)
+                    {
+                        ProcessButtonState(combinedXInput);
                     }
 
                     // Quick-tile combos are evaluated every pass (not gated on XInput packet

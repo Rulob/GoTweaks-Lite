@@ -470,18 +470,8 @@ namespace XboxGamingBar
         private volatile bool heartbeatWatcherReconnectInFlight = false;
 
         // Hotkey watchers for Xbox controller button combos
-        private XboxGameBarHotkeyWatcher hotkeyMenuA = null;
-        private XboxGameBarHotkeyWatcher hotkeyMenuB = null;
-        private XboxGameBarHotkeyWatcher hotkeyMenuX = null;
-        private XboxGameBarHotkeyWatcher hotkeyMenuY = null;
-        private XboxGameBarHotkeyWatcher hotkeyMenuDpadUp = null;
-        private XboxGameBarHotkeyWatcher hotkeyMenuDpadDown = null;
-        private XboxGameBarHotkeyWatcher hotkeyMenuDpadLeft = null;
-        private XboxGameBarHotkeyWatcher hotkeyMenuDpadRight = null;
         private bool isLoadingHotkeys = false;
         private bool isHotkeysExpanded = false;
-        private readonly Dictionary<string, DateTime> hotkeyLastExecuted = new Dictionary<string, DateTime>();
-        private const int HotkeyDebounceMs = 300; // Minimum ms between hotkey executions
         private int lastNonZeroOsdLevel = 1; // Track last OSD level for toggle (default to Basic)
 
         // Properties

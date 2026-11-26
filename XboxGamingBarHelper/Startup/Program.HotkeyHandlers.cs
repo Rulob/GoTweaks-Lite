@@ -405,7 +405,8 @@ namespace XboxGamingBarHelper
         }
 
         /// <summary>
-        /// Toggles OSD visibility by cycling through OSD levels (0=Off, 1, 2, 3)
+        /// Turns the overlay on or off (it has been on/off only since 1.9.7; this used to cycle
+        /// the old levels 0-3, so one press could leave it on at another level).
         /// </summary>
         private static void ToggleOSD()
         {
@@ -417,9 +418,8 @@ namespace XboxGamingBarHelper
                     return;
                 }
 
-                // Cycle through levels: 0 -> 1 -> 2 -> 3 -> 0
                 int currentLevel = onScreenDisplay.Value;
-                int newLevel = (currentLevel + 1) % 4;  // 0, 1, 2, 3, then back to 0
+                int newLevel = currentLevel > 0 ? 0 : 1;
 
                 onScreenDisplay.SetValue(newLevel);
                 Logger.Info($"ToggleOSD: OSD level changed from {currentLevel} to {newLevel}");

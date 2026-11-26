@@ -77,83 +77,17 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Initialize hotkey watchers for Xbox controller button combinations.
-        /// These work even when the widget is not visible.
+        /// Applies the default hotkey bindings on first run. The View+ABXY / Menu+D-Pad combos
+        /// themselves are detected and run only by the helper (ControllerHotkeyMonitor), which
+        /// polls the controller in games and on the desktop alike. Until 1.9.8b the widget also
+        /// watched the same combos through Game Bar, so a combo could run its action twice
+        /// (Toggle OSD turning the overlay on and straight back off).
         /// </summary>
         private void InitializeHotkeyWatchers()
         {
-            if (widget == null)
-            {
-                Logger.Warn("Cannot initialize hotkey watchers - widget is null");
-                return;
-            }
-
-            // Skip if already initialized
-            if (hotkeyMenuA != null)
-            {
-                Logger.Info("Hotkey watchers already initialized, skipping");
-                return;
-            }
-
-            // Apply default hotkey settings if not already set
             ApplyHotkeyDefaults();
-
-            try
-            {
-                // Menu+A
-                var keysA = new List<VirtualKey> { VirtualKey.GamepadView, VirtualKey.GamepadA };
-                hotkeyMenuA = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysA);
-                hotkeyMenuA.HotkeySetStateChanged += HotkeyMenuA_StateChanged;
-                hotkeyMenuA.Start();
-
-                // Menu+B
-                var keysB = new List<VirtualKey> { VirtualKey.GamepadView, VirtualKey.GamepadB };
-                hotkeyMenuB = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysB);
-                hotkeyMenuB.HotkeySetStateChanged += HotkeyMenuB_StateChanged;
-                hotkeyMenuB.Start();
-
-                // Menu+X
-                var keysX = new List<VirtualKey> { VirtualKey.GamepadView, VirtualKey.GamepadX };
-                hotkeyMenuX = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysX);
-                hotkeyMenuX.HotkeySetStateChanged += HotkeyMenuX_StateChanged;
-                hotkeyMenuX.Start();
-
-                // Menu+Y
-                var keysY = new List<VirtualKey> { VirtualKey.GamepadView, VirtualKey.GamepadY };
-                hotkeyMenuY = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysY);
-                hotkeyMenuY.HotkeySetStateChanged += HotkeyMenuY_StateChanged;
-                hotkeyMenuY.Start();
-
-                // Menu+DpadUp
-                var keysDpadUp = new List<VirtualKey> { VirtualKey.GamepadMenu, VirtualKey.GamepadDPadUp };
-                hotkeyMenuDpadUp = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysDpadUp);
-                hotkeyMenuDpadUp.HotkeySetStateChanged += HotkeyMenuDpadUp_StateChanged;
-                hotkeyMenuDpadUp.Start();
-
-                // Menu+DpadDown
-                var keysDpadDown = new List<VirtualKey> { VirtualKey.GamepadMenu, VirtualKey.GamepadDPadDown };
-                hotkeyMenuDpadDown = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysDpadDown);
-                hotkeyMenuDpadDown.HotkeySetStateChanged += HotkeyMenuDpadDown_StateChanged;
-                hotkeyMenuDpadDown.Start();
-
-                // Menu+DpadLeft
-                var keysDpadLeft = new List<VirtualKey> { VirtualKey.GamepadMenu, VirtualKey.GamepadDPadLeft };
-                hotkeyMenuDpadLeft = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysDpadLeft);
-                hotkeyMenuDpadLeft.HotkeySetStateChanged += HotkeyMenuDpadLeft_StateChanged;
-                hotkeyMenuDpadLeft.Start();
-
-                // Menu+DpadRight
-                var keysDpadRight = new List<VirtualKey> { VirtualKey.GamepadMenu, VirtualKey.GamepadDPadRight };
-                hotkeyMenuDpadRight = XboxGameBarHotkeyWatcher.CreateWatcher(widget, keysDpadRight);
-                hotkeyMenuDpadRight.HotkeySetStateChanged += HotkeyMenuDpadRight_StateChanged;
-                hotkeyMenuDpadRight.Start();
-
-                Logger.Info("Hotkey watchers initialized for View+A/B/X/Y and Menu+Dpad");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to initialize hotkey watchers: {ex.Message}");
-            }
+            // The defaults may have been written just now, after the connect-time send.
+            SendControllerHotkeyConfigToHelper();
         }
 
     }
