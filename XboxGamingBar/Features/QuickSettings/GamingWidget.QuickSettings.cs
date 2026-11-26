@@ -107,7 +107,7 @@ namespace XboxGamingBar
         private TileDefinition qsSelectedTileForMove = null;
 
         // Column count setting (3 or 4 columns)
-        private int qsColumnCount = 4;
+        private int qsColumnCount = 2;
 
         // Quick Metrics row state
         private bool quickMetricsEnabled = false;
@@ -146,6 +146,11 @@ namespace XboxGamingBar
             public string Unit { get; set; }
             public TextBlock ValueTextBlock { get; set; }
             public TextBlock LabelTextBlock { get; set; }
+            // 1.9.9a sensor bar: two star columns split the track (filled / rest).
+            public Grid BarTrack { get; set; }
+            public ColumnDefinition BarFillColumn { get; set; }
+            public ColumnDefinition BarRestColumn { get; set; }
+            public Border BarFill { get; set; }
         }
 
         // Map of metric type to display info
@@ -194,13 +199,14 @@ namespace XboxGamingBar
                 // stay neutral/white always.
                 var liveAccent = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
 
-                tileOffBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x35, 0x39, 0x3F)); // flat neutral gray
+                tileOffBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x1C, 0x1F, 0x25)); // card colour (1.9.9a)
                 tileOnBrush = tileOffBrush;
 
                 tileAccentBrush = new SolidColorBrush(liveAccent);
                 // Same muted gray as the state text's "off" color, so the bar is
                 // always present (every tile) but reads as grayed-out when inactive.
-                tileBarOffBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 136, 136, 136));
+                // 1.9.9a: the "bar" is now the icon chip; off = a dark chip with a light icon.
+                tileBarOffBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x2C, 0x31, 0x3A));
 
                 // Light purple - distinct from the accent, used only by action/trigger tiles.
                 tileActionBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 180, 150, 200));
@@ -479,9 +485,15 @@ namespace XboxGamingBar
                 var settings = ApplicationData.Current.LocalSettings;
 
                 // Load column count setting
+                // 1.9.9a: tiles default to two columns (row layout); switch once on upgrade.
+                if (!settings.Values.ContainsKey("QS_TwoColumnLayout_199a"))
+                {
+                    settings.Values["QS_TwoColumnLayout_199a"] = true;
+                    settings.Values["QS_ColumnCount"] = 2;
+                }
                 if (settings.Values.TryGetValue("QS_ColumnCount", out object colVal) && colVal is int colCount)
                 {
-                    qsColumnCount = Math.Max(3, Math.Min(5, colCount));  // Clamp to 3-5
+                    qsColumnCount = Math.Max(2, Math.Min(4, colCount));  // Clamp to 2-4
                 }
 
                 // Load Quick Metrics toggle state

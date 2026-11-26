@@ -959,46 +959,20 @@ namespace XboxGamingBar
             }
         }
 
-        /// <summary>
-        /// Set column count to 3
-        /// </summary>
-        private void ColumnCount3_Click(object sender, RoutedEventArgs e)
-        {
-            if (qsColumnCount != 3)
-            {
-                qsColumnCount = 3;
-                UpdateColumnButtonVisuals();
-                BuildSortableGrid();
-                RebuildQuickSettingsTiles();
-            }
-        }
+        // Tile columns (1.9.9a): 2, 3 or 4. Two columns lay each tile out as a row (icon chip,
+        // name and state side by side); 3 and 4 stack them (see CreateTileButton).
+        private void ColumnCount2_Click(object sender, RoutedEventArgs e) => SetTileColumnCount(2);
+        private void ColumnCount3_Click(object sender, RoutedEventArgs e) => SetTileColumnCount(3);
+        private void ColumnCount4_Click(object sender, RoutedEventArgs e) => SetTileColumnCount(4);
 
-        /// <summary>
-        /// Set column count to 4
-        /// </summary>
-        private void ColumnCount4_Click(object sender, RoutedEventArgs e)
+        private void SetTileColumnCount(int columns)
         {
-            if (qsColumnCount != 4)
-            {
-                qsColumnCount = 4;
-                UpdateColumnButtonVisuals();
-                BuildSortableGrid();
-                RebuildQuickSettingsTiles();
-            }
-        }
-
-        /// <summary>
-        /// Set column count to 5
-        /// </summary>
-        private void ColumnCount5_Click(object sender, RoutedEventArgs e)
-        {
-            if (qsColumnCount != 5)
-            {
-                qsColumnCount = 5;
-                UpdateColumnButtonVisuals();
-                BuildSortableGrid();
-                RebuildQuickSettingsTiles();
-            }
+            if (qsColumnCount == columns) return;
+            qsColumnCount = columns;
+            UpdateColumnButtonVisuals();
+            BuildSortableGrid();
+            RebuildQuickSettingsTiles();
+            UpdateQuickSettingsTileStates();
         }
 
         /// <summary>
@@ -1006,14 +980,28 @@ namespace XboxGamingBar
         /// </summary>
         private void UpdateColumnButtonVisuals()
         {
-            if (Column3Button == null || Column4Button == null || Column5Button == null) return;
+            if (Column2Button == null || Column3Button == null || Column4Button == null) return;
 
-            var selectedBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 120, 180));
-            var normalBrush = tileOffBrush ?? new SolidColorBrush(Windows.UI.Color.FromArgb(255, 26, 28, 30));
+            var accent = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+            var selectedBrush = new SolidColorBrush(accent);
+            var selectedText = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x0A, 0x1A, 0x24));
+            var normalText = new SolidColorBrush(Windows.UI.Colors.White);
 
-            Column3Button.Background = qsColumnCount == 3 ? selectedBrush : normalBrush;
-            Column4Button.Background = qsColumnCount == 4 ? selectedBrush : normalBrush;
-            Column5Button.Background = qsColumnCount == 5 ? selectedBrush : normalBrush;
+            var buttons = new[] { (Column2Button, 2), (Column3Button, 3), (Column4Button, 4) };
+            foreach (var (button, count) in buttons)
+            {
+                bool selected = qsColumnCount == count;
+                if (selected)
+                {
+                    button.Background = selectedBrush;
+                    button.Foreground = selectedText;
+                }
+                else
+                {
+                    button.ClearValue(Control.BackgroundProperty);
+                    button.Foreground = normalText;
+                }
+            }
         }
 
         /// <summary>

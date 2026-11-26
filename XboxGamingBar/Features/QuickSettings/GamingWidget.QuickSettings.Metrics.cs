@@ -192,6 +192,10 @@ namespace XboxGamingBar
         /// </summary>
         private void UpdateMetricsDisplay()
         {
+            var accent = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+            var green = Windows.UI.Color.FromArgb(255, 0x8C, 0xD8, 0x67);
+            var orange = Windows.UI.Color.FromArgb(255, 0xFF, 0xB3, 0x5C);
+            var red = Windows.UI.Color.FromArgb(255, 0xFF, 0x6B, 0x6B);
             foreach (var metricType in selectedMetrics)
             {
                 if (!metricDefinitions.TryGetValue(metricType, out var info) || info.ValueTextBlock == null)
@@ -199,6 +203,8 @@ namespace XboxGamingBar
 
                 string displayValue = "--";
                 string label = info.Label;
+                double? bar = null;          // 0..1, null = no bar
+                var barColor = accent;
 
                 switch (metricType)
                 {
@@ -206,9 +212,9 @@ namespace XboxGamingBar
                         if (currentMetricsData.TryGetValue("batteryDrain", out var drain))
                         {
                             if (drain > 0)
-                                displayValue = $"{drain:F1}W";
+                                { displayValue = $"{drain:F1}W"; bar = drain / 30.0; }
                             else if (drain < 0)
-                                displayValue = $"+{-drain:F1}W";
+                                { displayValue = $"+{-drain:F1}W"; bar = -drain / 30.0; barColor = green; }
                             else
                                 displayValue = "--W";
                         }
@@ -216,22 +222,22 @@ namespace XboxGamingBar
 
                     case MetricType.BatteryLevel:
                         if (currentMetricsData.TryGetValue("batteryLevel", out var level) && level >= 0)
-                            displayValue = $"{level:F0}%";
+                            { displayValue = $"{level:F0}%"; bar = level / 100.0; barColor = level <= 20 ? red : green; }
                         break;
 
                     case MetricType.CPUUsage:
                         if (currentMetricsData.TryGetValue("cpuUsage", out var cpuUse) && cpuUse >= 0)
-                            displayValue = $"{cpuUse:F0}%";
+                            { displayValue = $"{cpuUse:F0}%"; bar = cpuUse / 100.0; }
                         break;
 
                     case MetricType.GPUUsage:
                         if (currentMetricsData.TryGetValue("gpuUsage", out var gpuUse) && gpuUse >= 0)
-                            displayValue = $"{gpuUse:F0}%";
+                            { displayValue = $"{gpuUse:F0}%"; bar = gpuUse / 100.0; }
                         break;
 
                     case MetricType.SoCTemp:
                         if (currentMetricsData.TryGetValue("socTemp", out var socTemp) && socTemp > 0)
-                            displayValue = $"{socTemp:F0}°";
+                            { displayValue = $"{socTemp:F0}°C"; bar = socTemp / 100.0; barColor = socTemp >= 85 ? red : orange; }
                         break;
 
                     case MetricType.TDP:
@@ -247,7 +253,7 @@ namespace XboxGamingBar
 
                     case MetricType.MemoryUsage:
                         if (currentMetricsData.TryGetValue("memoryUsage", out var memUse) && memUse >= 0)
-                            displayValue = $"{memUse:F0}%";
+                            { displayValue = $"{memUse:F0}%"; bar = memUse / 100.0; }
                         break;
 
                     case MetricType.TimeRemaining:
@@ -275,6 +281,7 @@ namespace XboxGamingBar
                         break;
                 }
 
+                SetMetricBar(info, bar, barColor);
                 info.ValueTextBlock.Text = displayValue;
                 if (info.LabelTextBlock != null)
                     info.LabelTextBlock.Text = label;
@@ -475,7 +482,6 @@ namespace XboxGamingBar
             if (QuickMetricsGrid == null) return;
 
             QuickMetricsGrid.Children.Clear();
-            QuickMetricsGrid.ColumnDefinitions.Clear();
 
             if (selectedMetrics.Count == 0)
             {
@@ -483,93 +489,66 @@ namespace XboxGamingBar
                 return;
             }
 
-            // Create columns: one star column per metric, plus a thin Auto divider
-            // column between each pair of metrics.
-            for (int c = 0; c < selectedMetrics.Count; c++)
-            {
-                if (c > 0) QuickMetricsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                QuickMetricsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            }
-
-            // Icon color: the user's live Windows accent color (unlike the Quick tab
-            // tile subtitle/state text, which stay pinned to the default Windows
-            // blue - this one deliberately follows the user's actual accent).
-            var metricIconBrush = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"]);
-
-            // Create UI for each selected metric: icon centered on top, value
-            // centered below the icon, gray label centered below the value.
-            int gridCol = 0;
+            // 1.9.9a: one row per selected metric - label, a bar, the value.
+            var labelBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x9A, 0xA3, 0xAF));
+            var trackBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x2C, 0x31, 0x3A));
             for (int i = 0; i < selectedMetrics.Count; i++)
             {
                 var metricType = selectedMetrics[i];
                 if (!metricDefinitions.TryGetValue(metricType, out var info))
                     continue;
 
-                if (i > 0)
-                {
-                    // Thin gray divider between metrics.
-                    var divider = new Border
-                    {
-                        Width = 1,
-                        Background = new SolidColorBrush(Windows.UI.Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
-                        Margin = new Thickness(0, 2, 0, 2)
-                    };
-                    Grid.SetColumn(divider, gridCol);
-                    QuickMetricsGrid.Children.Add(divider);
-                    gridCol++;
-                }
+                var row = new Grid { ColumnSpacing = 10 };
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(78) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
 
-                // Create metric panel
-                var panel = new StackPanel
+                var labelText = new TextBlock
                 {
-                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Text = info.Label,
+                    FontSize = 13,
+                    FontWeight = Windows.UI.Text.FontWeights.SemiBold,
+                    Foreground = labelBrush,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    TextTrimming = TextTrimming.CharacterEllipsis
+                };
+                info.LabelTextBlock = labelText;
+                row.Children.Add(labelText);
+
+                var track = new Grid
+                {
+                    Height = 8,
+                    CornerRadius = new CornerRadius(4),
+                    Background = trackBrush,
                     VerticalAlignment = VerticalAlignment.Center
                 };
-
-                var icon = new FontIcon
-                {
-                    Glyph = info.Glyph,
-                    // Matches the Quick Settings tile icon font size (see
-                    // CreateTileButton in GamingWidget.QuickSettings.TileStates.cs).
-                    FontSize = 21,
-                    Foreground = metricIconBrush,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 0, 0, 3)
-                };
+                var fillColumn = new ColumnDefinition { Width = new GridLength(0, GridUnitType.Star) };
+                var restColumn = new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) };
+                track.ColumnDefinitions.Add(fillColumn);
+                track.ColumnDefinitions.Add(restColumn);
+                var fill = new Border { CornerRadius = new CornerRadius(4) };
+                track.Children.Add(fill);
+                Grid.SetColumn(track, 1);
+                row.Children.Add(track);
+                info.BarTrack = track;
+                info.BarFillColumn = fillColumn;
+                info.BarRestColumn = restColumn;
+                info.BarFill = fill;
 
                 var valueText = new TextBlock
                 {
                     Text = "--",
-                    // Matches the Quick Settings tile state/subtitle font size (see
-                    // CreateTileButton in GamingWidget.QuickSettings.TileStates.cs).
-                    FontSize = 12,
-                    FontWeight = Windows.UI.Text.FontWeights.SemiBold,
+                    FontSize = 15,
+                    FontWeight = Windows.UI.Text.FontWeights.Bold,
                     Foreground = new SolidColorBrush(Windows.UI.Colors.White),
-                    HorizontalAlignment = HorizontalAlignment.Center
+                    HorizontalAlignment = HorizontalAlignment.Right,
+                    VerticalAlignment = VerticalAlignment.Center
                 };
                 info.ValueTextBlock = valueText;
+                Grid.SetColumn(valueText, 2);
+                row.Children.Add(valueText);
 
-                // Label
-                var labelText = new TextBlock
-                {
-                    Text = info.Label,
-                    // Matches the Quick Settings tile name/title font size (see
-                    // CreateTileButton in GamingWidget.QuickSettings.TileStates.cs).
-                    FontSize = qsColumnCount == 4 ? 13 : 14,
-                    Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 136, 136, 136)), // #888888
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 2, 0, 0)
-                };
-                info.LabelTextBlock = labelText;
-
-                panel.Children.Add(icon);
-                panel.Children.Add(valueText);
-                panel.Children.Add(labelText);
-
-                Grid.SetColumn(panel, gridCol);
-                QuickMetricsGrid.Children.Add(panel);
-
-                gridCol++;
+                QuickMetricsGrid.Children.Add(row);
             }
 
             // Show the row if we have metrics
@@ -578,17 +557,33 @@ namespace XboxGamingBar
                 QuickMetricsRow.Visibility = Visibility.Visible;
             }
 
-            // The TextBlocks just created above are seeded with "--" and only get repainted
-            // by the next helper push (UpdateQuickMetrics). If a push isn't imminent (e.g. we
-            // just came back from an instance recreation, or the user is mid-reorder), the row
-            // would sit on "--" for a while. Repaint immediately from already-cached data so
-            // there's no visible gap when we have it.
+            // Repaint immediately from already-cached data so there's no "--" gap until the
+            // next helper push.
             UpdateMetricsDisplay();
 
             // Also rebuild the reorder list
             RebuildMetricsReorderList();
         }
 
+        /// <summary>
+        /// Fills a metric's bar to <paramref name="fraction"/> (0 to 1) in <paramref name="color"/>,
+        /// or hides the bar when the metric has no scale (null), e.g. the TDP mode name or time.
+        /// </summary>
+        private static void SetMetricBar(MetricInfo info, double? fraction, Windows.UI.Color color)
+        {
+            if (info?.BarTrack == null) return;
+            if (!fraction.HasValue || double.IsNaN(fraction.Value))
+            {
+                info.BarTrack.Visibility = Visibility.Collapsed;
+                return;
+            }
+            double f = Math.Max(0, Math.Min(1, fraction.Value));
+            info.BarTrack.Visibility = Visibility.Visible;
+            info.BarFillColumn.Width = new GridLength(f, GridUnitType.Star);
+            info.BarRestColumn.Width = new GridLength(1 - f, GridUnitType.Star);
+            if (!(info.BarFill.Background is SolidColorBrush b) || b.Color != color)
+                info.BarFill.Background = new SolidColorBrush(color);
+        }
         /// <summary>
         /// Rebuild the metrics reorder list UI
         /// </summary>

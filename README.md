@@ -111,7 +111,14 @@ upstream, and why.
 - **Controller Mode (X-Input / D-Input)** — a Legion Space style switch for the Legion Go 2
   controllers, on the Legion tab and as an _Input Mode_ Quick Settings tile (see
   [Controller Mode](#-controller-mode-x-input--d-input)).
-- **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
+- **New look (1.9.9a).** A darker, controller-first design across every tab: icon tabs, bigger
+  buttons and rounded cards. The Quick tab opens with a power card (a dial showing the watts, the
+  firmware preset, or AutoTDP's live FPS; four TDP mode buttons; the Custom wattage; AutoTDP),
+  then the sensors as bars, then the tiles, now two per row with a coloured icon when on (3 or 4
+  per row is still in Customize). The Performance tab is now called Power, and its TDP mode and
+  Windows power mode use buttons instead of dropdowns, with FPS limit presets (30/40/45/60). The
+  Profiles tab opens with a Now playing card whose buttons change TDP, AutoTDP, FPS limit, the
+  overlay, the Windows power mode and CPU boost directly.- **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
   the whole install behind a small progress window (see [Installation](#-installation)).
 
 ### 🔧 Reliability fixes
@@ -227,7 +234,7 @@ upstream, and why.
   both sticks at startup), the 80% Charge Limit, and the fan curve editor. The fan always follows
   the firmware curve of the TDP mode; in Custom, GoTweaks writes Lenovo's stock curve (the
   firmware doesn't expose its Balanced curve to copy).
-- **Reset All Settings** (Settings → Debug). Puts GoTweaks' settings back to a fresh install:
+- **Reset All Settings** (System → Maintenance). Puts GoTweaks' settings back to a fresh install:
   every setting, the Global profile, the Quick Settings and overlay layouts and the hotkeys go
   back to their defaults, and the controller gets the default buttons, deadzones, triggers,
   vibration and lighting. Game profiles are deleted unless you choose "Keep game profiles".
@@ -265,7 +272,7 @@ A customizable dashboard of quick-access tiles for your most-used settings.
 - **Assign a controller button combo to any tile** — hold the combo (paddles included) to fire it
   hands-free
 - Custom keyboard-shortcut tiles you can add and remove
-- An optional built-in **brightness slider** and a live metrics row (CPU/GPU usage, SoC
+- An optional built-in **brightness slider** and live sensor bars (CPU/GPU usage, SoC
   temperature, TDP, memory, battery)
 - Device-specific tiles that appear when supported hardware is detected
 

@@ -24,25 +24,28 @@
 
         <!-- Win11 Theme Colors (promoted app-wide 2026-07-11 from the Performance-tab
              pilot checkpoint; matches the already-shipped Quick Settings tile palette) -->
-        <SolidColorBrush x:Key="PageBackgroundBrush" Color="#25282C"/>
-        <SolidColorBrush x:Key="CardBackgroundBrush" Color="#35393F"/>
-        <SolidColorBrush x:Key="CardBorderBrush" Color="#22FFFFFF"/>
-        <SolidColorBrush x:Key="ButtonBackground" Color="#3E434B"/>
-        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#484E58"/>
-        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#3A3F47"/>
-        <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="#2C3035"/>
-        <SolidColorBrush x:Key="ButtonBorderBrush" Color="#22FFFFFF"/>
-        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#33FFFFFF"/>
-        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#22FFFFFF"/>
-        <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#14FFFFFF"/>
-        <CornerRadius x:Key="ControlCornerRadius">8,8,8,8</CornerRadius>
+        <!-- 1.9.9a "Handheld Console" palette: darker page, borderless cards, 16 px corners -->
+        <SolidColorBrush x:Key="PageBackgroundBrush" Color="#121418"/>
+        <SolidColorBrush x:Key="CardBackgroundBrush" Color="#1C1F25"/>
+        <SolidColorBrush x:Key="CardBorderBrush" Color="#00FFFFFF"/>
+        <SolidColorBrush x:Key="CardInsetBrush" Color="#23272E"/>
+        <SolidColorBrush x:Key="MutedTextBrush" Color="#9AA3AF"/>
+        <SolidColorBrush x:Key="ButtonBackground" Color="#262A31"/>
+        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#2F343C"/>
+        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#22262C"/>
+        <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="#1A1D22"/>
+        <SolidColorBrush x:Key="ButtonBorderBrush" Color="#00FFFFFF"/>
+        <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="#22FFFFFF"/>
+        <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="#00FFFFFF"/>
+        <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="#00FFFFFF"/>
+        <CornerRadius x:Key="ControlCornerRadius">10,10,10,10</CornerRadius>
         <Thickness x:Key="ButtonPadding">15,10,15,11</Thickness>
 
         <!-- Card Style - Win11 -->
         <Style x:Key="CardStyle" TargetType="Border">
-            <Setter Property="CornerRadius" Value="10"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="Margin" Value="0,10,0,0"/>
+            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="Padding" Value="14"/>
+            <Setter Property="Margin" Value="0,12,0,0"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}"/>
             <Setter Property="BorderBrush" Value="{StaticResource CardBorderBrush}"/>
@@ -55,12 +58,14 @@
         <!-- Uses RadioButtons group which treats tabs as single navigable unit -->
         <Style x:Key="NavRadioButtonStyle" TargetType="RadioButton">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="#B9C0CC"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#9AA3AF"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="MinWidth" Value="0"/>
             <Setter Property="MinHeight" Value="0"/>
-            <Setter Property="Padding" Value="8,5,8,5"/>
+            <Setter Property="Width" Value="64"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="0"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="UseSystemFocusVisuals" Value="False"/>
@@ -119,29 +124,27 @@
                                     <VisualState x:Name="PointerFocused"/>
                                 </VisualStateGroup>
                             </VisualStateManager.VisualStateGroups>
+                            <!-- 1.9.9a: the selected tab gets a rounded raised background -->
+                            <Border x:Name="SelectionIndicator"
+                                    Background="#22262D"
+                                    CornerRadius="10"
+                                    Visibility="Collapsed"/>
                             <!-- Focus border with rounded corners -->
                             <Border x:Name="FocusBorder"
                                     BorderBrush="White"
                                     BorderThickness="2"
-                                    CornerRadius="6"
-                                    Margin="-2"
+                                    CornerRadius="10"
                                     Visibility="Collapsed"/>
                             <ContentPresenter x:Name="ContentPresenter"
                                               Content="{TemplateBinding Content}"
                                               ContentTemplate="{TemplateBinding ContentTemplate}"
                                               Foreground="{TemplateBinding Foreground}"
                                               Padding="{TemplateBinding Padding}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
                                               HorizontalContentAlignment="Center"
                                               VerticalContentAlignment="Center"
                                               AutomationProperties.AccessibilityView="Raw"/>
-                            <Border x:Name="SelectionIndicator"
-                                    Height="3"
-                                    Background="{StaticResource SystemAccentBrush}"
-                                    CornerRadius="1.5"
-                                    VerticalAlignment="Bottom"
-                                    HorizontalAlignment="Stretch"
-                                    Margin="6,0,6,2"
-                                    Visibility="Collapsed"/>
                         </Grid>
                     </ControlTemplate>
                 </Setter.Value>
@@ -150,10 +153,10 @@
 
         <!-- Card Title Style - Win11 -->
         <Style x:Key="CardTitleStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Margin" Value="0,0,0,2"/>
         </Style>
 
         <!-- Card Title Style - Compact Mode -->
@@ -163,9 +166,29 @@
 
         <!-- Card Caption Style - Win11 -->
         <Style x:Key="CardCaptionStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14"/>
-            <Setter Property="Foreground" Value="#B9C0CC"/>
-            <Setter Property="Margin" Value="0,4,0,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Foreground" Value="#9AA3AF"/>
+            <Setter Property="Margin" Value="0,1,0,0"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- Section label (1.9.9a): small spaced capitals above a group of cards -->
+        <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="CharacterSpacing" Value="80"/>
+            <Setter Property="Foreground" Value="#9AA3AF"/>
+            <Setter Property="Margin" Value="4,18,0,0"/>
+        </Style>
+
+        <!-- Icon chip (1.9.9a): the rounded square that holds a card's icon -->
+        <Style x:Key="IconChipStyle" TargetType="Border">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="CornerRadius" Value="9"/>
+            <Setter Property="Background" Value="#2C313A"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,12,0"/>
         </Style>
 
         <!-- Card Caption Style - Compact Mode -->
@@ -234,9 +257,10 @@
         <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="#33FFFFFF"/>
         <SolidColorBrush x:Key="ComboBoxBorderBrushPressed" Color="#33FFFFFF"/>
         <SolidColorBrush x:Key="ComboBoxBorderBrushFocused" Color="#33FFFFFF"/>
-        <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#35393F"/>
-        <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#35393F"/>
-        <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="#35393F"/>
+        <SolidColorBrush x:Key="ComboBoxBackground" Color="#262A31"/>
+        <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#2F343C"/>
+        <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="#22262C"/>
+        <SolidColorBrush x:Key="ComboBoxBackgroundFocused" Color="#262A31"/>
 
 
         <!-- Reusable high-visibility white focus-ring setters for gamepad navigation.
@@ -260,6 +284,38 @@
             <Setter Property="FocusVisualSecondaryBrush" Value="Transparent"/>
             <Setter Property="FocusVisualPrimaryThickness" Value="2"/>
             <Setter Property="FocusVisualMargin" Value="-3,-3,-3,-3"/>
+        </Style>
+
+        <!-- Segment button (1.9.9a): one option of a row of choices, 44 px tall. The selected one
+             gets the accent background and dark text in code. -->
+        <Style x:Key="QuickSegmentButtonStyle" TargetType="Button" BasedOn="{StaticResource StandaloneButtonStyle}">
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Padding" Value="2,0"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Profiles tab quick buttons (1.9.9a): a label over the current value -->
+        <Style x:Key="ProfileQuickButtonStyle" TargetType="Button" BasedOn="{StaticResource StandaloneButtonStyle}">
+            <Setter Property="MinHeight" Value="56"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="#23272E"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="ProfileQuickLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#9AA3AF"/>
+        </Style>
+        <Style x:Key="ProfileQuickValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
         </Style>
 
         <!-- Standalone ToggleButton Style - System style -->
@@ -454,14 +510,15 @@
 
         <!-- Section Header Style - Win11 -->
         <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="18"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{StaticResource SystemAccentBrush}"/>
-            <Setter Property="Margin" Value="0,20,0,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="CharacterSpacing" Value="80"/>
+            <Setter Property="Foreground" Value="#9AA3AF"/>
+            <Setter Property="Margin" Value="4,22,0,0"/>
         </Style>
 
         <!-- Quick Settings Tile Colors - Dark mode with sharp contrast -->
-        <SolidColorBrush x:Key="TileOffBackground" Color="#1A1C1E"/>
+        <SolidColorBrush x:Key="TileOffBackground" Color="#1C1F25"/>
         <SolidColorBrush x:Key="TileOnBackground" Color="#1A2E1F"/>
         <SolidColorBrush x:Key="TileActiveBackground" Color="#1A2530"/>
         <SolidColorBrush x:Key="TileTriggerBackground" Color="#252030"/>
@@ -475,7 +532,7 @@
         <!-- Rest: normal background, Focus: rest + white stroke, Press: 10% darker, Focus+Press: press + stroke, Inactive: 50% darker -->
         <Style x:Key="QuickSettingsTileStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource TileOffBackground}"/>
-            <Setter Property="BorderBrush" Value="#22FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#00FFFFFF"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="FontSize" Value="14"/>
@@ -591,16 +648,16 @@
             </Grid.RowDefinitions>
 
             <!-- Nav Bar Row -->
-            <Grid Grid.Row="0" Background="Transparent" Margin="4,0,4,0">
+            <Grid Grid.Row="0" Background="Transparent" Margin="12,10,12,6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- LT indicator -->
-                <Border Grid.Column="0" Background="#404040" CornerRadius="3" Padding="4,1" Margin="0,0,4,0" VerticalAlignment="Center">
-                    <TextBlock Text="LT" Foreground="#FFFFFF" FontSize="10" FontWeight="SemiBold"/>
+                <!-- LT indicator (1.9.9a: shoulder-shaped chip) -->
+                <Border Grid.Column="0" Background="#C5CBD3" CornerRadius="10,4,4,10" Padding="7,2" Margin="0,0,6,0" VerticalAlignment="Center">
+                    <TextBlock Text="LT" Foreground="#121418" FontSize="11" FontWeight="Bold"/>
                 </Border>
 
                 <!-- Navigation Tabs - StackPanel for proper horizontal XY navigation -->
@@ -610,18 +667,44 @@
                             Orientation="Horizontal"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
+                            Spacing="2"
                             XYFocusKeyboardNavigation="Disabled">
-                    <RadioButton x:Name="QuickNavItem" Content="Quick" Tag="Quick" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked"/>
-                    <RadioButton x:Name="PerformanceNavItem" Content="Performance" Tag="Performance" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked"/>
-                    <RadioButton x:Name="ProfilesNavItem" Content="Profiles" Tag="Game" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked"/>
-                    <RadioButton x:Name="LegionNavItem" Content="Legion" Tag="Legion" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Visibility="Collapsed" Checked="NavRadioButton_Checked"/>
-                    <RadioButton x:Name="SystemNavItem" Content="System" Tag="System" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked"/>
+                    <RadioButton x:Name="QuickNavItem" Tag="Quick" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked" AutomationProperties.Name="Quick">
+                        <StackPanel Spacing="3">
+                            <FontIcon Glyph="&#xECA5;" FontSize="18" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Quick" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="PerformanceNavItem" Tag="Performance" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked" AutomationProperties.Name="Power">
+                        <StackPanel Spacing="3">
+                            <FontIcon Glyph="&#xE945;" FontSize="18" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Power" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="ProfilesNavItem" Tag="Game" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked" AutomationProperties.Name="Profiles">
+                        <StackPanel Spacing="3">
+                            <FontIcon Glyph="&#xE77B;" FontSize="18" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Profiles" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="LegionNavItem" Tag="Legion" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Visibility="Collapsed" Checked="NavRadioButton_Checked" AutomationProperties.Name="Legion">
+                        <StackPanel Spacing="3">
+                            <FontIcon Glyph="&#xE7FC;" FontSize="18" HorizontalAlignment="Center"/>
+                            <TextBlock Text="Legion" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="SystemNavItem" Tag="System" Style="{StaticResource NavRadioButtonStyle}" GroupName="MainNav" Checked="NavRadioButton_Checked" AutomationProperties.Name="System">
+                        <StackPanel Spacing="3">
+                            <FontIcon Glyph="&#xE713;" FontSize="18" HorizontalAlignment="Center"/>
+                            <TextBlock Text="System" HorizontalAlignment="Center"/>
+                        </StackPanel>
+                    </RadioButton>
                 </StackPanel>
 
                 <!-- RT indicator and status dot -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
-                    <Border Background="#404040" CornerRadius="3" Padding="4,1" Margin="4,0,0,0" VerticalAlignment="Center">
-                        <TextBlock Text="RT" Foreground="#FFFFFF" FontSize="10" FontWeight="SemiBold"/>
+                    <Border Background="#C5CBD3" CornerRadius="4,10,10,4" Padding="7,2" Margin="6,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="RT" Foreground="#121418" FontSize="11" FontWeight="Bold"/>
                     </Border>
                     <!-- Helper Connection Status Indicator -->
                     <Border x:Name="HelperStatusIndicator"
@@ -654,7 +737,7 @@
             <Grid>
                 <ScrollViewer x:Name="QuickSettingsScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Visible"
                               BringIntoViewOnFocusChange="True">
-                    <StackPanel Padding="16,8,16,16">
+                    <StackPanel Padding="12,4,12,16">
 
                         <!-- Driver updates tile (Legion devices only, visible only when count > 0).
                              Helper pushes DriverUpdatesAvailable after its startup probe; the
@@ -737,30 +820,127 @@
                             </Grid>
                         </Button>
 
-                        <!-- Quick Metrics Row (compact stats display - dynamically populated) -->
-                        <Border x:Name="QuickMetricsRow"
-                                Background="#35393F"
-                                CornerRadius="12"
-                                Padding="4,9"
-                                Margin="0,0,0,8"
-                                BorderBrush="#22FFFFFF"
-                                BorderThickness="1"
-                                Visibility="Collapsed">
-                            <!-- Dynamic metrics grid - populated in code-behind -->
-                            <Grid x:Name="QuickMetricsGrid"/>
+                        <!-- 1.9.9a power card: TDP dial and mode, the four TDP modes, the Custom wattage and
+                             AutoTDP. It drives the Performance tab's own controls (TDPModeComboBox,
+                             CustomTDPSlowSlider, AutoTDPToggle, AutoTDPTargetFPSSlider), see
+                             GamingWidget.QuickPowerBoxes.cs. -->
+                        <Border x:Name="QuickPowerCard"
+                                Background="{StaticResource CardBackgroundBrush}"
+                                CornerRadius="16"
+                                Padding="16"
+                                Margin="0,0,0,12">
+                            <StackPanel Spacing="14">
+                                <Grid ColumnSpacing="16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Dial: a 270 degree track; the value arc is drawn in code -->
+                                    <Grid Width="104" Height="104" VerticalAlignment="Center">
+                                        <Path Data="M 19.47,84.53 A 46,46 0 1 1 84.53,84.53"
+                                              Stroke="#2C313A" StrokeThickness="10"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <Path x:Name="QuickTdpDialArc"
+                                              Stroke="{StaticResource SystemAccentBrush}" StrokeThickness="10"
+                                              StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,2,0,0">
+                                            <TextBlock x:Name="QuickTdpDialText" Text="--" FontSize="28" FontWeight="Bold"
+                                                       HorizontalAlignment="Center"/>
+                                            <FontIcon x:Name="QuickTdpDialIcon" Glyph="&#xEC49;" FontSize="28"
+                                                      HorizontalAlignment="Center" Margin="0,2,0,4" Visibility="Collapsed"/>
+                                            <TextBlock x:Name="QuickTdpDialUnit" Text="WATTS" FontSize="11" FontWeight="Bold"
+                                                       CharacterSpacing="60" Foreground="{StaticResource MutedTextBrush}"
+                                                       HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="TDP MODE" FontSize="12" FontWeight="Bold" CharacterSpacing="80"
+                                                   Foreground="{StaticResource MutedTextBrush}"/>
+                                        <TextBlock x:Name="QuickTdpModeValueText" Text="--" FontSize="24" FontWeight="Bold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="QuickTdpModeSubText" Text="" FontSize="13"
+                                                   Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid ColumnSpacing="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="QuickTdpModeQuiet" Grid.Column="0" Tag="0" Content="Quiet"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
+                                    <Button x:Name="QuickTdpModeBalanced" Grid.Column="1" Tag="1" Content="Balanced"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
+                                    <Button x:Name="QuickTdpModePerformance" Grid.Column="2" Tag="2" Content="Performance"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" FontSize="12" Click="QuickTdpModeOption_Click"/>
+                                    <Button x:Name="QuickTdpModeCustom" Grid.Column="3" Tag="3" Content="Custom"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
+                                </Grid>
+                                <!-- Custom wattage: shown in Custom while AutoTDP is off -->
+                                <StackPanel x:Name="QuickTdpCustomPanel" Spacing="2" Visibility="Collapsed">
+                                    <Grid>
+                                        <TextBlock Text="Custom TDP" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource MutedTextBrush}"/>
+                                        <TextBlock x:Name="QuickTdpValueText" Text="15 W" FontSize="13" FontWeight="Bold"
+                                                   HorizontalAlignment="Right"/>
+                                    </Grid>
+                                    <Slider x:Name="QuickTdpSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="5" Maximum="35" StepFrequency="1" SmallChange="1" Value="15"
+                                            ValueChanged="QuickTdpSlider_ValueChanged"/>
+                                </StackPanel>
+                                <!-- AutoTDP -->
+                                <Border Background="{StaticResource CardInsetBrush}" CornerRadius="12" Padding="14,10">
+                                    <StackPanel Spacing="4">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon Glyph="&#xE9F5;" FontSize="20" Foreground="#C5CBD3" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="AutoTDP" FontSize="15" FontWeight="Bold"/>
+                                                <TextBlock x:Name="QuickAutoTdpValueText" Text="Off" FontSize="12"
+                                                           Foreground="{StaticResource MutedTextBrush}"/>
+                                            </StackPanel>
+                                            <ToggleSwitch x:Name="QuickAutoTdpToggle" Grid.Column="2"
+                                                          Style="{StaticResource ModernToggleStyle}" Width="47"
+                                                          Toggled="QuickAutoTdpToggle_Toggled"/>
+                                        </Grid>
+                                        <StackPanel x:Name="QuickAutoTdpPanel" Visibility="Collapsed" Spacing="2" Margin="0,6,0,0">
+                                            <Grid>
+                                                <TextBlock Text="Target FPS" FontSize="13" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource MutedTextBrush}"/>
+                                                <TextBlock x:Name="QuickAutoTdpTargetText" Text="60 FPS" FontSize="13" FontWeight="Bold"
+                                                           HorizontalAlignment="Right"/>
+                                            </Grid>
+                                            <Slider x:Name="QuickAutoTdpTargetSlider"
+                                                    Style="{StaticResource ModernSliderStyle}"
+                                                    Minimum="30" Maximum="144" StepFrequency="5" SmallChange="5" Value="60"
+                                                    ValueChanged="QuickAutoTdpTargetSlider_ValueChanged"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </Border>
-
-                        <!-- Optional Built-in Display Brightness slider (hidden by default; -->
-                        <!-- revealed under Customize. Sits under the metrics row, or in its -->
-                        <!-- place when metrics are hidden. Background matches the metrics row; -->
-                        <!-- the slider itself uses the active system accent color by default. -->
+                        <!-- Live sensor bars (1.9.9a): one row per selected metric, built in code -->
+                        <Border x:Name="QuickMetricsRow"
+                                Background="{StaticResource CardBackgroundBrush}"
+                                CornerRadius="16"
+                                Padding="16,14"
+                                Margin="0,0,0,12"
+                                Visibility="Collapsed">
+                            <StackPanel x:Name="QuickMetricsGrid" Spacing="10"/>
+                        </Border>
+                        <!-- Optional built-in display brightness slider (hidden by default, revealed under Customize) -->
                         <Border x:Name="PanelBrightnessRow"
-                                Background="#35393F"
-                                CornerRadius="12"
-                                Padding="12,8"
-                                Margin="0,0,0,8"
-                                BorderBrush="#22FFFFFF"
-                                BorderThickness="1"
+                                Background="{StaticResource CardBackgroundBrush}"
+                                CornerRadius="16"
+                                Padding="16,8"
+                                Margin="0,0,0,12"
                                 Visibility="Collapsed">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -769,9 +949,9 @@
                                 </Grid.ColumnDefinitions>
                                 <FontIcon Grid.Column="0"
                                           Glyph="&#xE706;"
-                                          FontSize="16"
-                                          Foreground="#FFFFFF"
-                                          Margin="0,0,10,0"
+                                          FontSize="18"
+                                          Foreground="#C5CBD3"
+                                          Margin="0,0,12,0"
                                           VerticalAlignment="Center"/>
                                 <Slider x:Name="PanelBrightnessSlider"
                                         Grid.Column="1"
@@ -784,125 +964,6 @@
                                         VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
-
-                        <!-- TDP Mode and AutoTDP boxes: always shown above the tiles, half width each.
-                             The header shows the current state; tapping it expands the controls
-                             (GamingWidget.QuickPowerBoxes.cs drives the Performance tab controls). -->
-                        <Grid x:Name="QuickPowerBoxes" ColumnSpacing="8" Margin="0,0,0,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <!-- TDP Mode -->
-                            <Border Grid.Column="0" Background="#35393F" CornerRadius="12" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Top">
-                                <StackPanel>
-                                    <Button x:Name="QuickTdpModeHeaderButton"
-                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                            Background="Transparent" BorderThickness="0" Padding="12,8"
-                                            Click="QuickTdpModeHeaderButton_Click">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <FontIcon Grid.Column="0" Glyph="&#xE945;" FontSize="18"
-                                                      Foreground="{StaticResource SystemAccentBrush}"
-                                                      Margin="0,0,10,0" VerticalAlignment="Center"/>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock Text="TDP Mode" FontSize="12" Foreground="#888888"/>
-                                                <TextBlock x:Name="QuickTdpModeValueText" Text="--" FontSize="14"
-                                                           FontWeight="SemiBold" Foreground="White"
-                                                           TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                            <FontIcon x:Name="QuickTdpModeChevron" Grid.Column="2" Glyph="&#xE70D;"
-                                                      FontSize="12" Foreground="#B9C0CC" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Button>
-                                    <StackPanel x:Name="QuickTdpModePanel" Visibility="Collapsed" Padding="10,0,10,10" Spacing="6">
-                                        <Grid ColumnSpacing="6" RowSpacing="6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="Auto"/>
-                                            </Grid.RowDefinitions>
-                                            <Button x:Name="QuickTdpModeQuiet" Grid.Row="0" Grid.Column="0" Tag="0" Content="Quiet"
-                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
-                                            <Button x:Name="QuickTdpModeBalanced" Grid.Row="0" Grid.Column="1" Tag="1" Content="Balanced"
-                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
-                                            <Button x:Name="QuickTdpModePerformance" Grid.Row="1" Grid.Column="0" Tag="2" Content="Perf."
-                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
-                                            <Button x:Name="QuickTdpModeCustom" Grid.Row="1" Grid.Column="1" Tag="3" Content="Custom"
-                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
-                                        </Grid>
-                                        <Grid>
-                                            <TextBlock Text="TDP" FontSize="12" Foreground="#B9C0CC"/>
-                                            <TextBlock x:Name="QuickTdpValueText" Text="15 W" FontSize="12" Foreground="White"
-                                                       HorizontalAlignment="Right"/>
-                                        </Grid>
-                                        <Slider x:Name="QuickTdpSlider"
-                                                Style="{StaticResource ModernSliderStyle}"
-                                                Minimum="5" Maximum="35" StepFrequency="1" SmallChange="1" Value="15"
-                                                ValueChanged="QuickTdpSlider_ValueChanged"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- AutoTDP -->
-                            <Border Grid.Column="1" Background="#35393F" CornerRadius="12" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Top">
-                                <StackPanel>
-                                    <Button x:Name="QuickAutoTdpHeaderButton"
-                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                            Background="Transparent" BorderThickness="0" Padding="12,8"
-                                            Click="QuickAutoTdpHeaderButton_Click">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <FontIcon Grid.Column="0" Glyph="&#xE9F5;" FontSize="18"
-                                                      Foreground="{StaticResource SystemAccentBrush}"
-                                                      Margin="0,0,10,0" VerticalAlignment="Center"/>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                <TextBlock Text="AutoTDP" FontSize="12" Foreground="#888888"/>
-                                                <TextBlock x:Name="QuickAutoTdpValueText" Text="Off" FontSize="14"
-                                                           FontWeight="SemiBold" Foreground="White"
-                                                           TextTrimming="CharacterEllipsis"/>
-                                            </StackPanel>
-                                            <FontIcon x:Name="QuickAutoTdpChevron" Grid.Column="2" Glyph="&#xE70D;"
-                                                      FontSize="12" Foreground="#B9C0CC" VerticalAlignment="Center"/>
-                                        </Grid>
-                                    </Button>
-                                    <StackPanel x:Name="QuickAutoTdpPanel" Visibility="Collapsed" Padding="10,0,10,10" Spacing="6">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Enabled" FontSize="12" Foreground="#B9C0CC" VerticalAlignment="Center"/>
-                                            <ToggleSwitch x:Name="QuickAutoTdpToggle" Grid.Column="1"
-                                                          Style="{StaticResource ModernToggleStyle}" Width="47"
-                                                          Toggled="QuickAutoTdpToggle_Toggled"/>
-                                        </Grid>
-                                        <Grid>
-                                            <TextBlock Text="Target FPS" FontSize="12" Foreground="#B9C0CC"/>
-                                            <TextBlock x:Name="QuickAutoTdpTargetText" Text="60 FPS" FontSize="12" Foreground="White"
-                                                       HorizontalAlignment="Right"/>
-                                        </Grid>
-                                        <Slider x:Name="QuickAutoTdpTargetSlider"
-                                                Style="{StaticResource ModernSliderStyle}"
-                                                Minimum="30" Maximum="144" StepFrequency="5" SmallChange="5" Value="60"
-                                                ValueChanged="QuickAutoTdpTargetSlider_ValueChanged"/>
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
                         <!-- Dynamic Tiles Container - tiles generated in code-behind -->
                         <StackPanel x:Name="QuickSettingsTilesContainer"/>
 
@@ -938,6 +999,11 @@
                                                Foreground="#B9C0CC"
                                                FontSize="13"/>
                                     <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Button x:Name="Column2Button"
+                                                Content="2"
+                                                MinWidth="40"
+                                                Margin="0,0,4,0"
+                                                Click="ColumnCount2_Click"/>
                                         <Button x:Name="Column3Button"
                                                 Content="3"
                                                 MinWidth="40"
@@ -946,12 +1012,7 @@
                                         <Button x:Name="Column4Button"
                                                 Content="4"
                                                 MinWidth="40"
-                                                Margin="0,0,4,0"
                                                 Click="ColumnCount4_Click"/>
-                                        <Button x:Name="Column5Button"
-                                                Content="5"
-                                                MinWidth="40"
-                                                Click="ColumnCount5_Click"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -1129,22 +1190,28 @@
                 <!-- PERFORMANCE TAB -->
                 <ScrollViewer x:Name="PerformanceScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Collapsed"
                               BringIntoViewOnFocusChange="True">
-                    <StackPanel Padding="16,8,16,16">
+                    <StackPanel Padding="12,4,12,16">
+
+                        <TextBlock Text="OVERLAY &amp; FPS" Style="{StaticResource SectionLabelStyle}" Margin="4,8,0,0"/>
 
                         <!-- Performance Overlay Card -->
                         <Border Style="{StaticResource CardStyle}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock Text="Performance Overlay" Style="{StaticResource CardTitleStyle}"/>
-                                    <TextBlock Text="FPS, CPU/GPU, RAM/VRAM, Battery, Time"
+                                <Border Style="{StaticResource IconChipStyle}">
+                                    <FontIcon Glyph="&#xE7B3;" FontSize="18" Foreground="#C5CBD3"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="Performance overlay" Style="{StaticResource CardTitleStyle}"/>
+                                    <TextBlock Text="FPS, CPU/GPU, RAM/VRAM, battery, time"
                                                Style="{StaticResource CardCaptionStyle}"/>
                                 </StackPanel>
                                 <ToggleSwitch x:Name="PerformanceOverlayToggle"
-                                              Grid.Column="1"
+                                              Grid.Column="2"
                                               Style="{StaticResource ModernToggleStyle}"
                                               Width="52"
                                               Toggled="PerformanceOverlayToggle_Toggled"
@@ -1164,41 +1231,62 @@
                             <StackPanel>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="FPS Limit" Style="{StaticResource CardTitleStyle}"/>
+                                    <Border Style="{StaticResource IconChipStyle}">
+                                        <FontIcon Glyph="&#xE916;" FontSize="18" Foreground="#C5CBD3"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="FPS limit" Style="{StaticResource CardTitleStyle}"/>
                                         <TextBlock x:Name="FPSLimitCaption"
                                                    Text=""
                                                    Style="{StaticResource CardCaptionStyle}"
                                                    Visibility="Collapsed"/>
                                     </StackPanel>
                                     <TextBlock x:Name="FPSLimitValue"
-                                               Grid.Column="1"
+                                               Grid.Column="2"
                                                Text=""
-                                               FontSize="14"
-                                               Foreground="#4CAF50"
-                                               FontWeight="SemiBold"
+                                               FontSize="15"
+                                               Foreground="{StaticResource SystemAccentBrush}"
+                                               FontWeight="Bold"
                                                VerticalAlignment="Center"
                                                Margin="0,0,12,0"
                                                Visibility="{x:Bind FPSLimitToggle.IsOn, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"/>
                                     <ToggleSwitch x:Name="FPSLimitToggle"
-                                                  Grid.Column="2"
+                                                  Grid.Column="3"
                                                   Style="{StaticResource ModernToggleStyle}"
                                                   IsEnabled="False" Width="52"/>
                                 </Grid>
-                                <Slider x:Name="FPSLimitSlider"
-                                        Style="{StaticResource ModernSliderStyle}"
-                                        Minimum="15" Maximum="144"
-                                        StepFrequency="1"
-                                        TickFrequency="15"
-                                        TickPlacement="Outside"
-                                        SnapsTo="StepValues"
-                                        Visibility="{x:Bind FPSLimitToggle.IsOn, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"/>
+                                <StackPanel Spacing="6" Margin="0,12,0,0"
+                                            Visibility="{x:Bind FPSLimitToggle.IsOn, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <!-- 1.9.9a presets: set the slider below, which does the sending -->
+                                    <Grid x:Name="FPSLimitPresetGrid" ColumnSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Button Grid.Column="0" Tag="30" Content="30" Style="{StaticResource QuickSegmentButtonStyle}" Height="40" Click="FPSLimitPreset_Click"/>
+                                        <Button Grid.Column="1" Tag="40" Content="40" Style="{StaticResource QuickSegmentButtonStyle}" Height="40" Click="FPSLimitPreset_Click"/>
+                                        <Button Grid.Column="2" Tag="45" Content="45" Style="{StaticResource QuickSegmentButtonStyle}" Height="40" Click="FPSLimitPreset_Click"/>
+                                        <Button Grid.Column="3" Tag="60" Content="60" Style="{StaticResource QuickSegmentButtonStyle}" Height="40" Click="FPSLimitPreset_Click"/>
+                                    </Grid>
+                                    <Slider x:Name="FPSLimitSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="15" Maximum="144"
+                                            StepFrequency="1"
+                                            TickFrequency="15"
+                                            TickPlacement="Outside"
+                                            SnapsTo="StepValues"/>
+                                </StackPanel>
                             </StackPanel>
                         </Border>
+
+                        <TextBlock Text="POWER" Style="{StaticResource SectionLabelStyle}"/>
 
                         <!-- AutoTDP Card (Legion only; visible regardless of TDP Mode). Continuously
                              adjusts TDP to hit a target FPS instead of a fixed wattage. Enabling it
@@ -1207,16 +1295,20 @@
                             <StackPanel Spacing="10">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <Border Style="{StaticResource IconChipStyle}">
+                                        <FontIcon Glyph="&#xE9F5;" FontSize="18" Foreground="#C5CBD3"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                         <TextBlock Text="AutoTDP" Style="{StaticResource CardTitleStyle}"/>
-                                        <TextBlock Text="Adjusts TDP live to hit a target FPS"
+                                        <TextBlock Text="Adjusts power live to hit a target FPS"
                                                    Style="{StaticResource CardCaptionStyle}"/>
                                     </StackPanel>
                                     <ToggleSwitch x:Name="AutoTDPToggle"
-                                                  Grid.Column="1"
+                                                  Grid.Column="2"
                                                   Style="{StaticResource ModernToggleStyle}"
                                                   Width="52"
                                                   Toggled="AutoTDPToggle_Toggled"/>
@@ -1225,11 +1317,27 @@
                                 <StackPanel x:Name="AutoTDPSettingsPanel"
                                             Spacing="10"
                                             Visibility="{Binding ElementName=AutoTDPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                    <!-- Target FPS -->
-                                    <Grid>
-                                        <TextBlock Text="Target FPS" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="AutoTDPTargetFPSValue" Text="60 FPS" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    <!-- Target and live FPS side by side -->
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="{StaticResource CardInsetBrush}" CornerRadius="12" Padding="12,8">
+                                            <StackPanel>
+                                                <TextBlock Text="Target" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"/>
+                                                <TextBlock x:Name="AutoTDPTargetFPSValue" Text="60 FPS" FontSize="20" FontWeight="Bold"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="1" Background="{StaticResource CardInsetBrush}" CornerRadius="12" Padding="12,8">
+                                            <StackPanel>
+                                                <TextBlock Text="Now" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"/>
+                                                <TextBlock x:Name="AutoTDPCurrentFPSValue" Text="-- FPS" FontSize="20" FontWeight="Bold"
+                                                           Foreground="{StaticResource SystemAccentBrush}"/>
+                                            </StackPanel>
+                                        </Border>
                                     </Grid>
+                                    <TextBlock Text="Target FPS" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"/>
                                     <Slider x:Name="AutoTDPTargetFPSSlider"
                                             Style="{StaticResource ModernSliderStyle}"
                                             Minimum="30" Maximum="144"
@@ -1237,16 +1345,10 @@
                                             Value="60"
                                             ValueChanged="AutoTDPTargetFPSSlider_ValueChanged"/>
 
-                                    <!-- Live current FPS readout -->
-                                    <Grid>
-                                        <TextBlock Text="Current FPS" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="AutoTDPCurrentFPSValue" Text="-- FPS" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
-                                    </Grid>
-
                                     <!-- Min TDP -->
                                     <Grid>
-                                        <TextBlock Text="Min TDP" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="AutoTDPMinValue" Text="8W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="Min TDP" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="AutoTDPMinValue" Text="8W" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"/>
                                     </Grid>
                                     <Slider x:Name="AutoTDPMinSlider"
                                             Style="{StaticResource ModernSliderStyle}"
@@ -1256,8 +1358,8 @@
 
                                     <!-- Max TDP -->
                                     <Grid>
-                                        <TextBlock Text="Max TDP" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="AutoTDPMaxValue" Text="30W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="Max TDP" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="AutoTDPMaxValue" Text="30W" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"/>
                                     </Grid>
                                     <Slider x:Name="AutoTDPMaxSlider"
                                             Style="{StaticResource ModernSliderStyle}"
@@ -1265,10 +1367,12 @@
                                             Value="30"
                                             ValueChanged="AutoTDPMaxSlider_ValueChanged"/>
 
+                                    <Border Height="1" Background="#262A31" Margin="0,2,0,0"/>
+
                                     <!-- Pause when unfocused -->
                                     <Grid>
-                                        <TextBlock Text="Pause when game not focused" FontSize="13" Foreground="#FFFFFF"
-                                                   VerticalAlignment="Center" TextWrapping="Wrap" Grid.Column="0"/>
+                                        <TextBlock Text="Pause when game isn't focused" FontSize="14" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,60,0"/>
                                         <ToggleSwitch x:Name="AutoTDPPauseWhenUnfocusedToggle"
                                                       Style="{StaticResource ModernToggleStyle}"
                                                       Width="52"
@@ -1280,9 +1384,9 @@
                                     <!-- Fast response -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,60,0">
-                                            <TextBlock Text="Fast response" FontSize="13" Foreground="#FFFFFF" TextWrapping="Wrap"/>
+                                            <TextBlock Text="Fast response" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                             <TextBlock Text="Jump to the estimated wattage when FPS is far off target, then fine-tune"
-                                                       FontSize="11" Foreground="#888888" TextWrapping="Wrap"/>
+                                                       FontSize="12" Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AutoTDPFastResponseToggle"
                                                       Style="{StaticResource ModernToggleStyle}"
@@ -1294,21 +1398,34 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- TDP Mode Card (all devices) -->
+                        <!-- TDP Mode Card (all devices). 1.9.9a: four buttons; the ComboBox stays (hidden)
+                             as the control the mode logic reads and writes. -->
                         <Border x:Name="TDPModeCard" Style="{StaticResource CardStyle}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock Text="TDP Mode" Style="{StaticResource CardTitleStyle}"/>
-                                    <TextBlock Text="Controls power and thermal profile"
-                                               Style="{StaticResource CardCaptionStyle}"/>
-                                </StackPanel>
+                            <StackPanel Spacing="12">
+                                <Grid>
+                                    <TextBlock Text="TDP MODE" FontSize="12" FontWeight="Bold" CharacterSpacing="80"
+                                               Foreground="{StaticResource MutedTextBrush}"/>
+                                    <TextBlock x:Name="PerfTdpModeHint" Text="" FontSize="12"
+                                               Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid ColumnSpacing="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="PerfTdpModeQuiet" Grid.Column="0" Tag="0" Content="Quiet"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
+                                    <Button x:Name="PerfTdpModeBalanced" Grid.Column="1" Tag="1" Content="Balanced"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
+                                    <Button x:Name="PerfTdpModePerformance" Grid.Column="2" Tag="2" Content="Performance"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" FontSize="12" Click="QuickTdpModeOption_Click"/>
+                                    <Button x:Name="PerfTdpModeCustom" Grid.Column="3" Tag="3" Content="Custom"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
+                                </Grid>
                                 <ComboBox x:Name="TDPModeComboBox"
-                                          MinWidth="140"
-                                          Grid.Column="1"
+                                          Visibility="Collapsed"
                                           Style="{StaticResource ModernComboBoxStyle}"
                                           SelectedIndex="1"
                                           SelectionChanged="TDPModeComboBox_SelectionChanged">
@@ -1317,7 +1434,7 @@
                                     <ComboBoxItem Content="Performance" Tag="3"/>
                                     <ComboBoxItem Content="Custom" Tag="255"/>
                                 </ComboBox>
-                            </Grid>
+                            </StackPanel>
                         </Border>
 
                         <!-- Custom Power Limits Card (Legion only, shown in Custom mode).
@@ -1327,12 +1444,12 @@
                              readout sits at the bottom of this card. -->
                         <Border x:Name="CustomTDPCard" Style="{StaticResource CardStyle}" Visibility="Collapsed">
                             <StackPanel Spacing="10">
-                                <TextBlock Text="Custom Power Limits" Style="{StaticResource CardTitleStyle}"/>
+                                <TextBlock Text="Custom power limits" Style="{StaticResource CardTitleStyle}"/>
 
                                 <!-- TDP (base SPL / sustained) -->
                                 <Grid>
-                                    <TextBlock Text="TDP" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="CustomTDPSlowValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="TDP (sustained)" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="CustomTDPSlowValue" Text="-- W" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Slider x:Name="CustomTDPSlowSlider"
                                         Style="{StaticResource ModernSliderStyle}"
@@ -1344,8 +1461,8 @@
 
                                 <!-- SPPT Boost (effective SPPT = TDP + boost) -->
                                 <Grid>
-                                    <TextBlock Text="SPPT Boost" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="CustomTDPFastValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="SPPT boost" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="CustomTDPFastValue" Text="-- W" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Slider x:Name="CustomTDPFastSlider"
                                         Style="{StaticResource ModernSliderStyle}"
@@ -1357,8 +1474,8 @@
 
                                 <!-- FPPT Boost (effective FPPT = TDP + boost; must be >= SPPT boost) -->
                                 <Grid>
-                                    <TextBlock Text="FPPT Boost" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="CustomTDPPeakValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="FPPT boost" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="CustomTDPPeakValue" Text="-- W" FontSize="13" FontWeight="Bold" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <Slider x:Name="CustomTDPPeakSlider"
                                         Style="{StaticResource ModernSliderStyle}"
@@ -1369,46 +1486,55 @@
                                         ValueChanged="CustomTDPPeakSlider_ValueChanged"/>
 
                                 <!-- Live hardware readout (helper pushes the actual SPL/SPPT/FPPT) -->
-                                <Grid Margin="0,4,0,0">
-                                    <TextBlock x:Name="CurrentTDPText"
-                                               Text="Limits:"
-                                               FontSize="12"
-                                               Foreground="#B9C0CC"/>
-                                    <TextBlock x:Name="CurrentTDPValueText"
-                                               Text="-- W"
-                                               FontSize="12"
-                                               Foreground="#B9C0CC"
-                                               HorizontalAlignment="Right"/>
-                                </Grid>
+                                <Border Background="{StaticResource CardInsetBrush}" CornerRadius="10" Padding="12,8" Margin="0,4,0,0">
+                                    <Grid>
+                                        <TextBlock x:Name="CurrentTDPText"
+                                                   Text="Limits:"
+                                                   FontSize="12"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource MutedTextBrush}"/>
+                                        <TextBlock x:Name="CurrentTDPValueText"
+                                                   Text="-- W"
+                                                   FontSize="12"
+                                                   FontWeight="Bold"
+                                                   HorizontalAlignment="Right"/>
+                                    </Grid>
+                                </Border>
                             </StackPanel>
                         </Border>
 
-                        <!-- OS Power Mode Card -->
+                        <TextBlock Text="WINDOWS &amp; CPU" Style="{StaticResource SectionLabelStyle}"/>
+
+                        <!-- OS Power Mode Card. 1.9.9a: three buttons; the ComboBox stays (hidden) as the
+                             control the power-mode logic reads and writes. -->
                         <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
+                            <StackPanel Spacing="12">
                                 <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="OS Power Mode" Style="{StaticResource CardTitleStyle}"/>
-                                        <TextBlock Text="Windows power slider setting"
-                                                   Style="{StaticResource CardCaptionStyle}"
-                                                   TextWrapping="Wrap"/>
-                                    </StackPanel>
+                                    <TextBlock Text="Windows power mode" Style="{StaticResource CardTitleStyle}"/>
                                     <TextBlock x:Name="OSPowerModeValue"
-                                               Grid.Column="1"
                                                Text="Balanced"
                                                FontSize="14"
-                                               Foreground="#4CAF50"
+                                               Foreground="{StaticResource SystemAccentBrush}"
                                                FontWeight="SemiBold"
+                                               HorizontalAlignment="Right"
                                                VerticalAlignment="Center"
-                                               Margin="0,0,0,0"
                                                Visibility="Collapsed"/>
                                 </Grid>
+                                <Grid ColumnSpacing="6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="OSPowerModeEfficiencyButton" Grid.Column="0" Tag="0" Content="Efficiency"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="OSPowerModeButton_Click"/>
+                                    <Button x:Name="OSPowerModeBalancedButton" Grid.Column="1" Tag="1" Content="Balanced"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="OSPowerModeButton_Click"/>
+                                    <Button x:Name="OSPowerModePerformanceButton" Grid.Column="2" Tag="2" Content="Performance"
+                                            Style="{StaticResource QuickSegmentButtonStyle}" Click="OSPowerModeButton_Click"/>
+                                </Grid>
                                 <ComboBox x:Name="OSPowerModeComboBox"
-                                          Margin="0,12,0,0"
+                                          Visibility="Collapsed"
                                           Style="{StaticResource ModernComboBoxStyle}"
                                           SelectedIndex="1"
                                           SelectionChanged="OSPowerModeComboBox_SelectionChanged">
@@ -1517,31 +1643,99 @@
                 <!-- GAME TAB -->
                 <ScrollViewer x:Name="GameScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Collapsed"
                               BringIntoViewOnFocusChange="True">
-                    <StackPanel Padding="16,8,16,16">
+                    <StackPanel Padding="12,4,12,16">
 
-                        <!-- Active Profile Indicator -->
-                        <Border x:Name="ActiveProfileCard" Style="{StaticResource CardStyle}">
-                            <StackPanel Spacing="10">
-                                <StackPanel>
-                                    <TextBlock Text="Current Profile" Style="{StaticResource CardTitleStyle}"/>
+                        <!-- 1.9.9a "Now playing" card: the running game, the per-game profile switch, the
+                             active profile and quick buttons for the main settings (each one runs the
+                             same action as its Quick Settings tile, see GamingWidget.ProfileQuickButtons). -->
+                        <Border x:Name="ActiveProfileCard" Style="{StaticResource CardStyle}" Padding="16">
+                            <StackPanel Spacing="14">
+                                <Grid ColumnSpacing="14">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="60" Height="60" CornerRadius="14" Background="#2C313A" VerticalAlignment="Center">
+                                        <Grid>
+                                            <FontIcon Glyph="&#xE7FC;" FontSize="26" Foreground="{StaticResource SystemAccentBrush}"/>
+                                            <Image x:Name="CurrentGameIcon"
+                                                   Width="60" Height="60"
+                                                   Stretch="UniformToFill"
+                                                   Visibility="Collapsed"/>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="NOW PLAYING" FontSize="12" FontWeight="Bold" CharacterSpacing="80"
+                                                   Foreground="{StaticResource MutedTextBrush}"/>
+                                        <TextBlock x:Name="RunningGameText"
+                                                   Text="No game detected"
+                                                   FontSize="20"
+                                                   FontWeight="Bold"
+                                                   Foreground="White"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock x:Name="CurrentGameProfileStatus"
+                                                   Text=""
+                                                   FontSize="12"
+                                                   Foreground="{StaticResource MutedTextBrush}"
+                                                   Visibility="Collapsed"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border Background="{StaticResource CardInsetBrush}" CornerRadius="12" Padding="14,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="Use a profile for this game" FontSize="15" FontWeight="Bold"/>
+                                            <!--
+                                                Detected-game name next to the per-game toggle. Wrapped in a
+                                                Canvas so long window titles marquee-scroll instead of
+                                                truncating (UpdateMarqueeScrollAnimation).
+                                            -->
+                                            <Canvas x:Name="DetectedGameTextCanvas"
+                                                    Height="16"
+                                                    MaxWidth="220"
+                                                    Margin="0,2,0,0"
+                                                    HorizontalAlignment="Left">
+                                                <Canvas.Clip>
+                                                    <RectangleGeometry Rect="0,0,220,16"/>
+                                                </Canvas.Clip>
+                                                <TextBlock x:Name="DetectedGameText"
+                                                           Text="No game detected"
+                                                           FontSize="12"
+                                                           Foreground="{StaticResource MutedTextBrush}">
+                                                    <TextBlock.RenderTransform>
+                                                        <TranslateTransform x:Name="DetectedGameTextTransform"/>
+                                                    </TextBlock.RenderTransform>
+                                                </TextBlock>
+                                            </Canvas>
+                                        </StackPanel>
+                                        <ToggleSwitch x:Name="PerGameProfileToggle"
+                                                      Grid.Column="1"
+                                                      Style="{StaticResource ModernToggleStyle}"
+                                                      IsEnabled="False"/>
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Spacing="2">
+                                    <TextBlock Text="ACTIVE PROFILE" FontSize="12" FontWeight="Bold" CharacterSpacing="80"
+                                               Foreground="{StaticResource MutedTextBrush}"/>
                                     <!--
-                                        Active profile name. Wrapped in a Canvas so long
-                                        names (e.g. detected window titles like Windows
-                                        Terminal showing the current task) marquee-scroll
-                                        instead of truncating with an ellipsis. Mirrors
-                                        the Quick Settings tile scroll pattern in
-                                        Features/QuickSettings/GamingWidget.QuickSettings.TileStates.cs.
+                                        Active profile name. Wrapped in a Canvas so long names
+                                        marquee-scroll instead of truncating with an ellipsis.
                                     -->
                                     <Canvas x:Name="ActiveProfileTextCanvas"
-                                            Height="20"
+                                            Height="22"
                                             HorizontalAlignment="Stretch">
                                         <Canvas.Clip>
-                                            <RectangleGeometry Rect="0,0,0,20"/>
+                                            <RectangleGeometry Rect="0,0,0,22"/>
                                         </Canvas.Clip>
                                         <TextBlock x:Name="ActiveProfileText"
                                                    Text="Global Settings"
-                                                   FontSize="14"
-                                                   FontWeight="SemiBold"
+                                                   FontSize="16"
+                                                   FontWeight="Bold"
                                                    Foreground="{StaticResource SystemAccentBrush}">
                                             <TextBlock.RenderTransform>
                                                 <TranslateTransform x:Name="ActiveProfileTextTransform"/>
@@ -1550,91 +1744,42 @@
                                     </Canvas>
                                 </StackPanel>
 
-                                <!-- Per-Game Profile Toggle -->
-                                <Grid>
+                                <!-- Quick buttons: tap to change the setting (same action as its tile) -->
+                                <Grid x:Name="ProfileQuickButtonsGrid" ColumnSpacing="6" RowSpacing="6">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Use per-game profile"
-                                                   FontSize="13"
-                                                   Foreground="#FFFFFF"/>
-                                        <!--
-                                            Detected-game name next to the per-game toggle.
-                                            Wrapped in a Canvas so long window titles (e.g.
-                                            Windows Terminal showing the foreground task)
-                                            marquee-scroll instead of truncating. Same
-                                            UpdateMarqueeScrollAnimation pattern used for
-                                            ActiveProfileText above and the QS tiles.
-                                        -->
-                                        <Canvas x:Name="DetectedGameTextCanvas"
-                                                Height="16"
-                                                MaxWidth="200"
-                                                Margin="0,4,0,0"
-                                                HorizontalAlignment="Left">
-                                            <Canvas.Clip>
-                                                <RectangleGeometry Rect="0,0,200,16"/>
-                                            </Canvas.Clip>
-                                            <TextBlock x:Name="DetectedGameText"
-                                                       Text="No game detected"
-                                                       FontSize="11"
-                                                       Foreground="#888888">
-                                                <TextBlock.RenderTransform>
-                                                    <TranslateTransform x:Name="DetectedGameTextTransform"/>
-                                                </TextBlock.RenderTransform>
-                                            </TextBlock>
-                                        </Canvas>
-                                    </StackPanel>
-                                    <ToggleSwitch x:Name="PerGameProfileToggle"
-                                                  Grid.Column="1"
-                                                  Style="{StaticResource ModernToggleStyle}"
-                                                  IsEnabled="False"/>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <Button Grid.Row="0" Grid.Column="0" Tag="TDPMode" Style="{StaticResource ProfileQuickButtonStyle}" Click="ProfileQuickButton_Click">
+                                        <StackPanel><TextBlock Text="TDP" Style="{StaticResource ProfileQuickLabelStyle}"/><TextBlock x:Name="ProfileQuickTdpText" Text="--" Style="{StaticResource ProfileQuickValueStyle}"/></StackPanel>
+                                    </Button>
+                                    <Button Grid.Row="0" Grid.Column="1" Tag="AutoTDP" Style="{StaticResource ProfileQuickButtonStyle}" Click="ProfileQuickButton_Click">
+                                        <StackPanel><TextBlock Text="AutoTDP" Style="{StaticResource ProfileQuickLabelStyle}"/><TextBlock x:Name="ProfileQuickAutoTdpText" Text="--" Style="{StaticResource ProfileQuickValueStyle}"/></StackPanel>
+                                    </Button>
+                                    <Button Grid.Row="0" Grid.Column="2" Tag="FPSLimit" Style="{StaticResource ProfileQuickButtonStyle}" Click="ProfileQuickButton_Click">
+                                        <StackPanel><TextBlock Text="FPS limit" Style="{StaticResource ProfileQuickLabelStyle}"/><TextBlock x:Name="ProfileQuickFpsText" Text="--" Style="{StaticResource ProfileQuickValueStyle}"/></StackPanel>
+                                    </Button>
+                                    <Button Grid.Row="1" Grid.Column="0" Tag="Overlay" Style="{StaticResource ProfileQuickButtonStyle}" Click="ProfileQuickButton_Click">
+                                        <StackPanel><TextBlock Text="Overlay" Style="{StaticResource ProfileQuickLabelStyle}"/><TextBlock x:Name="ProfileQuickOverlayText" Text="--" Style="{StaticResource ProfileQuickValueStyle}"/></StackPanel>
+                                    </Button>
+                                    <Button Grid.Row="1" Grid.Column="1" Tag="PowerMode" Style="{StaticResource ProfileQuickButtonStyle}" Click="ProfileQuickButton_Click">
+                                        <StackPanel><TextBlock Text="Power mode" Style="{StaticResource ProfileQuickLabelStyle}"/><TextBlock x:Name="ProfileQuickPowerModeText" Text="--" Style="{StaticResource ProfileQuickValueStyle}"/></StackPanel>
+                                    </Button>
+                                    <Button Grid.Row="1" Grid.Column="2" Tag="CPUBoost" Style="{StaticResource ProfileQuickButtonStyle}" Click="ProfileQuickButton_Click">
+                                        <StackPanel><TextBlock Text="CPU boost" Style="{StaticResource ProfileQuickLabelStyle}"/><TextBlock x:Name="ProfileQuickCpuBoostText" Text="--" Style="{StaticResource ProfileQuickValueStyle}"/></StackPanel>
+                                    </Button>
                                 </Grid>
-
+                                <TextBlock Text="Tap a setting to change it." FontSize="12" Foreground="{StaticResource MutedTextBrush}" Margin="2,-6,0,0"/>
                             </StackPanel>
                         </Border>
 
-                        <!-- Current Game Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <TextBlock Text="Current Game" Style="{StaticResource CardTitleStyle}"/>
-                                <Grid Margin="0,4,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <!-- Game Icon -->
-                                    <Image x:Name="CurrentGameIcon"
-                                           Grid.Column="0"
-                                           Width="32" Height="32"
-                                           Margin="0,0,10,0"
-                                           Stretch="UniformToFill"
-                                           VerticalAlignment="Center"
-                                           Visibility="Collapsed"/>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock x:Name="RunningGameText"
-                                                   Text="No game detected"
-                                                   FontSize="16"
-                                                   Foreground="White"
-                                                   TextWrapping="Wrap"/>
-                                        <TextBlock x:Name="CurrentGameProfileStatus"
-                                                   Text=""
-                                                   FontSize="11"
-                                                   Foreground="#888888"
-                                                   Visibility="Collapsed"/>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
+                        <TextBlock Text="GLOBAL PROFILE" Style="{StaticResource SectionLabelStyle}"/>
 
-
-                        <!-- Global Profile Section -->
-                        <TextBlock Text="Global Profile"
-                                   FontSize="16"
-                                   Foreground="#00C8FF"
-                                   FontWeight="SemiBold"
-                                   Margin="0,16,0,8"/>
 
                         <!-- Global Profile Card -->
                         <Border Style="{StaticResource CardStyle}">
@@ -1650,7 +1795,7 @@
                                      UpdateLastVisibleSeparator (see GamingWidget.ProfileDisplay.cs) so a
                                      partially-filled profile (only some categories saved) doesn't show a
                                      stray separator flush against the box's bottom edge. -->
-                                <Border x:Name="GlobalProfileSimple" Background="{StaticResource PageBackgroundBrush}" CornerRadius="6" Padding="12,2,12,8">
+                                <Border x:Name="GlobalProfileSimple" Background="{StaticResource CardInsetBrush}" CornerRadius="6" Padding="12,2,12,8">
                                     <StackPanel>
                                         <StackPanel x:Name="GlobalProfileTDPModeRow" Visibility="Collapsed">
                                             <Grid Margin="0,8,0,0">
@@ -1807,7 +1952,7 @@
                                          being hidden dynamically by UpdateLastVisibleSeparator (see
                                          GamingWidget.ProfileDisplay.cs), since not every category is
                                          necessarily saved for a given game. -->
-                                    <Border Background="{StaticResource PageBackgroundBrush}" CornerRadius="6" Padding="12,2,12,8" Margin="0,10,0,0">
+                                    <Border Background="{StaticResource CardInsetBrush}" CornerRadius="6" Padding="12,2,12,8" Margin="0,10,0,0">
                                         <StackPanel>
                                             <StackPanel x:Name="GameProfileTDPModeRow" Visibility="Collapsed">
                                                 <Grid Margin="0,8,0,0">
@@ -1916,10 +2061,9 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Saved Profiles"
-                                       FontSize="16"
-                                       Foreground="#00C8FF"
-                                       FontWeight="SemiBold"
+                            <TextBlock Text="SAVED PROFILES"
+                                       Style="{StaticResource SectionLabelStyle}"
+                                       Margin="4,0,0,0"
                                        VerticalAlignment="Center"/>
                             <!--
                                 Sort dropdown for the saved-profiles list. Selection is
@@ -1947,7 +2091,7 @@
                 <!-- SYSTEM TAB -->
                 <ScrollViewer x:Name="SystemScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Collapsed"
                               BringIntoViewOnFocusChange="True">
-                    <StackPanel Padding="16,8,16,16">
+                    <StackPanel Padding="12,4,12,16">
 
                         <!-- OSD Customization Card (Collapsible) -->
                         <Border Style="{StaticResource CardStyle}">
@@ -2570,8 +2714,8 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Debug" Style="{StaticResource CardTitleStyle}"/>
-                                        <TextBlock Text="Troubleshooting and diagnostic tools"
+                                        <TextBlock Text="Maintenance" Style="{StaticResource CardTitleStyle}"/>
+                                        <TextBlock Text="Restart, logs, backup, reset"
                                                    Style="{StaticResource CardCaptionStyle}"
                                                    TextWrapping="Wrap"/>
                                     </StackPanel>
@@ -2588,74 +2732,19 @@
                                 </Grid>
 
                                 <!-- Collapsible Content -->
-                                <StackPanel x:Name="DebugContent" Visibility="Collapsed" Margin="0,12,0,0">
-                                    <!-- Restart Helper / Kill GoTweaks Buttons (side by side) -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Button x:Name="RestartHelperButton"
-                                                Grid.Column="0"
-                                                Content="Restart Helper"
-                                                HorizontalAlignment="Stretch"
-                                                Style="{StaticResource StandaloneButtonStyle}"
-                                                Click="RestartHelperButton_Click"/>
-                                        <Button x:Name="KillGoTweaksButton"
-                                                Grid.Column="2"
-                                                Content="Kill GoTweaks Lite"
-                                                HorizontalAlignment="Stretch"
-                                                Style="{StaticResource StandaloneButtonStyle}"
-                                                Click="KillGoTweaksButton_Click"/>
-                                    </Grid>
-
-                                    <!-- Export Logs Button -->
-                                    <Button x:Name="ExportLogsButton"
-                                            Content="Export Logs"
-                                            HorizontalAlignment="Stretch"
-                                            Margin="0,8,0,0"
-                                            Style="{StaticResource StandaloneButtonStyle}"
-                                            Click="ExportLogsButton_Click"/>
-
-                                    <!-- Export/Import All Data Buttons (side by side) -->
-                                    <Grid Margin="0,8,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="8"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Button x:Name="ExportAllDataButton"
-                                                Grid.Column="0"
-                                                Content="Export All Data"
-                                                HorizontalAlignment="Stretch"
-                                                Style="{StaticResource StandaloneButtonStyle}"
-                                                Click="ExportAllDataButton_Click"/>
-                                        <Button x:Name="ImportAllDataButton"
-                                                Grid.Column="2"
-                                                Content="Import All Data"
-                                                HorizontalAlignment="Stretch"
-                                                Style="{StaticResource StandaloneButtonStyle}"
-                                                Click="ImportAllDataButton_Click"/>
-                                    </Grid>
-
-                                    <!-- Reset All Settings: backs up to the Desktop, then puts every GoTweaks
-                                         setting back to default (GamingWidget.DebugPanel.cs, helper Program.ResetSettings.cs) -->
-                                    <Button x:Name="ResetAllSettingsButton"
-                                            Content="Reset All Settings"
-                                            HorizontalAlignment="Stretch"
-                                            Margin="0,8,0,0"
-                                            Style="{StaticResource StandaloneButtonStyle}"
-                                            Click="ResetAllSettingsButton_Click"/>
-
-                                    <!-- Prepare for Uninstall Button -->
-                                    <Button x:Name="PrepareForUninstallButton"
-                                            Content="Prepare for Uninstall"
-                                            HorizontalAlignment="Stretch"
-                                            Margin="0,8,0,0"
-                                            Style="{StaticResource StandaloneButtonStyle}"
-                                            Click="PrepareForUninstallButton_Click"/>
-                                </StackPanel>
+                                <!-- 1.9.9a: maintenance tools as a two-column grid of large buttons -->
+                                <Grid x:Name="DebugContent" Visibility="Collapsed" Margin="0,12,0,0" ColumnSpacing="8" RowSpacing="8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                    <Button x:Name="RestartHelperButton" Grid.Row="0" Grid.Column="0" Content="Restart Helper" Height="52" CornerRadius="12" Style="{StaticResource StandaloneButtonStyle}" Click="RestartHelperButton_Click"/>
+                                    <Button x:Name="KillGoTweaksButton" Grid.Row="0" Grid.Column="1" Content="Kill GoTweaks Lite" Height="52" CornerRadius="12" Style="{StaticResource StandaloneButtonStyle}" Click="KillGoTweaksButton_Click"/>
+                                    <Button x:Name="ExportLogsButton" Grid.Row="1" Grid.Column="0" Content="Export Logs" Height="52" CornerRadius="12" Style="{StaticResource StandaloneButtonStyle}" Click="ExportLogsButton_Click"/>
+                                    <Button x:Name="ExportAllDataButton" Grid.Row="1" Grid.Column="1" Content="Export All Data" Height="52" CornerRadius="12" Style="{StaticResource StandaloneButtonStyle}" Click="ExportAllDataButton_Click"/>
+                                    <Button x:Name="ImportAllDataButton" Grid.Row="2" Grid.Column="0" Content="Import All Data" Height="52" CornerRadius="12" Style="{StaticResource StandaloneButtonStyle}" Click="ImportAllDataButton_Click"/>
+                                    <!-- Reset All Settings: backs up to the Desktop, then puts every GoTweaks setting back to default -->
+                                    <Button x:Name="ResetAllSettingsButton" Grid.Row="2" Grid.Column="1" Content="Reset All Settings" Height="52" CornerRadius="12" Foreground="#FF8A80" Style="{StaticResource StandaloneButtonStyle}" Click="ResetAllSettingsButton_Click"/>
+                                    <Button x:Name="PrepareForUninstallButton" Grid.Row="3" Grid.ColumnSpan="2" Content="Prepare for Uninstall" Height="52" CornerRadius="12" Foreground="#FF8A80" Style="{StaticResource StandaloneButtonStyle}" Click="PrepareForUninstallButton_Click"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
 
@@ -2804,7 +2893,7 @@
                 <!-- LEGION TAB -->
                 <ScrollViewer x:Name="LegionScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Collapsed"
                               BringIntoViewOnFocusChange="True">
-                    <StackPanel Padding="16,8,16,16">
+                    <StackPanel Padding="12,4,12,16">
 
                         <!-- Controller Status Card -->
                         <Border Style="{StaticResource CardStyle}">
@@ -2823,7 +2912,7 @@
 
                                     <!-- Left Controller -->
                                     <Border x:Name="LeftControllerCard" Grid.Column="0" Height="132"
-                                            Background="{StaticResource PageBackgroundBrush}"
+                                            Background="{StaticResource CardInsetBrush}"
                                             CornerRadius="14" Padding="12,10" Margin="0,0,8,0">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="Left Controller" FontSize="12" Foreground="#B9C0CC" Margin="0,0,0,4" HorizontalAlignment="Center"/>
@@ -2852,7 +2941,7 @@
 
                                     <!-- Device Glyph + name, stacked together in one taller box -->
                                     <Border Grid.Column="1" Width="176" Height="132" CornerRadius="18"
-                                            Background="{StaticResource PageBackgroundBrush}"
+                                            Background="{StaticResource CardInsetBrush}"
                                             Margin="8,0,8,0">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <Image Source="/Assets/Glyph_LeGo2.png"
@@ -2867,7 +2956,7 @@
 
                                     <!-- Right Controller -->
                                     <Border x:Name="RightControllerCard" Grid.Column="2" Height="132"
-                                            Background="{StaticResource PageBackgroundBrush}"
+                                            Background="{StaticResource CardInsetBrush}"
                                             CornerRadius="14" Padding="12,10" Margin="8,0,0,0">
                                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                             <TextBlock Text="Right Controller" FontSize="12" Foreground="#B9C0CC" Margin="0,0,0,4" HorizontalAlignment="Center"/>
@@ -2910,7 +2999,7 @@
                                                Foreground="#B9C0CC"
                                                Margin="0,0,0,8"/>
 
-                                    <Border Background="{StaticResource PageBackgroundBrush}" CornerRadius="6" Padding="12,2">
+                                    <Border Background="{StaticResource CardInsetBrush}" CornerRadius="6" Padding="12,2">
                                         <StackPanel>
                                             <Grid Margin="0,8,0,0">
                                                 <Grid.ColumnDefinitions>
@@ -3001,7 +3090,7 @@
                         </Border>
 
                         <!-- Controller Settings Section (Touchpad & Vibration + Lighting) -->
-                        <TextBlock Text="Controller Settings" Style="{StaticResource SectionHeaderStyle}"/>
+                        <TextBlock Text="CONTROLLER" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <!-- Controller Mode Card: Legion Space style X-Input / D-Input switch. Only shown
                              once the helper reports a controller that supports it (see
@@ -3279,7 +3368,7 @@
                         <!-- Controller Remapping Section (hidden on devices without HID controller remap support) -->
                         <StackPanel x:Name="ControllerRemappingSection">
                         <!-- Controller Remapping Section Header -->
-                        <TextBlock Text="Controller Remapping" Style="{StaticResource SectionHeaderStyle}"/>
+                        <TextBlock Text="REMAPPING" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <!-- Button Remapping Card -->
                         <Border Style="{StaticResource CardStyle}">
@@ -4529,7 +4618,7 @@
                         <!-- End Controller Remapping Section -->
 
                         <!-- Fan Settings Section Header -->
-                        <TextBlock Text="Fan Settings" Style="{StaticResource SectionHeaderStyle}"/>
+                        <TextBlock Text="FAN" Style="{StaticResource SectionHeaderStyle}"/>
 
                         <!-- The Legion-tab "Power Profile" dropdown was removed: the Performance tab's
                              TDP Mode dropdown (TDPModeComboBox) is now the single control for the
@@ -4585,7 +4674,7 @@
                         <!-- Driver Updates Card (Lenovo): machine type + installed BIOS +
                              direct link to the correct Lenovo downloads page, with a
                              best-effort live driver list fetched from pcsupport.lenovo.com -->
-                        <TextBlock Text="Driver Updates" Style="{StaticResource SectionHeaderStyle}"/>
+                        <TextBlock Text="UPDATES" Style="{StaticResource SectionHeaderStyle}"/>
                         <Border x:Name="DriverUpdatesCard" Style="{StaticResource CardStyle}">
                             <StackPanel>
                                 <Grid>

@@ -6,10 +6,11 @@ using Windows.UI.Xaml.Media;
 
 namespace XboxGamingBar
 {
-    // Quick Settings: the TDP Mode and AutoTDP boxes above the tiles (1.9.7c). Each header shows
-    // the current state and expands the controls. They drive the Performance tab's own controls
-    // (TDPModeComboBox, CustomTDPSlowSlider, AutoTDPToggle, AutoTDPTargetFPSSlider), so the
-    // sending, locking and saving logic stays in one place, and they follow those controls back.
+    // The Quick tab power card (1.9.9a; it replaced the 1.9.7c TDP Mode / AutoTDP boxes), the Power
+    // tab's TDP mode / Windows power mode buttons and FPS presets, and the Profiles tab quick
+    // buttons. All of them drive the Power tab's own controls (TDPModeComboBox, CustomTDPSlowSlider,
+    // AutoTDPToggle, AutoTDPTargetFPSSlider, OSPowerModeComboBox, FPSLimitSlider, or a tile action),
+    // so the sending, locking and saving logic stays in one place, and they follow those controls back.
     public sealed partial class GamingWidget
     {
         private bool isUpdatingQuickPowerBoxes;
@@ -45,6 +46,118 @@ namespace XboxGamingBar
             UpdateQuickPowerBoxes();
         }
 
+        private void OSPowerModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is FrameworkElement fe) || !int.TryParse(fe.Tag as string, out int index)) return;
+            if (OSPowerModeComboBox == null || !OSPowerModeComboBox.IsEnabled) return;
+            if (OSPowerModeComboBox.SelectedIndex != index)
+                OSPowerModeComboBox.SelectedIndex = index; // its SelectionChanged handler applies it
+        }
+
+        private void PaintOSPowerModeButtons()
+        {
+            var buttons = new[] { OSPowerModeEfficiencyButton, OSPowerModeBalancedButton, OSPowerModePerformanceButton };
+            int index = OSPowerModeComboBox?.SelectedIndex ?? -1;
+            bool enabled = OSPowerModeComboBox?.IsEnabled ?? false;
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                if (buttons[i] == null) continue;
+                PaintSegmentButton(buttons[i], i == index);
+                buttons[i].IsEnabled = enabled;
+            }
+        }
+
+        private void FPSLimitPreset_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is FrameworkElement fe) || !int.TryParse(fe.Tag as string, out int fps)) return;
+            if (FPSLimitSlider == null) return;
+            if ((int)Math.Round(FPSLimitSlider.Value) != fps)
+                FPSLimitSlider.Value = fps; // the slider's handler sends it
+        }
+
+        private void PaintFpsLimitPresets()
+        {
+            if (FPSLimitPresetGrid == null || FPSLimitSlider == null) return;
+            int value = (int)Math.Round(FPSLimitSlider.Value);
+            foreach (var child in FPSLimitPresetGrid.Children)
+            {
+                if (child is Button b && int.TryParse(b.Tag as string, out int fps))
+                    PaintSegmentButton(b, fps == value);
+            }
+        }
+
+        // ---- Profiles tab quick buttons (1.9.9a) ----------------------------------------------
+
+        /// <summary>Runs the same action as the matching Quick Settings tile (tile id in Tag).</summary>
+        private void ProfileQuickButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!(sender is FrameworkElement fe) || !(fe.Tag is string tileId)) return;
+            SimulateTileHotkeyFired(tileId);
+            // Tile actions update their controls right away or after the helper answers.
+            PaintProfileQuickButtons();
+            _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, PaintProfileQuickButtons);
+        }
+
+        /// <summary>Shows each setting's current value; values that are "on" use the accent colour.</summary>
+        private void PaintProfileQuickButtons()
+        {
+            if (ProfileQuickButtonsGrid == null) return;
+            try
+            {
+                var accent = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"]);
+                var white = new SolidColorBrush(Windows.UI.Colors.White);
+                var muted = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x9A, 0xA3, 0xAF));
+                void Set(TextBlock text, string value, bool on)
+                {
+                    if (text == null) return;
+                    text.Text = value;
+                    text.Foreground = on ? accent : (value == "Off" ? muted : white);
+                }
+
+                bool autoOn = AutoTDPToggle?.IsOn == true;
+                int index = TDPModeComboBox?.SelectedIndex ?? -1;
+                int spl = (int)Math.Round(CustomTDPSlowSlider?.Value ?? 15);
+                int target = (int)Math.Round(AutoTDPTargetFPSSlider?.Value ?? 60);
+                string tdp = autoOn ? "Auto"
+                    : IsCustomTdpModeSelected() ? $"Custom {spl} W"
+                    : index >= 0 && index < QuickTdpModeValues.Length ? GetLegionModeShortName(QuickTdpModeValues[index]) : "--";
+                Set(ProfileQuickTdpText, tdp, false);
+                Set(ProfileQuickAutoTdpText, autoOn ? $"{target} FPS" : "Off", autoOn);
+
+                bool fpsOn = FPSLimitToggle?.IsOn == true;
+                Set(ProfileQuickFpsText, fpsOn ? $"{(int)Math.Round(FPSLimitSlider?.Value ?? 0)} FPS" : "Off", fpsOn);
+
+                bool overlayOn = PerformanceOverlayToggle?.IsOn == true;
+                Set(ProfileQuickOverlayText, overlayOn ? "On" : "Off", overlayOn);
+
+                string[] powerModes = { "Efficiency", "Balanced", "Performance" };
+                int pm = OSPowerModeComboBox?.SelectedIndex ?? -1;
+                Set(ProfileQuickPowerModeText, pm >= 0 && pm < powerModes.Length ? powerModes[pm] : "--", false);
+
+                bool boostOn = CPUBoostToggle?.IsOn == true;
+                Set(ProfileQuickCpuBoostText, boostOn ? "On" : "Off", boostOn);
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"PaintProfileQuickButtons failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>Selected segment: accent background and dark text; otherwise the default button look.</summary>
+        private static void PaintSegmentButton(Button button, bool selected)
+        {
+            if (selected)
+            {
+                button.Background = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"]);
+                button.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x0A, 0x1A, 0x24));
+            }
+            else
+            {
+                button.ClearValue(Control.BackgroundProperty);
+                button.Foreground = new SolidColorBrush(Windows.UI.Colors.White);
+            }
+        }
+
         /// <summary>Keeps the boxes in step with the controls they drive (wired once).</summary>
         private void SubscribeQuickPowerBoxes()
         {
@@ -52,25 +165,32 @@ namespace XboxGamingBar
             if (CustomTDPSlowSlider != null) CustomTDPSlowSlider.ValueChanged += (s, e) => UpdateQuickPowerBoxes();
             if (AutoTDPToggle != null) AutoTDPToggle.Toggled += (s, e) => UpdateQuickPowerBoxes();
             if (AutoTDPTargetFPSSlider != null) AutoTDPTargetFPSSlider.ValueChanged += (s, e) => UpdateQuickPowerBoxes();
-            UpdateQuickPowerBoxes();
-        }
-
-        private void QuickTdpModeHeaderButton_Click(object sender, RoutedEventArgs e)
-        {
-            ToggleQuickPowerPanel(QuickTdpModePanel, QuickTdpModeChevron);
-        }
-
-        private void QuickAutoTdpHeaderButton_Click(object sender, RoutedEventArgs e)
-        {
-            ToggleQuickPowerPanel(QuickAutoTdpPanel, QuickAutoTdpChevron);
-        }
-
-        private void ToggleQuickPowerPanel(FrameworkElement panel, FontIcon chevron)
-        {
-            if (panel == null) return;
-            bool expand = panel.Visibility != Visibility.Visible;
-            panel.Visibility = expand ? Visibility.Visible : Visibility.Collapsed;
-            if (chevron != null) chevron.Glyph = expand ? "" : ""; // ChevronUp / ChevronDown
+            // The dial shows AutoTDP's live FPS while it runs.
+            if (autoTDPCurrentFPS != null)
+            {
+                autoTDPCurrentFPS.PropertyChanged += (s, e) =>
+                {
+                    _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, () =>
+                    {
+                        if (AutoTDPToggle?.IsOn == true) UpdateQuickPowerBoxes();
+                    });
+                };
+            }
+            // Power tab buttons (1.9.9a) that stand in for the hidden ComboBox / slider presets.
+            if (OSPowerModeComboBox != null)
+            {
+                OSPowerModeComboBox.SelectionChanged += (s, e) => PaintOSPowerModeButtons();
+                OSPowerModeComboBox.IsEnabledChanged += (s, e) => PaintOSPowerModeButtons();
+            }
+            if (FPSLimitSlider != null) FPSLimitSlider.ValueChanged += (s, e) => PaintFpsLimitPresets();
+            // Profiles tab quick buttons follow the controls they mirror.
+            if (FPSLimitToggle != null) FPSLimitToggle.Toggled += (s, e) => PaintProfileQuickButtons();
+            if (FPSLimitSlider != null) FPSLimitSlider.ValueChanged += (s, e) => PaintProfileQuickButtons();
+            if (PerformanceOverlayToggle != null) PerformanceOverlayToggle.Toggled += (s, e) => PaintProfileQuickButtons();
+            if (OSPowerModeComboBox != null) OSPowerModeComboBox.SelectionChanged += (s, e) => PaintProfileQuickButtons();
+            if (CPUBoostToggle != null) CPUBoostToggle.Toggled += (s, e) => PaintProfileQuickButtons();
+            PaintOSPowerModeButtons();
+            PaintFpsLimitPresets();
             UpdateQuickPowerBoxes();
         }
 
@@ -115,7 +235,11 @@ namespace XboxGamingBar
             }
         }
 
-        /// <summary>Shows the current TDP mode / AutoTDP state in both boxes without sending anything.</summary>
+        /// <summary>
+        /// Paints the power card (1.9.9a) from the controls it drives, without sending anything:
+        /// the dial (Custom watts, the preset's level, or AutoTDP's live FPS against its target),
+        /// the mode name and its line, the selected mode button, the Custom slider and AutoTDP.
+        /// </summary>
         private void UpdateQuickPowerBoxes()
         {
             if (QuickTdpModeValueText == null || isUpdatingQuickPowerBoxes) return;
@@ -127,34 +251,86 @@ namespace XboxGamingBar
                 bool isCustom = IsCustomTdpModeSelected();
                 int spl = (int)Math.Round(CustomTDPSlowSlider?.Value ?? 15);
                 int target = (int)Math.Round(AutoTDPTargetFPSSlider?.Value ?? 60);
+                int mode = index >= 0 && index < QuickTdpModeValues.Length ? QuickTdpModeValues[index] : 2;
 
-                // TDP Mode box
-                string modeName = index >= 0 && index < QuickTdpModeValues.Length
-                    ? GetLegionModeShortName(QuickTdpModeValues[index]) : "--";
-                QuickTdpModeValueText.Text = isCustom ? (autoOn ? "Custom · Auto" : $"Custom · {spl} W") : modeName;
+                var accentColor = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+                var accent = new SolidColorBrush(accentColor);
+                var onAccent = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x0A, 0x1A, 0x24));
+                var white = new SolidColorBrush(Windows.UI.Colors.White);
 
-                var accent = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"]);
-                var idle = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x2A, 0x2E, 0x33));
-                var buttons = new[] { QuickTdpModeQuiet, QuickTdpModeBalanced, QuickTdpModePerformance, QuickTdpModeCustom };
+                // Dial and title
+                if (autoOn)
+                {
+                    int fps = autoTDPCurrentFPS?.Value ?? 0;
+                    SetQuickDial(fps > 0 ? fps.ToString() : "--", "FPS", null, target > 0 ? (double)fps / target : 0);
+                    QuickTdpModeValueText.Text = "AutoTDP";
+                    QuickTdpModeSubText.Text = $"Adjusting power to hold {target} FPS";
+                }
+                else if (isCustom)
+                {
+                    SetQuickDial(spl.ToString(), "WATTS", null, spl / (double)CustomTdpMaxWatts);
+                    QuickTdpModeValueText.Text = "Custom";
+                    QuickTdpModeSubText.Text = "Your own wattage, 5 to 35 W";
+                }
+                else
+                {
+                    switch (mode)
+                    {
+                        case 1:
+                            SetQuickDial(null, "PRESET", "\uEC48", 1 / 3.0);
+                            QuickTdpModeSubText.Text = "Lowest power, quietest fans";
+                            break;
+                        case 3:
+                            SetQuickDial(null, "PRESET", "\uEC4A", 1.0);
+                            QuickTdpModeSubText.Text = "Highest firmware power limit";
+                            break;
+                        default:
+                            SetQuickDial(null, "PRESET", "\uEC49", 2 / 3.0);
+                            QuickTdpModeSubText.Text = "Everyday power and noise";
+                            break;
+                    }
+                    QuickTdpModeValueText.Text = GetLegionModeShortName(mode);
+                }
+
+                // Mode buttons: the selected one is filled with the accent colour.
+                var buttons = new[]
+                {
+                    QuickTdpModeQuiet, QuickTdpModeBalanced, QuickTdpModePerformance, QuickTdpModeCustom,
+                    PerfTdpModeQuiet, PerfTdpModeBalanced, PerfTdpModePerformance, PerfTdpModeCustom
+                };
                 for (int i = 0; i < buttons.Length; i++)
                 {
                     if (buttons[i] == null) continue;
-                    buttons[i].Background = i == index ? accent : idle;
+                    bool selected = (i % 4) == index && !autoOn;
+                    if (selected)
+                    {
+                        buttons[i].Background = accent;
+                        buttons[i].Foreground = onAccent;
+                    }
+                    else
+                    {
+                        buttons[i].ClearValue(Control.BackgroundProperty);
+                        buttons[i].Foreground = white;
+                    }
                     buttons[i].IsEnabled = !autoOn; // AutoTDP holds the mode (Custom)
                 }
-                if (QuickTdpSlider != null)
-                {
-                    QuickTdpSlider.Value = spl;
-                    QuickTdpSlider.IsEnabled = isCustom && !autoOn;
-                    QuickTdpSlider.Opacity = QuickTdpSlider.IsEnabled ? 1.0 : 0.4;
-                }
-                if (QuickTdpValueText != null) QuickTdpValueText.Text = autoOn && isCustom ? "AutoTDP" : $"{spl} W";
 
-                // AutoTDP box
-                if (QuickAutoTdpValueText != null) QuickAutoTdpValueText.Text = autoOn ? $"On · {target} FPS" : "Off";
+                if (PerfTdpModeHint != null) PerfTdpModeHint.Text = autoOn ? "Held by AutoTDP" : "";
+
+                // Custom wattage
+                if (QuickTdpCustomPanel != null)
+                    QuickTdpCustomPanel.Visibility = isCustom && !autoOn ? Visibility.Visible : Visibility.Collapsed;
+                if (QuickTdpSlider != null) QuickTdpSlider.Value = spl;
+                if (QuickTdpValueText != null) QuickTdpValueText.Text = $"{spl} W";
+
+                // AutoTDP
+                if (QuickAutoTdpValueText != null) QuickAutoTdpValueText.Text = autoOn ? $"On · target {target} FPS" : "Off";
                 if (QuickAutoTdpToggle != null) QuickAutoTdpToggle.IsOn = autoOn;
+                if (QuickAutoTdpPanel != null) QuickAutoTdpPanel.Visibility = autoOn ? Visibility.Visible : Visibility.Collapsed;
                 if (QuickAutoTdpTargetSlider != null) QuickAutoTdpTargetSlider.Value = target;
                 if (QuickAutoTdpTargetText != null) QuickAutoTdpTargetText.Text = $"{target} FPS";
+
+                PaintProfileQuickButtons();
             }
             catch (Exception ex)
             {
@@ -164,6 +340,48 @@ namespace XboxGamingBar
             {
                 isUpdatingQuickPowerBoxes = false;
             }
+        }
+
+        private const int CustomTdpMaxWatts = 35;
+
+        /// <summary>Sets the dial's centre (a number, or a glyph when <paramref name="text"/> is null),
+        /// its unit line and the value arc (0 to 1 of the 270 degree track).</summary>
+        private void SetQuickDial(string text, string unit, string glyph, double fraction)
+        {
+            if (QuickTdpDialText != null)
+            {
+                QuickTdpDialText.Text = text ?? "";
+                QuickTdpDialText.Visibility = text != null ? Visibility.Visible : Visibility.Collapsed;
+            }
+            if (QuickTdpDialIcon != null)
+            {
+                if (glyph != null) QuickTdpDialIcon.Glyph = glyph;
+                QuickTdpDialIcon.Visibility = glyph != null ? Visibility.Visible : Visibility.Collapsed;
+            }
+            if (QuickTdpDialUnit != null) QuickTdpDialUnit.Text = unit;
+            if (QuickTdpDialArc != null) QuickTdpDialArc.Data = BuildDialArc(fraction);
+        }
+
+        /// <summary>Arc on the dial's circle (centre 52,52, radius 46) from 135 degrees, clockwise.</summary>
+        private static Geometry BuildDialArc(double fraction)
+        {
+            fraction = Math.Max(0, Math.Min(1, double.IsNaN(fraction) ? 0 : fraction));
+            if (fraction < 0.005) return null;
+            const double cx = 52, cy = 52, r = 46, startDeg = 135, spanDeg = 270;
+            double endDeg = startDeg + spanDeg * Math.Min(fraction, 0.999);
+            var start = new Windows.Foundation.Point(cx + r * Math.Cos(startDeg * Math.PI / 180), cy + r * Math.Sin(startDeg * Math.PI / 180));
+            var end = new Windows.Foundation.Point(cx + r * Math.Cos(endDeg * Math.PI / 180), cy + r * Math.Sin(endDeg * Math.PI / 180));
+            var figure = new PathFigure { StartPoint = start, IsClosed = false, IsFilled = false };
+            figure.Segments.Add(new ArcSegment
+            {
+                Point = end,
+                Size = new Windows.Foundation.Size(r, r),
+                IsLargeArc = spanDeg * fraction > 180,
+                SweepDirection = SweepDirection.Clockwise
+            });
+            var geometry = new PathGeometry();
+            geometry.Figures.Add(figure);
+            return geometry;
         }
     }
 }

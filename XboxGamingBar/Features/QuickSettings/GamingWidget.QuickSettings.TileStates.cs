@@ -67,7 +67,7 @@ namespace XboxGamingBar
             {
                 if (colIndex == 0)
                 {
-                    currentRow = new Grid { Margin = new Thickness(0, 4, 0, 4) };
+                    currentRow = new Grid { Margin = new Thickness(0, 0, 0, 8) };
                     // Add column definitions dynamically based on qsColumnCount
                     for (int c = 0; c < qsColumnCount; c++)
                     {
@@ -109,144 +109,140 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Create a tile button for the given definition
+        /// Create a tile button for the given definition (1.9.9a "Handheld Console" look).
+        /// The icon sits in a rounded chip; the chip is the tile's indicator (tile.AccentBar):
+        /// accent / severity colour when on, dark when off, with the icon switching between dark
+        /// and light to match. Two columns lay the tile out as a row (chip, then name and state);
+        /// three and four stack it (chip, name, state).
         /// </summary>
         private Button CreateTileButton(TileDefinition tile)
         {
+            bool rowLayout = qsColumnCount <= 2;
             var button = new Button
             {
                 Tag = tile.Id,
                 Style = Resources["QuickSettingsTileStyle"] as Style,
-                // Action tiles share the same neutral background/border as every
-                // other tile - only their subtitle + bottom bar color is distinct
-                // (see tileActionBrush below).
                 Background = tileOffBrush,
                 HorizontalAlignment = HorizontalAlignment.Stretch,
                 VerticalAlignment = VerticalAlignment.Stretch,
-                // Override QuickSettingsTileStyle's Center default so the ContentPresenter
-                // actually hands the inner StackPanel the full tile width (minus the style's
-                // 12,16 padding). Without this, Center alignment sizes the ContentPresenter to
-                // the StackPanel's DesiredSize — which is the widest child (the Center-aligned
-                // label), leaving the state-text Canvas squeezed and the marquee scrolling in
-                // a narrow strip while the tile itself looks mostly empty.
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
-                // Slightly taller at 4 columns (narrower tiles read as too squat
-                // otherwise) - overrides the Style's Padding="10,7" default.
-                Padding = qsColumnCount == 4 ? new Thickness(10, 9, 10, 9) : new Thickness(10, 7, 10, 7)
+                Padding = rowLayout ? new Thickness(12, 0, 10, 0) : new Thickness(6, 10, 6, 8),
+                MinHeight = rowLayout ? 58 : 54
             };
 
-            // Stretch so the state-text Canvas below gets the full tile width to scroll in
-            // (otherwise the StackPanel sizes to its widest child — usually the centered label —
-            // and marquees scroll in a narrow strip). Icon and label stay Center-aligned per-child
-            // so the tile still looks centered.
-            var content = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
-
-            // Icon and tile name stay white always. The active-tile accent signal
-            // lives in the state text color and the bottom accent bar (see
-            // SetTileAccentBar below) - the tile Background stays neutral.
-            // FontFamily is Segoe Fluent Icons (Windows 11's icon font) rather than
-            // the FontIcon default of Segoe MDL2 Assets.
             var icon = new FontIcon
             {
                 Glyph = tile.Glyph,
                 FontFamily = new FontFamily("Segoe Fluent Icons"),
-                FontSize = 21,
-                HorizontalAlignment = HorizontalAlignment.Center
+                FontSize = 18,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                Foreground = new SolidColorBrush(TileChipIconLight)
             };
-            content.Children.Add(icon);
             tile.IconElement = icon;
 
-            content.Children.Add(new TextBlock
+            var chip = new Border
+            {
+                Width = 34,
+                Height = 34,
+                CornerRadius = new CornerRadius(9),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = rowLayout ? HorizontalAlignment.Left : HorizontalAlignment.Center,
+                Child = icon
+            };
+            // Keep the icon readable on whatever colour the state code gives the chip.
+            chip.RegisterPropertyChangedCallback(Border.BackgroundProperty, (s, dp) => UpdateTileChipIcon(chip, icon));
+            chip.Background = tile.IsAction ? tileActionBrush : tileBarOffBrush;
+            UpdateTileChipIcon(chip, icon);
+            tile.AccentBar = chip;
+
+            var nameText = new TextBlock
             {
                 Text = tile.Name,
-                // Slightly smaller at 4 columns, where tiles are narrowest.
-                FontSize = qsColumnCount == 4 ? 13 : 14,
-                Margin = new Thickness(0, 4, 0, 0),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                TextWrapping = TextWrapping.Wrap,
-                TextAlignment = TextAlignment.Center
-            });
+                FontSize = rowLayout ? 14 : 13,
+                FontWeight = Windows.UI.Text.FontWeights.SemiBold,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                TextWrapping = TextWrapping.NoWrap,
+                HorizontalAlignment = rowLayout ? HorizontalAlignment.Left : HorizontalAlignment.Center,
+                Margin = rowLayout ? new Thickness(0) : new Thickness(0, 6, 0, 0)
+            };
 
-            // Action tiles show "Action" instead of state, in tileActionBrush - they
-            // never get revisited by UpdateQuickSettingsTileStates (no on/off state),
-            // so this creation-time value is final.
+            // Action tiles show "Action" instead of state - never revisited by
+            // UpdateQuickSettingsTileStates (no on/off state), so this value is final.
             var stateText = new TextBlock
             {
                 Text = tile.IsAction ? "Action" : "Off",
                 FontSize = 12,
-                Foreground = tile.IsAction ? tileActionBrush : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 136, 136, 136)),
+                Foreground = tile.IsAction ? tileActionBrush : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x9A, 0xA3, 0xAF)),
                 HorizontalAlignment = HorizontalAlignment.Left,
                 VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0),
                 TextWrapping = TextWrapping.NoWrap
             };
 
-            // Wrap every tile's state text in a Canvas that clips to the tile's
-            // available width and supports marquee scrolling when the text overflows.
-            // Width binds to the parent Grid column via HorizontalAlignment=Stretch +
-            // SizeChanged so the clip geometry tracks column resizes (3/4/5 cols).
+            // The state text sits in a clipping Canvas that marquees it when it overflows.
             var transform = new TranslateTransform { X = 0 };
             stateText.RenderTransform = transform;
-
             var canvas = new Canvas
             {
-                Height = 15,
+                Height = 16,
                 Margin = new Thickness(0, 1, 0, 0),
                 HorizontalAlignment = HorizontalAlignment.Stretch
             };
-            canvas.Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, 0, 15) };
+            canvas.Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, 0, 16) };
             canvas.Children.Add(stateText);
-
-            // Keep the clip rect in sync with the actual laid-out width so scroll
-            // calculations reflect the real tile width at 3/4/5 column settings.
             canvas.SizeChanged += (s, e) =>
             {
                 if (e.NewSize.Width > 0)
                 {
-                    canvas.Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, e.NewSize.Width, 15) };
-                    // Re-evaluate scroll state now that the available width changed
+                    canvas.Clip = new RectangleGeometry { Rect = new Windows.Foundation.Rect(0, 0, e.NewSize.Width, 16) };
                     UpdateTileScrollAnimation(tile);
                 }
             };
-
-            content.Children.Add(canvas);
-
             tile.StateTextCanvas = canvas;
             tile.StateTextTransform = transform;
 
-            // Active-tile accent bar: a small rounded bar centered along the bottom
-            // edge, ~1/4 of the tile's own width (not just the content area) - width
-            // tracks the button's actual laid-out size via SizeChanged. Muted gray
-            // when the tile is off - see SetTileAccentBar. Action tiles get
-            // tileActionBrush immediately since they're never revisited afterward.
-            var accentBar = new Border
+            if (rowLayout)
             {
-                Height = 3,
-                CornerRadius = new CornerRadius(1.5),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 5, 0, -3),
-                Background = tile.IsAction ? tileActionBrush : tileBarOffBrush
-            };
-            content.Children.Add(accentBar);
-            tile.AccentBar = accentBar;
-
-            button.SizeChanged += (s, e) =>
+                var grid = new Grid { ColumnSpacing = 12 };
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.Children.Add(chip);
+                var texts = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+                texts.Children.Add(nameText);
+                texts.Children.Add(canvas);
+                Grid.SetColumn(texts, 1);
+                grid.Children.Add(texts);
+                button.Content = grid;
+            }
+            else
             {
-                if (e.NewSize.Width > 0)
-                {
-                    accentBar.Width = e.NewSize.Width * 0.25;
-                }
-            };
+                var stack = new StackPanel { HorizontalAlignment = HorizontalAlignment.Stretch };
+                stack.Children.Add(chip);
+                stack.Children.Add(nameText);
+                stack.Children.Add(canvas);
+                button.Content = stack;
+            }
 
-            button.Content = content;
             button.Click += QuickSettingsTile_Click;
-
             tile.TileButton = button;
             tile.StateText = stateText;
-
             return button;
         }
 
+        private static readonly Windows.UI.Color TileChipIconLight = Windows.UI.Color.FromArgb(255, 0xC5, 0xCB, 0xD3);
+        private static readonly Windows.UI.Color TileChipIconDark = Windows.UI.Color.FromArgb(255, 0x0A, 0x1A, 0x24);
+
+        /// <summary>Dark icon on a bright chip, light icon on a dark one.</summary>
+        private static void UpdateTileChipIcon(Border chip, FontIcon icon)
+        {
+            if (chip == null || icon == null) return;
+            var c = (chip.Background as SolidColorBrush)?.Color ?? Windows.UI.Colors.Transparent;
+            double luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0;
+            var wanted = luminance > 0.45 ? TileChipIconDark : TileChipIconLight;
+            if (!(icon.Foreground is SolidColorBrush b) || b.Color != wanted)
+                icon.Foreground = new SolidColorBrush(wanted);
+        }
         /// <summary>
         /// Sets a tile's bottom accent bar to the live Windows accent color when on,
         /// or a muted gray (same tone as the off state text) when off - the bar is
@@ -312,7 +308,7 @@ namespace XboxGamingBar
             // If text fits, no animation needed — just center it
             if (textWidth <= canvasWidth)
             {
-                Canvas.SetLeft(tile.StateText, (canvasWidth - textWidth) / 2);
+                Canvas.SetLeft(tile.StateText, qsColumnCount <= 2 ? 0 : (canvasWidth - textWidth) / 2);
                 return;
             }
 
