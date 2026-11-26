@@ -28,9 +28,19 @@ namespace Shared.Data
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        protected virtual async void NotifyPropertyChanged(string propertyName = "")
+        protected virtual void NotifyPropertyChanged(string propertyName = "")
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            // A failing handler is logged, not rethrown. This used to be "async void", so a handler
+            // exception went to the thread pool: the .NET Framework helper survived it only through
+            // legacyUnhandledExceptionPolicy, and .NET 10 (1.9.9) would terminate the process.
+            try
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
+            catch (System.Exception ex)
+            {
+                Logger.Error(ex, $"PropertyChanged handler failed for {GetType().Name}");
+            }
         }
 
         public List<IProperty> ChildProperties

@@ -518,7 +518,8 @@ namespace XboxGamingBarHelper.PresentMon
                         try { _process?.Dispose(); } catch { }
                         _process = null;
                         ResetColumns();
-                        SpawnUnlocked();
+                        try { SpawnUnlocked(); }
+                        catch (Exception ex) { Logger.Warn($"PresentMon restart failed: {ex.Message}"); }
                     }
                 }, null, 2000, Timeout.Infinite);
             }

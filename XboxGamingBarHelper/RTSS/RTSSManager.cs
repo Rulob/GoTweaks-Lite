@@ -1,4 +1,4 @@
-﻿using RTSSSharedMemoryNET;
+﻿using XboxGamingBarHelper.RTSS.Interop;
 using Shared.Enums;
 using Shared.Utilities;
 using System;
@@ -64,7 +64,7 @@ namespace XboxGamingBarHelper.RTSS
         private bool rtssWasRunning = false;
 
         // Frametime graph settings - uses <G=<FT>> tag processed by RTSSSharedMemoryNET
-        // Width/height are hardcoded in ProcessGraphTags (-32 chars wide, -2 lines tall)
+        // Width/height are fixed in OSD.EmbedGraphs (-32 chars wide, -2 lines tall)
         private float currentMinFt = 0f;
         private float currentAvgFt = 0f;
         private float currentMaxFt = 0f;
@@ -342,7 +342,7 @@ namespace XboxGamingBarHelper.RTSS
             {
                 // Fixed 1-minute interval for OLED burn-in prevention
                 const int intervalMs = 60 * 1000;
-                positionShiftTimer = new Timer(PositionShiftTick, null, intervalMs, intervalMs);
+                positionShiftTimer = new Timer(state => { try { PositionShiftTick(state); } catch (Exception ex) { Logger.Debug($"OSD position shift failed: {ex.Message}"); } }, null, intervalMs, intervalMs);
                 Logger.Info("OSD Position shift enabled, interval: 1 minute");
             }
             else
@@ -571,8 +571,8 @@ namespace XboxGamingBarHelper.RTSS
                     // Get frametime statistics from RTSS AppEntry
                     UpdateFrametimeStats();
 
-                    // Build graph using <G=<FT>> tag - processed by RTSSSharedMemoryNET.ProcessGraphTags
-                    // Width/height are hardcoded in ProcessGraphTags (-32 chars, -2 lines)
+                    // Build graph using <G=<FT>> tag - embedded as a graph object by RTSS.Interop.OSD
+                    // Width/height are fixed in OSD.EmbedGraphs (-32 chars, -2 lines)
                     string graphColor = (osdTextColor == "DYNAMIC" || string.IsNullOrEmpty(osdTextColor)) ? "00FFFF" : osdTextColor;
                     graphColor = ApplyOpacityToColor(graphColor);
 
@@ -589,7 +589,7 @@ namespace XboxGamingBarHelper.RTSS
                         statsLabel = $"\n<S=50><C={labelColor}>min:<C={minColor}>{currentMinFt:F1}ms <C={labelColor}>avg:<C={avgColor}>{currentAvgFt:F1}ms <C={labelColor}>max:<C={maxColor}>{currentMaxFt:F1}ms<C>{sizeReset}";
                     }
 
-                    // <G=<FT>> - RTSSSharedMemoryNET.ProcessGraphTags converts this to embedded graph object
+                    // <G=<FT>> - OSD.Update (RTSS/Interop) turns this into an embedded graph object
                     frametimeGraphString = $"<C={graphColor}><G=<FT>><C>{statsLabel}";
                 }
                 catch (Exception ex)

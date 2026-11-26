@@ -1,4 +1,4 @@
-﻿using RTSSSharedMemoryNET;
+﻿using XboxGamingBarHelper.RTSS.Interop;
 using System.Drawing;
 using XboxGamingBarHelper.Windows;
 

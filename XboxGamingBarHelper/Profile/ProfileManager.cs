@@ -36,9 +36,11 @@ namespace XboxGamingBarHelper.Profile
             {
                 _localFolderPath = ApplicationData.Current.LocalFolder.Path;
             }
-            catch (InvalidOperationException)
+            catch (Exception)
             {
-                // Running outside MSIX (elevated via scheduled task)
+                // Running outside MSIX (elevated via scheduled task). On .NET Framework this was an
+                // InvalidOperationException; the .NET 10 WinRT projection (1.9.9) reports "no package
+                // identity" as a COMException, so catch any.
                 // Use the same path that MSIX would use
                 _localFolderPath = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),

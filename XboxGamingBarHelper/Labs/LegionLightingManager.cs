@@ -380,6 +380,13 @@ namespace XboxGamingBarHelper.Labs
 
         private void EffectLoop()
         {
+            // An exception on this thread would end the helper (.NET 10): log it and stop the effect.
+            try { EffectLoopCore(); }
+            catch (Exception ex) { Logger.Error(ex, "Reactive lighting loop failed; effect stopped"); }
+        }
+
+        private void EffectLoopCore()
+        {
             while (_running)
             {
                 LegionReactiveMode mode;

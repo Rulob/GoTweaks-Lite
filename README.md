@@ -233,6 +233,14 @@ upstream, and why.
   vibration and lighting. Game profiles are deleted unless you choose "Keep game profiles".
   Windows settings are left alone. Everything is backed up to a Desktop folder first (Import All
   Data brings it back), then the helper restarts and GoTweaks closes.
+- **The background helper runs on .NET 10** (it was .NET Framework 4.8, which gets no new
+  development). It ships with its own copy of the runtime, so there is still nothing to install;
+  the download is larger because of that. The RTSS overlay link was rewritten in plain C# for it
+  (the old one could not run on .NET 10), reading and writing RTSS's shared memory as the RTSS SDK
+  documents. Errors in background tasks are now caught and logged where .NET Framework used to
+  ignore them silently. For troubleshooting, `XboxGamingBarHelper.exe --self-test` checks the
+  runtime, Windows APIs, WMI, HID, RTSS and the native libraries without changing anything and
+  writes the result to `%TEMP%\GoTweaks-SelfTest.txt`.
 - **Export All Data now saves all widget settings** (it used to save a short list) and the
   helper's real settings file (it was saving an old copy).
 - **GoTweaks always takes Game Bar's first slot** (left of Home, where Legion Space sits); the
@@ -420,13 +428,14 @@ powershell -ExecutionPolicy Bypass -File ".\Uninstall-GoTweaks.ps1"
 
 ## 🛠️ Technology
 
-Free and open source. Built with C#.
+Free and open source. Built with C#: the widget is a UWP Game Bar widget, the background helper
+a self-contained .NET 10 app (it carries its own runtime, so nothing extra needs installing).
 
 | Library | Purpose |
 | --- | --- |
 | **LibreHardwareMonitor** | Hardware sensors and monitoring |
 | **RyzenAdj** | AMD TDP control (non-Legion fallback path) |
-| **RTSSSharedMemoryNET** | Custom build with frametime-graph support, tuned for low CPU/memory use |
+| **RTSS shared memory** | Overlay text, embedded frametime graph and per-game FPS, read and written directly (following the RTSS SDK) |
 | **ADLX** | AMD Display Library for Radeon features |
 | **PresentMon** | Rendered / displayed FPS and frame-generation metrics |
 

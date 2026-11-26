@@ -220,8 +220,8 @@ namespace XboxGamingBarHelper.IPC
                 // S-1-15-2-2 may not exist on older Windows versions
             }
 
-            // Use the NamedPipeServerStream constructor with PipeSecurity (available in .NET Framework)
-            _pipeServer = new NamedPipeServerStream(
+            // .NET 10: the PipeSecurity overload lives in NamedPipeServerStreamAcl (same arguments).
+            _pipeServer = NamedPipeServerStreamAcl.Create(
                 PipeName,
                 PipeDirection.InOut,
                 1, // maxNumberOfServerInstances

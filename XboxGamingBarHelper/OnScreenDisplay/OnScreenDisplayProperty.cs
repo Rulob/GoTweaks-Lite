@@ -14,12 +14,15 @@ namespace XboxGamingBarHelper.OnScreenDisplay
             Logger.Info($"OSD level initialized to {Value} (loaded from settings)");
         }
 
+        private const string SettingsKey = "OSDLevel";
+
         private static int LoadSavedLevel(int defaultValue)
         {
             try
             {
-                int savedLevel = Properties.Settings.Default.OSDLevel;
-                if (savedLevel >= 0 && savedLevel <= 3)
+                // Kept in the helper settings since 1.9.9 (the .NET Framework user.config is not
+                // read by .NET 10). The per-profile overlay state is applied on top at startup.
+                if (Settings.LocalSettingsHelper.TryGetValue<int>(SettingsKey, out int savedLevel) && savedLevel >= 0 && savedLevel <= 3)
                 {
                     Logger.Info($"Loaded OSD level {savedLevel} from settings");
                     return savedLevel;
@@ -36,8 +39,7 @@ namespace XboxGamingBarHelper.OnScreenDisplay
         {
             try
             {
-                Properties.Settings.Default.OSDLevel = level;
-                Properties.Settings.Default.Save();
+                Settings.LocalSettingsHelper.SetValue(SettingsKey, level);
                 Logger.Debug($"Saved OSD level {level} to settings");
             }
             catch (Exception ex)

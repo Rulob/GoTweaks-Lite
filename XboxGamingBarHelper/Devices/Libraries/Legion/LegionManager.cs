@@ -1025,7 +1025,7 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 // Cancel existing timer and start a new one
                 performanceModeDebounceTimer?.Dispose();
                 performanceModeDebounceTimer = new System.Threading.Timer(
-                    _ => ApplyPendingPerformanceMode(),
+                    _ => { try { ApplyPendingPerformanceMode(); } catch (Exception ex) { Logger.Error(ex, "Applying the TDP mode failed"); } },
                     null,
                     PERFORMANCE_MODE_DEBOUNCE_MS,
                     System.Threading.Timeout.Infinite // Don't repeat

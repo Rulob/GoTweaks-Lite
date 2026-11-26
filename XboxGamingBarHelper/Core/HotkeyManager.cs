@@ -192,7 +192,11 @@ namespace XboxGamingBarHelper.Core
                                 try
                                 {
                                     // Execute on a thread pool thread to avoid blocking message loop
-                                    ThreadPool.QueueUserWorkItem(_ => callback());
+                                    ThreadPool.QueueUserWorkItem(_ =>
+                                    {
+                                        try { callback(); }
+                                        catch (Exception ex) { Logger.Error($"HotkeyManager: hotkey callback failed: {ex.Message}"); }
+                                    });
                                 }
                                 catch (Exception ex)
                                 {

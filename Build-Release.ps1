@@ -68,6 +68,7 @@ if (-not $Thumbprint) {
 Write-Host "Signing thumbprint: $Thumbprint"
 
 # --- Build the signed bundle ----------------------------------------
+$buildStart = Get-Date
 if (-not $SkipBuild) {
     # vswhere.exe always installs under the x86 Program Files; probe both, tolerate absence.
     $msbuild = $null
@@ -104,6 +105,12 @@ if (-not (Test-Path $appPkgs)) { Fail "AppPackages folder not found - did the bu
 $bundle = Get-ChildItem $appPkgs -Recurse -Filter *.msixbundle |
           Sort-Object LastWriteTime | Select-Object -Last 1
 if (-not $bundle) { Fail "No .msixbundle produced under AppPackages." }
+# The wapproj build exits 1 even on success (mspdbcmf, see above), so a real failure (e.g.
+# MakeAppx) used to go unnoticed and the previous release's bundle got shipped. Require a
+# bundle written by this run.
+if (-not $SkipBuild -and $bundle.LastWriteTime -lt $buildStart) {
+    Fail "The newest bundle ($($bundle.Name), $($bundle.LastWriteTime)) is older than this build - packaging failed. Check the MSBuild output above (MakeAppx errors)."
+}
 $cer = Get-ChildItem $bundle.DirectoryName -Filter *.cer | Select-Object -First 1
 if (-not $cer) { Fail "No .cer next to the bundle ($($bundle.DirectoryName))." }
 

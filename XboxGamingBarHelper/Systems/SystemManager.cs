@@ -1,5 +1,5 @@
 using NLog;
-using RTSSSharedMemoryNET;
+using XboxGamingBarHelper.RTSS.Interop;
 using System;
 using System.IO;
 using System.Linq;

@@ -1040,7 +1040,7 @@ namespace XboxGamingBarHelper.Performance
                 // Cancel existing timer and start a new one
                 tdpDebounceTimer?.Dispose();
                 tdpDebounceTimer = new System.Threading.Timer(
-                    _ => ApplyPendingTDP(),
+                    _ => { try { ApplyPendingTDP(); } catch (Exception ex) { Logger.Error(ex, "Applying the TDP failed"); } },
                     null,
                     TDPDebounceDelayMs,
                     System.Threading.Timeout.Infinite // Don't repeat

@@ -286,6 +286,13 @@ namespace XboxGamingBarHelper
             Logger.Info($"=== Helper starting, PID={Process.GetCurrentProcess().Id} ===");
             LogManager.Flush();
 
+            // Runtime/interop check that changes nothing, then exit (Startup/Program.SelfTest.cs).
+            if (args != null && args.Contains("--self-test"))
+            {
+                Environment.ExitCode = RunSelfTest();
+                return;
+            }
+
             // Early process-uniqueness gate. Catches the case where a previous helper
             // crashed/zombied (released or disposed its single-instance mutex but didn't
             // fully exit), or where the bootstrapper fired schtasks /Run twice during a

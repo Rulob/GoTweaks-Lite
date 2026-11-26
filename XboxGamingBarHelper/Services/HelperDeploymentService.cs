@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -95,37 +96,16 @@ namespace XboxGamingBarHelper.Services
         private static readonly string VersionFilePath = Path.Combine(HelperFolder, ".version");
 
         /// <summary>
-        /// Files that must be copied to the deployed location
+        /// Files in the deployed folder that belong to the deployment itself, not the helper:
+        /// the version stamp, the .old copies left by locked-file replacement, and logs.
         /// </summary>
-        private static readonly string[] RequiredFiles = new[]
+        private static bool IsDeploymentMetadata(string relativePath)
         {
-            "XboxGamingBarHelper.exe",
-            "XboxGamingBarHelper.exe.config",
-            "ADLXCSharpBind.dll",
-            "libryzenadj.dll",
-            "inpoutx64.dll",
-            "PresentMon.exe", // #66 Intel PresentMon CLI for FPS / displayed / FrameType capture
-            "NLog.config",
-            "NLog.dll",
-            "Shared.dll",
-            // Managed DLLs
-            "LibreHardwareMonitorLib.dll",
-            "HidSharp.dll",
-            "RTSSSharedMemoryNET.dll",
-            "RAMSPDToolkit-NDD.dll",
-            // System dependencies
-            "System.Text.Json.dll",
-            "System.Text.Encodings.Web.dll",
-            "System.Buffers.dll",
-            "System.Memory.dll",
-            "System.Numerics.Vectors.dll",
-            "System.Runtime.CompilerServices.Unsafe.dll",
-            "System.Threading.Tasks.Extensions.dll",
-            "System.ValueTuple.dll",
-            "System.IO.Pipelines.dll",
-            "System.CodeDom.dll",
-            "Microsoft.Bcl.AsyncInterfaces.dll"
-        };
+            var name = Path.GetFileName(relativePath);
+            return name.Equals(".version", StringComparison.OrdinalIgnoreCase)
+                || name.EndsWith(".old", StringComparison.OrdinalIgnoreCase)
+                || name.EndsWith(".log", StringComparison.OrdinalIgnoreCase);
+        }
 
         /// <summary>
         /// Gets the current package version from MSIX
@@ -293,59 +273,39 @@ namespace XboxGamingBarHelper.Services
                 int successCount = 0;
                 int failCount = 0;
 
-                // Copy all required files
-                foreach (var fileName in RequiredFiles)
+                // Copy every file of the helper (1.9.9: it is a self-contained .NET 10 app, so the
+                // runtime, XboxGamingBarHelper.deps.json and .runtimeconfig.json must come along -
+                // without them the exe doesn't start). Subfolders are kept.
+                var sourceFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var sourcePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
                 {
-                    var sourcePath = Path.Combine(sourceDir, fileName);
-                    var targetPath = Path.Combine(HelperFolder, fileName);
-
-                    if (!File.Exists(sourcePath))
-                    {
-                        // Some files may be optional
-                        Logger.Debug($"Source file not found (may be optional): {fileName}");
-                        continue;
-                    }
-
+                    var relative = sourcePath.Substring(sourceDir.TrimEnd('\\').Length).TrimStart('\\');
+                    if (IsDeploymentMetadata(relative)) continue;
+                    sourceFiles.Add(relative);
+                    var targetPath = Path.Combine(HelperFolder, relative);
                     try
                     {
+                        Directory.CreateDirectory(Path.GetDirectoryName(targetPath));
                         CopyFileWithRetry(sourcePath, targetPath);
                         successCount++;
-                        Logger.Debug($"Copied: {fileName}");
                     }
                     catch (Exception ex)
                     {
-                        Logger.Warn($"Failed to copy {fileName}: {ex.Message}");
+                        Logger.Warn($"Failed to copy {relative}: {ex.Message}");
                         failCount++;
                     }
                 }
 
-                // Also copy any other DLLs that might be in the source directory
-                try
+                // Remove what the previous version left behind (e.g. the .NET Framework DLLs and
+                // XboxGamingBarHelper.exe.config before 1.9.9). Best effort: a file still in use
+                // is simply left for the next deploy.
+                foreach (var targetPath in Directory.GetFiles(HelperFolder, "*", SearchOption.AllDirectories))
                 {
-                    foreach (var dllPath in Directory.GetFiles(sourceDir, "*.dll"))
-                    {
-                        var fileName = Path.GetFileName(dllPath);
-                        if (RequiredFiles.Contains(fileName, StringComparer.OrdinalIgnoreCase))
-                            continue; // Already handled
-
-                        var targetPath = Path.Combine(HelperFolder, fileName);
-                        try
-                        {
-                            CopyFileWithRetry(dllPath, targetPath);
-                            successCount++;
-                            Logger.Debug($"Copied additional DLL: {fileName}");
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Debug($"Could not copy additional DLL {fileName}: {ex.Message}");
-                        }
-                    }
+                    var relative = targetPath.Substring(HelperFolder.TrimEnd('\\').Length).TrimStart('\\');
+                    if (IsDeploymentMetadata(relative) || sourceFiles.Contains(relative)) continue;
+                    try { File.Delete(targetPath); Logger.Debug($"Removed stale file: {relative}"); }
+                    catch (Exception ex) { Logger.Debug($"Could not remove stale file {relative}: {ex.Message}"); }
                 }
-                catch (Exception ex)
-                {
-                    Logger.Debug($"Error scanning for additional DLLs: {ex.Message}");
-                }
-
                 // Only stamp the .version file when the deploy actually succeeded — the
                 // exe is present and nothing failed to copy. Writing it on a partial/failed
                 // deploy is what let a half-wiped folder masquerade as "up to date" and
