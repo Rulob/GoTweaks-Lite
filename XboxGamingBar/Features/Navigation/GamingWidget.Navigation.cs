@@ -279,8 +279,13 @@ namespace XboxGamingBar
                     // Mark as handled immediately to prevent default XY navigation
                     e.Handled = true;
 
-                    // Use TryMoveFocus to move to the first focusable element downward
-                    FocusManager.TryMoveFocus(FocusNavigationDirection.Down);
+                    // Use TryMoveFocus to move to the first focusable element downward. Tabs on the
+                    // far right can have nothing focusable straight below them (e.g. the Quick tab
+                    // dial), so fall back to the tab's first control (1.9.9b).
+                    if (!FocusManager.TryMoveFocus(FocusNavigationDirection.Down))
+                    {
+                        FocusFirstControlInActiveTab();
+                    }
                 }
             }
         }

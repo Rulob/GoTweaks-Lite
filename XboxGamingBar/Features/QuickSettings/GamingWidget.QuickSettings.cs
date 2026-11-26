@@ -543,6 +543,12 @@ namespace XboxGamingBar
                     selectedMetrics.AddRange(new[] { MetricType.BatteryDrain, MetricType.CPUUsage, MetricType.SoCTemp, MetricType.GPUUsage, MetricType.TimeRemaining });
                 }
 
+                // 1.9.9b fixed Quick tab: no sensor row (the helper stops pushing metrics), the
+                // brightness slider always shown, tiles two per row.
+                quickMetricsEnabled = false;
+                brightnessSliderEnabled = true;
+                qsColumnCount = 2;
+
                 // Update Quick Metrics UI
                 if (QuickMetricsToggle != null)
                     QuickMetricsToggle.IsOn = quickMetricsEnabled;

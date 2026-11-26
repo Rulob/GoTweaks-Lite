@@ -53,11 +53,12 @@ namespace XboxGamingBar
 
             QuickSettingsTilesContainer.Children.Clear();
 
-            // Get tiles to display - in edit mode show all (including hidden), otherwise only visible
-            var tilesToShow = qsTileDefinitions
-                .Where(t => !ShouldSkipTile(t) && (qsEditMode || t.IsVisible))
-                .OrderBy(t => t.Order)
+            // 1.9.9b: a fixed set in a fixed order (two per row), then a fixed row of actions.
+            var tilesToShow = QuickFixedTileIds
+                .Select(id => qsTileMap.TryGetValue(id, out var tile) ? tile : null)
+                .Where(t => t != null && !ShouldSkipTile(t))
                 .ToList();
+            RebuildQuickActions();
 
             // Build rows of tiles (3 or 4 columns based on setting)
             Grid currentRow = null;
@@ -127,8 +128,9 @@ namespace XboxGamingBar
                 VerticalAlignment = VerticalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 Padding = rowLayout ? new Thickness(12, 0, 10, 0) : new Thickness(6, 10, 6, 8),
-                MinHeight = rowLayout ? 58 : 54
+                MinHeight = rowLayout ? 54 : 54
             };
+            Windows.UI.Xaml.Automation.AutomationProperties.SetName(button, tile.Name);
 
             var icon = new FontIcon
             {
@@ -228,6 +230,59 @@ namespace XboxGamingBar
             tile.TileButton = button;
             tile.StateText = stateText;
             return button;
+        }
+
+        // The Quick tab's fixed layout (1.9.9b), left to right then down.
+        private static readonly string[] QuickFixedTileIds =
+        {
+            "PowerMode", "EPP", "CPUBoost", "FPSLimit",
+            "Touchscreen", "LegionTouchpad", "LegionVibrationMode", "Overlay"
+        };
+        private static readonly string[] QuickFixedActionIds = { "Keyboard", "ActionEndTask", "ActionTaskManager", "ActionExplorer" };
+        private static readonly string[] QuickFixedActionLabels = { "Keyboard", "End Task", "Task Mgr", "Explorer" };
+
+        /// <summary>The bottom row of four actions: icon over a short label, same click path as a tile.</summary>
+        private void RebuildQuickActions()
+        {
+            if (QuickActionsGrid == null) return;
+            QuickActionsGrid.Children.Clear();
+            for (int i = 0; i < QuickFixedActionIds.Length; i++)
+            {
+                string id = QuickFixedActionIds[i];
+                string glyph = qsTileMap.TryGetValue(id, out var def) ? def.Glyph : "";
+                var content = new StackPanel { Spacing = 3, HorizontalAlignment = HorizontalAlignment.Center };
+                content.Children.Add(new FontIcon
+                {
+                    Glyph = glyph,
+                    FontFamily = new FontFamily("Segoe Fluent Icons"),
+                    FontSize = 18,
+                    Foreground = tileActionBrush,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+                content.Children.Add(new TextBlock
+                {
+                    Text = QuickFixedActionLabels[i],
+                    FontSize = 11,
+                    FontWeight = Windows.UI.Text.FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(TileChipIconLight),
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+                var button = new Button
+                {
+                    Tag = id,
+                    Style = Resources["QuickSettingsTileStyle"] as Style,
+                    Background = tileOffBrush,
+                    HorizontalAlignment = HorizontalAlignment.Stretch,
+                    HorizontalContentAlignment = HorizontalAlignment.Center,
+                    Padding = new Thickness(2, 6, 2, 6),
+                    MinHeight = 52,
+                    Content = content
+                };
+                Windows.UI.Xaml.Automation.AutomationProperties.SetName(button, QuickFixedActionLabels[i]);
+                button.Click += QuickSettingsTile_Click;
+                Grid.SetColumn(button, i);
+                QuickActionsGrid.Children.Add(button);
+            }
         }
 
         private static readonly Windows.UI.Color TileChipIconLight = Windows.UI.Color.FromArgb(255, 0xC5, 0xCB, 0xD3);

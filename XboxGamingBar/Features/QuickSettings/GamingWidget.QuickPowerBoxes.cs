@@ -205,7 +205,6 @@ namespace XboxGamingBar
         private void QuickTdpSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             int watts = (int)Math.Round(e.NewValue);
-            if (QuickTdpValueText != null) QuickTdpValueText.Text = $"{watts} W";
             if (isUpdatingQuickPowerBoxes || CustomTDPSlowSlider == null) return;
             // Only usable in Custom, and not while AutoTDP picks the wattage.
             if (!IsCustomTdpModeSelected() || AutoTDPToggle?.IsOn == true) return;
@@ -224,25 +223,24 @@ namespace XboxGamingBar
             }
         }
 
-        private void QuickAutoTdpTargetSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        /// <summary>The − / + target FPS buttons: step the Power tab's target slider by Tag (±5).</summary>
+        private void QuickAutoTdpStep_Click(object sender, RoutedEventArgs e)
         {
-            int fps = (int)Math.Round(e.NewValue);
-            if (QuickAutoTdpTargetText != null) QuickAutoTdpTargetText.Text = $"{fps} FPS";
-            if (isUpdatingQuickPowerBoxes || AutoTDPTargetFPSSlider == null) return;
-            if ((int)Math.Round(AutoTDPTargetFPSSlider.Value) != fps)
-            {
-                AutoTDPTargetFPSSlider.Value = fps; // its debounced handler sends and saves it
-            }
+            if (AutoTDPTargetFPSSlider == null || AutoTDPToggle?.IsOn != true) return;
+            if (!(sender is FrameworkElement fe) || !int.TryParse(fe.Tag as string, out int step)) return;
+            double next = Math.Max(AutoTDPTargetFPSSlider.Minimum, Math.Min(AutoTDPTargetFPSSlider.Maximum, AutoTDPTargetFPSSlider.Value + step));
+            if (next != AutoTDPTargetFPSSlider.Value)
+                AutoTDPTargetFPSSlider.Value = next; // its debounced handler sends and saves it
         }
 
         /// <summary>
-        /// Paints the power card (1.9.9a) from the controls it drives, without sending anything:
-        /// the dial (Custom watts, the preset's level, or AutoTDP's live FPS against its target),
-        /// the mode name and its line, the selected mode button, the Custom slider and AutoTDP.
+        /// Paints the power card from the controls it drives, without sending anything: the dial
+        /// (Custom watts, the preset's level, or AutoTDP's live FPS against its target), the
+        /// selected mode button, the mini Custom slider and the AutoTDP row.
         /// </summary>
         private void UpdateQuickPowerBoxes()
         {
-            if (QuickTdpModeValueText == null || isUpdatingQuickPowerBoxes) return;
+            if (QuickTdpDialArc == null || isUpdatingQuickPowerBoxes) return;
             isUpdatingQuickPowerBoxes = true;
             try
             {
@@ -263,33 +261,19 @@ namespace XboxGamingBar
                 {
                     int fps = autoTDPCurrentFPS?.Value ?? 0;
                     SetQuickDial(fps > 0 ? fps.ToString() : "--", "FPS", null, target > 0 ? (double)fps / target : 0);
-                    QuickTdpModeValueText.Text = "AutoTDP";
-                    QuickTdpModeSubText.Text = $"Adjusting power to hold {target} FPS";
                 }
                 else if (isCustom)
                 {
                     SetQuickDial(spl.ToString(), "WATTS", null, spl / (double)CustomTdpMaxWatts);
-                    QuickTdpModeValueText.Text = "Custom";
-                    QuickTdpModeSubText.Text = "Your own wattage, 5 to 35 W";
                 }
                 else
                 {
                     switch (mode)
                     {
-                        case 1:
-                            SetQuickDial(null, "PRESET", "\uEC48", 1 / 3.0);
-                            QuickTdpModeSubText.Text = "Lowest power, quietest fans";
-                            break;
-                        case 3:
-                            SetQuickDial(null, "PRESET", "\uEC4A", 1.0);
-                            QuickTdpModeSubText.Text = "Highest firmware power limit";
-                            break;
-                        default:
-                            SetQuickDial(null, "PRESET", "\uEC49", 2 / 3.0);
-                            QuickTdpModeSubText.Text = "Everyday power and noise";
-                            break;
+                        case 1: SetQuickDial(null, "PRESET", "\uEC48", 1 / 3.0); break;
+                        case 3: SetQuickDial(null, "PRESET", "\uEC4A", 1.0); break;
+                        default: SetQuickDial(null, "PRESET", "\uEC49", 2 / 3.0); break;
                     }
-                    QuickTdpModeValueText.Text = GetLegionModeShortName(mode);
                 }
 
                 // Mode buttons: the selected one is filled with the accent colour.
@@ -317,18 +301,21 @@ namespace XboxGamingBar
 
                 if (PerfTdpModeHint != null) PerfTdpModeHint.Text = autoOn ? "Held by AutoTDP" : "";
 
-                // Custom wattage
-                if (QuickTdpCustomPanel != null)
-                    QuickTdpCustomPanel.Visibility = isCustom && !autoOn ? Visibility.Visible : Visibility.Collapsed;
-                if (QuickTdpSlider != null) QuickTdpSlider.Value = spl;
-                if (QuickTdpValueText != null) QuickTdpValueText.Text = $"{spl} W";
+                // Custom wattage: a smaller dial with the mini slider under it
+                bool showSlider = isCustom && !autoOn;
+                if (QuickTdpSlider != null)
+                {
+                    QuickTdpSlider.Visibility = showSlider ? Visibility.Visible : Visibility.Collapsed;
+                    QuickTdpSlider.Value = spl;
+                }
+                if (QuickTdpDialBox != null) QuickTdpDialBox.Width = QuickTdpDialBox.Height = showSlider ? 70 : 94;
 
-                // AutoTDP
-                if (QuickAutoTdpValueText != null) QuickAutoTdpValueText.Text = autoOn ? $"On · target {target} FPS" : "Off";
+                // AutoTDP: the target stepper only works (and looks active) while AutoTDP is on
                 if (QuickAutoTdpToggle != null) QuickAutoTdpToggle.IsOn = autoOn;
-                if (QuickAutoTdpPanel != null) QuickAutoTdpPanel.Visibility = autoOn ? Visibility.Visible : Visibility.Collapsed;
-                if (QuickAutoTdpTargetSlider != null) QuickAutoTdpTargetSlider.Value = target;
-                if (QuickAutoTdpTargetText != null) QuickAutoTdpTargetText.Text = $"{target} FPS";
+                if (QuickAutoTdpTargetText != null) QuickAutoTdpTargetText.Text = target.ToString();
+                if (QuickAutoTdpTargetPanel != null) QuickAutoTdpTargetPanel.Opacity = autoOn ? 1.0 : 0.4;
+                if (QuickAutoTdpMinusButton != null) QuickAutoTdpMinusButton.IsEnabled = autoOn && target > (AutoTDPTargetFPSSlider?.Minimum ?? 30);
+                if (QuickAutoTdpPlusButton != null) QuickAutoTdpPlusButton.IsEnabled = autoOn && target < (AutoTDPTargetFPSSlider?.Maximum ?? 144);
 
                 PaintProfileQuickButtons();
             }

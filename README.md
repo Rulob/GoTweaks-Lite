@@ -118,7 +118,13 @@ upstream, and why.
   per row is still in Customize). The Performance tab is now called Power, and its TDP mode and
   Windows power mode use buttons instead of dropdowns, with FPS limit presets (30/40/45/60). The
   Profiles tab opens with a Now playing card whose buttons change TDP, AutoTDP, FPS limit, the
-  overlay, the Windows power mode and CPU boost directly.- **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
+  overlay, the Windows power mode and CPU boost directly.- **A fixed Quick tab that fits without scrolling (1.9.9b).** The power card is compact: the four
+  TDP mode buttons 2 × 2 with the dial beside them (in Custom the dial shrinks and a mini slider sets
+  the watts), and one AutoTDP row with the switch on the left and a − / + target FPS on the right.
+  Below it: the brightness slider, eight toggles (Power Mode, EPP, CPU Boost, FPS Limit,
+  Touchscreen, Touchpad, Vibration Mode, Overlay) and one row of actions (Keyboard, End Task, Task
+  Manager, Explorer). Customize, the sensor row, custom shortcut tiles and tile controller combos
+  were removed from this tab.- **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
   the whole install behind a small progress window (see [Installation](#-installation)).
 
 ### 🔧 Reliability fixes
@@ -266,15 +272,13 @@ upstream, and why.
 
 ### 🗂️ Quick Settings
 
-A customizable dashboard of quick-access tiles for your most-used settings.
+One screen, no scrolling, built for the controller.
 
-- One-tap toggles for TDP Mode, AutoTDP, Profile, Overlay, Lossless Scaling, and more
-- **Assign a controller button combo to any tile** — hold the combo (paddles included) to fire it
-  hands-free
-- Custom keyboard-shortcut tiles you can add and remove
-- An optional built-in **brightness slider** and live sensor bars (CPU/GPU usage, SoC
-  temperature, TDP, memory, battery)
-- Device-specific tiles that appear when supported hardware is detected
+- TDP mode buttons with a dial (Custom watts, preset, or AutoTDP's live FPS) and a mini Custom slider
+- AutoTDP on/off with a − / + target FPS
+- Built-in screen brightness
+- Toggles: Power Mode, EPP, CPU Boost, FPS Limit, Touchscreen, Touchpad, Vibration Mode, Overlay
+- Actions: on-screen keyboard, End Task, Task Manager, File Explorer
 
 ### ⚡ Performance Control
 
