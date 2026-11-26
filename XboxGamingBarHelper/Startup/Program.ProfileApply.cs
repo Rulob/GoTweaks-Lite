@@ -22,6 +22,10 @@ namespace XboxGamingBarHelper
         /// </summary>
         /// <param name="defaultToCustom">For a per-game profile with no saved mode: switch to
         /// Custom (a new game profile starts there). The Global profile keeps the current mode.</param>
+        // Base TDP (SPL) range of the Custom mode on the Legion Go 2 (the widget slider matches).
+        private const int CustomTdpMinSplW = 5;
+        private const int CustomTdpMaxSplW = 35;
+
         private static void ApplyPerformanceSettings(GameProfile profile, bool defaultToCustom)
         {
             string name = profile.GameId.Name;
@@ -52,16 +56,27 @@ namespace XboxGamingBarHelper
             // Custom SPL / SPPT / FPPT, unless AutoTDP picks the wattage itself. SetCustomTDP
             // first (it flushes a pending switch to Custom, which the per-limit setters don't
             // wait for), then the three properties so the widget's sliders follow.
-            if (legionManager != null && legionManager.LegionPerformanceMode.Value == 255 && !profile.AutoTDPEnabled)
+            if (legionManager != null && !profile.AutoTDPEnabled)
             {
-                int spl = profile.TDP;
+                int spl = Math.Max(CustomTdpMinSplW, Math.Min(CustomTdpMaxSplW, profile.TDP));
                 int sppt = Math.Max(spl, profile.TDPFast);
                 int fppt = Math.Max(sppt, profile.TDPPeak);
-                legionManager.SetCustomTDP(spl, sppt, fppt);
+                if (legionManager.LegionPerformanceMode.Value == 255)
+                {
+                    legionManager.SetCustomTDP(spl, sppt, fppt);
+                    Logger.Info($"Profile '{name}': Custom limits {spl}/{sppt}/{fppt} W");
+                }
+                else
+                {
+                    // Another mode is active: keep the profile's Custom limits ready (nothing is
+                    // written to the hardware), so switching to Custom later uses them instead of
+                    // whatever the firmware reported at startup (1.9.8: Custom always began at 15 W).
+                    legionManager.RememberCustomTDP(spl, sppt, fppt);
+                    Logger.Info($"Profile '{name}': Custom limits {spl}/{sppt}/{fppt} W kept for when Custom is selected");
+                }
                 legionManager.LegionCustomTDPSlow.SetValue(spl);
                 legionManager.LegionCustomTDPFast.SetValue(sppt);
                 legionManager.LegionCustomTDPPeak.SetValue(fppt);
-                Logger.Info($"Profile '{name}': Custom limits {spl}/{sppt}/{fppt} W");
             }
 
             powerManager.CPUBoost.SetValue(profile.CPUBoost);

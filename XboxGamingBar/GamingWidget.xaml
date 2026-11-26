@@ -846,7 +846,7 @@
                                         </Grid>
                                         <Slider x:Name="QuickTdpSlider"
                                                 Style="{StaticResource ModernSliderStyle}"
-                                                Minimum="5" Maximum="50" StepFrequency="1" SmallChange="1" Value="15"
+                                                Minimum="5" Maximum="35" StepFrequency="1" SmallChange="1" Value="15"
                                                 ValueChanged="QuickTdpSlider_ValueChanged"/>
                                     </StackPanel>
                                 </StackPanel>
@@ -1131,82 +1131,6 @@
                               BringIntoViewOnFocusChange="True">
                     <StackPanel Padding="16,8,16,16">
 
-                        <!-- Active Profile Indicator -->
-                        <Border x:Name="ActiveProfileCard" Style="{StaticResource CardStyle}">
-                            <StackPanel Spacing="10">
-                                <StackPanel>
-                                    <TextBlock Text="Current Profile" Style="{StaticResource CardTitleStyle}"/>
-                                    <!--
-                                        Active profile name. Wrapped in a Canvas so long
-                                        names (e.g. detected window titles like Windows
-                                        Terminal showing the current task) marquee-scroll
-                                        instead of truncating with an ellipsis. Mirrors
-                                        the Quick Settings tile scroll pattern in
-                                        Features/QuickSettings/GamingWidget.QuickSettings.TileStates.cs.
-                                    -->
-                                    <Canvas x:Name="ActiveProfileTextCanvas"
-                                            Height="20"
-                                            HorizontalAlignment="Stretch">
-                                        <Canvas.Clip>
-                                            <RectangleGeometry Rect="0,0,0,20"/>
-                                        </Canvas.Clip>
-                                        <TextBlock x:Name="ActiveProfileText"
-                                                   Text="Global Settings"
-                                                   FontSize="14"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="{StaticResource SystemAccentBrush}">
-                                            <TextBlock.RenderTransform>
-                                                <TranslateTransform x:Name="ActiveProfileTextTransform"/>
-                                            </TextBlock.RenderTransform>
-                                        </TextBlock>
-                                    </Canvas>
-                                </StackPanel>
-
-                                <!-- Per-Game Profile Toggle -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Use per-game profile"
-                                                   FontSize="13"
-                                                   Foreground="#FFFFFF"/>
-                                        <!--
-                                            Detected-game name next to the per-game toggle.
-                                            Wrapped in a Canvas so long window titles (e.g.
-                                            Windows Terminal showing the foreground task)
-                                            marquee-scroll instead of truncating. Same
-                                            UpdateMarqueeScrollAnimation pattern used for
-                                            ActiveProfileText above and the QS tiles.
-                                        -->
-                                        <Canvas x:Name="DetectedGameTextCanvas"
-                                                Height="16"
-                                                MaxWidth="200"
-                                                Margin="0,4,0,0"
-                                                HorizontalAlignment="Left">
-                                            <Canvas.Clip>
-                                                <RectangleGeometry Rect="0,0,200,16"/>
-                                            </Canvas.Clip>
-                                            <TextBlock x:Name="DetectedGameText"
-                                                       Text="No game detected"
-                                                       FontSize="11"
-                                                       Foreground="#888888">
-                                                <TextBlock.RenderTransform>
-                                                    <TranslateTransform x:Name="DetectedGameTextTransform"/>
-                                                </TextBlock.RenderTransform>
-                                            </TextBlock>
-                                        </Canvas>
-                                    </StackPanel>
-                                    <ToggleSwitch x:Name="PerGameProfileToggle"
-                                                  Grid.Column="1"
-                                                  Style="{StaticResource ModernToggleStyle}"
-                                                  IsEnabled="False"/>
-                                </Grid>
-
-                            </StackPanel>
-                        </Border>
-
                         <!-- Performance Overlay Card -->
                         <Border Style="{StaticResource CardStyle}">
                             <Grid>
@@ -1273,95 +1197,6 @@
                                         TickPlacement="Outside"
                                         SnapsTo="StepValues"
                                         Visibility="{x:Bind FPSLimitToggle.IsOn, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- TDP Mode Card (all devices) -->
-                        <Border x:Name="TDPModeCard" Style="{StaticResource CardStyle}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock Text="TDP Mode" Style="{StaticResource CardTitleStyle}"/>
-                                    <TextBlock Text="Controls power and thermal profile"
-                                               Style="{StaticResource CardCaptionStyle}"/>
-                                </StackPanel>
-                                <ComboBox x:Name="TDPModeComboBox"
-                                          MinWidth="140"
-                                          Grid.Column="1"
-                                          Style="{StaticResource ModernComboBoxStyle}"
-                                          SelectedIndex="1"
-                                          SelectionChanged="TDPModeComboBox_SelectionChanged">
-                                    <ComboBoxItem Content="Quiet" Tag="1"/>
-                                    <ComboBoxItem Content="Balanced" Tag="2"/>
-                                    <ComboBoxItem Content="Performance" Tag="3"/>
-                                    <ComboBoxItem Content="Custom" Tag="255"/>
-                                </ComboBox>
-                            </Grid>
-                        </Border>
-
-                        <!-- Custom Power Limits Card (Legion only, shown in Custom mode).
-                             Three explicit limits written straight through Lenovo WMI:
-                             TDP (base SPL), SPPT Boost (effective SPPT = TDP + boost), FPPT Boost
-                             (effective FPPT = TDP + boost). Boost is always on. The live hardware
-                             readout sits at the bottom of this card. -->
-                        <Border x:Name="CustomTDPCard" Style="{StaticResource CardStyle}" Visibility="Collapsed">
-                            <StackPanel Spacing="10">
-                                <TextBlock Text="Custom Power Limits" Style="{StaticResource CardTitleStyle}"/>
-
-                                <!-- TDP (base SPL / sustained) -->
-                                <Grid>
-                                    <TextBlock Text="TDP" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="CustomTDPSlowValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
-                                </Grid>
-                                <Slider x:Name="CustomTDPSlowSlider"
-                                        Style="{StaticResource ModernSliderStyle}"
-                                        Minimum="5" Maximum="50"
-                                        TickFrequency="1"
-                                        SnapsTo="Ticks"
-                                        Value="15"
-                                        ValueChanged="CustomTDPSlowSlider_ValueChanged"/>
-
-                                <!-- SPPT Boost (effective SPPT = TDP + boost) -->
-                                <Grid>
-                                    <TextBlock Text="SPPT Boost" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="CustomTDPFastValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
-                                </Grid>
-                                <Slider x:Name="CustomTDPFastSlider"
-                                        Style="{StaticResource ModernSliderStyle}"
-                                        Minimum="0" Maximum="10"
-                                        TickFrequency="1"
-                                        SnapsTo="Ticks"
-                                        Value="2"
-                                        ValueChanged="CustomTDPFastSlider_ValueChanged"/>
-
-                                <!-- FPPT Boost (effective FPPT = TDP + boost; must be >= SPPT boost) -->
-                                <Grid>
-                                    <TextBlock Text="FPPT Boost" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
-                                    <TextBlock x:Name="CustomTDPPeakValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
-                                </Grid>
-                                <Slider x:Name="CustomTDPPeakSlider"
-                                        Style="{StaticResource ModernSliderStyle}"
-                                        Minimum="0" Maximum="15"
-                                        TickFrequency="1"
-                                        SnapsTo="Ticks"
-                                        Value="5"
-                                        ValueChanged="CustomTDPPeakSlider_ValueChanged"/>
-
-                                <!-- Live hardware readout (helper pushes the actual SPL/SPPT/FPPT) -->
-                                <Grid Margin="0,4,0,0">
-                                    <TextBlock x:Name="CurrentTDPText"
-                                               Text="Limits:"
-                                               FontSize="12"
-                                               Foreground="#B9C0CC"/>
-                                    <TextBlock x:Name="CurrentTDPValueText"
-                                               Text="-- W"
-                                               FontSize="12"
-                                               Foreground="#B9C0CC"
-                                               HorizontalAlignment="Right"/>
-                                </Grid>
                             </StackPanel>
                         </Border>
 
@@ -1456,6 +1291,95 @@
                                                       IsOn="True"/>
                                     </Grid>
                                 </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- TDP Mode Card (all devices) -->
+                        <Border x:Name="TDPModeCard" Style="{StaticResource CardStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock Text="TDP Mode" Style="{StaticResource CardTitleStyle}"/>
+                                    <TextBlock Text="Controls power and thermal profile"
+                                               Style="{StaticResource CardCaptionStyle}"/>
+                                </StackPanel>
+                                <ComboBox x:Name="TDPModeComboBox"
+                                          MinWidth="140"
+                                          Grid.Column="1"
+                                          Style="{StaticResource ModernComboBoxStyle}"
+                                          SelectedIndex="1"
+                                          SelectionChanged="TDPModeComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="Quiet" Tag="1"/>
+                                    <ComboBoxItem Content="Balanced" Tag="2"/>
+                                    <ComboBoxItem Content="Performance" Tag="3"/>
+                                    <ComboBoxItem Content="Custom" Tag="255"/>
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+
+                        <!-- Custom Power Limits Card (Legion only, shown in Custom mode).
+                             Three explicit limits written straight through Lenovo WMI:
+                             TDP (base SPL), SPPT Boost (effective SPPT = TDP + boost), FPPT Boost
+                             (effective FPPT = TDP + boost). Boost is always on. The live hardware
+                             readout sits at the bottom of this card. -->
+                        <Border x:Name="CustomTDPCard" Style="{StaticResource CardStyle}" Visibility="Collapsed">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Custom Power Limits" Style="{StaticResource CardTitleStyle}"/>
+
+                                <!-- TDP (base SPL / sustained) -->
+                                <Grid>
+                                    <TextBlock Text="TDP" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="CustomTDPSlowValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider x:Name="CustomTDPSlowSlider"
+                                        Style="{StaticResource ModernSliderStyle}"
+                                        Minimum="5" Maximum="35"
+                                        TickFrequency="1"
+                                        SnapsTo="Ticks"
+                                        Value="15"
+                                        ValueChanged="CustomTDPSlowSlider_ValueChanged"/>
+
+                                <!-- SPPT Boost (effective SPPT = TDP + boost) -->
+                                <Grid>
+                                    <TextBlock Text="SPPT Boost" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="CustomTDPFastValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider x:Name="CustomTDPFastSlider"
+                                        Style="{StaticResource ModernSliderStyle}"
+                                        Minimum="0" Maximum="10"
+                                        TickFrequency="1"
+                                        SnapsTo="Ticks"
+                                        Value="2"
+                                        ValueChanged="CustomTDPFastSlider_ValueChanged"/>
+
+                                <!-- FPPT Boost (effective FPPT = TDP + boost; must be >= SPPT boost) -->
+                                <Grid>
+                                    <TextBlock Text="FPPT Boost" FontSize="13" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="CustomTDPPeakValue" Text="-- W" FontSize="13" Foreground="#B9C0CC" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Slider x:Name="CustomTDPPeakSlider"
+                                        Style="{StaticResource ModernSliderStyle}"
+                                        Minimum="0" Maximum="15"
+                                        TickFrequency="1"
+                                        SnapsTo="Ticks"
+                                        Value="5"
+                                        ValueChanged="CustomTDPPeakSlider_ValueChanged"/>
+
+                                <!-- Live hardware readout (helper pushes the actual SPL/SPPT/FPPT) -->
+                                <Grid Margin="0,4,0,0">
+                                    <TextBlock x:Name="CurrentTDPText"
+                                               Text="Limits:"
+                                               FontSize="12"
+                                               Foreground="#B9C0CC"/>
+                                    <TextBlock x:Name="CurrentTDPValueText"
+                                               Text="-- W"
+                                               FontSize="12"
+                                               Foreground="#B9C0CC"
+                                               HorizontalAlignment="Right"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
 
@@ -1595,6 +1519,82 @@
                               BringIntoViewOnFocusChange="True">
                     <StackPanel Padding="16,8,16,16">
 
+                        <!-- Active Profile Indicator -->
+                        <Border x:Name="ActiveProfileCard" Style="{StaticResource CardStyle}">
+                            <StackPanel Spacing="10">
+                                <StackPanel>
+                                    <TextBlock Text="Current Profile" Style="{StaticResource CardTitleStyle}"/>
+                                    <!--
+                                        Active profile name. Wrapped in a Canvas so long
+                                        names (e.g. detected window titles like Windows
+                                        Terminal showing the current task) marquee-scroll
+                                        instead of truncating with an ellipsis. Mirrors
+                                        the Quick Settings tile scroll pattern in
+                                        Features/QuickSettings/GamingWidget.QuickSettings.TileStates.cs.
+                                    -->
+                                    <Canvas x:Name="ActiveProfileTextCanvas"
+                                            Height="20"
+                                            HorizontalAlignment="Stretch">
+                                        <Canvas.Clip>
+                                            <RectangleGeometry Rect="0,0,0,20"/>
+                                        </Canvas.Clip>
+                                        <TextBlock x:Name="ActiveProfileText"
+                                                   Text="Global Settings"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{StaticResource SystemAccentBrush}">
+                                            <TextBlock.RenderTransform>
+                                                <TranslateTransform x:Name="ActiveProfileTextTransform"/>
+                                            </TextBlock.RenderTransform>
+                                        </TextBlock>
+                                    </Canvas>
+                                </StackPanel>
+
+                                <!-- Per-Game Profile Toggle -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Use per-game profile"
+                                                   FontSize="13"
+                                                   Foreground="#FFFFFF"/>
+                                        <!--
+                                            Detected-game name next to the per-game toggle.
+                                            Wrapped in a Canvas so long window titles (e.g.
+                                            Windows Terminal showing the foreground task)
+                                            marquee-scroll instead of truncating. Same
+                                            UpdateMarqueeScrollAnimation pattern used for
+                                            ActiveProfileText above and the QS tiles.
+                                        -->
+                                        <Canvas x:Name="DetectedGameTextCanvas"
+                                                Height="16"
+                                                MaxWidth="200"
+                                                Margin="0,4,0,0"
+                                                HorizontalAlignment="Left">
+                                            <Canvas.Clip>
+                                                <RectangleGeometry Rect="0,0,200,16"/>
+                                            </Canvas.Clip>
+                                            <TextBlock x:Name="DetectedGameText"
+                                                       Text="No game detected"
+                                                       FontSize="11"
+                                                       Foreground="#888888">
+                                                <TextBlock.RenderTransform>
+                                                    <TranslateTransform x:Name="DetectedGameTextTransform"/>
+                                                </TextBlock.RenderTransform>
+                                            </TextBlock>
+                                        </Canvas>
+                                    </StackPanel>
+                                    <ToggleSwitch x:Name="PerGameProfileToggle"
+                                                  Grid.Column="1"
+                                                  Style="{StaticResource ModernToggleStyle}"
+                                                  IsEnabled="False"/>
+                                </Grid>
+
+                            </StackPanel>
+                        </Border>
+
                         <!-- Current Game Card -->
                         <Border Style="{StaticResource CardStyle}">
                             <StackPanel>
@@ -1625,77 +1625,6 @@
                                                    Visibility="Collapsed"/>
                                     </StackPanel>
                                 </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Game Detection Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Game Detection"
-                                                   Style="{StaticResource CardTitleStyle}"/>
-                                        <TextBlock Text="Games with profiles always detect regardless of settings"
-                                                   Style="{StaticResource CardCaptionStyle}"/>
-                                    </StackPanel>
-                                    <ToggleButton x:Name="ProfileDetectionExpandToggle"
-                                                  Grid.Column="1"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  Padding="8,4"
-                                                  Click="ProfileDetectionExpandToggle_Click">
-                                        <FontIcon x:Name="ProfileDetectionExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
-                                    </ToggleButton>
-                                </Grid>
-
-                                <StackPanel x:Name="ProfileDetectionContent" Visibility="Collapsed" Margin="0,12,0,0" Spacing="12">
-
-                                    <!-- Match Exe Toggle -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                            <TextBlock Text="Prefer executable"
-                                                       FontSize="13"
-                                                       Foreground="#FFFFFF"/>
-                                            <TextBlock Text="Use .exe name, fall back to window title if unavailable"
-                                                       FontSize="11"
-                                                       Foreground="#888888"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="ProfileMatchByExeToggle"
-                                                      Grid.Column="1"
-                                                      Style="{StaticResource ModernToggleStyle}"/>
-                                    </Grid>
-
-                                    <!-- Games Only Toggle -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                            <TextBlock Text="Games only"
-                                                       FontSize="13"
-                                                       Foreground="#FFFFFF"/>
-                                            <TextBlock Text="Detect apps with FPS (RTSS) or added to Xbox Game Bar"
-                                                       FontSize="11"
-                                                       Foreground="#888888"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="ProfileGamesOnlyToggle"
-                                                      Grid.Column="1"
-                                                      Style="{StaticResource ModernToggleStyle}"
-                                                      IsOn="True"/>
-                                    </Grid>
-
-                                </StackPanel>
                             </StackPanel>
                         </Border>
 
@@ -2409,359 +2338,6 @@
                                                    FontSize="12"
                                                    TextWrapping="Wrap"/>
                                     </StackPanel>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Hotkeys Card (Collapsible) - Xbox Controller Button Combos -->
-                        <Border x:Name="HotkeysCard" Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <!-- Header with Expand/Collapse -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Hotkeys" Style="{StaticResource CardTitleStyle}"/>
-                                        <TextBlock x:Name="HotkeysSummary"
-                                                   Text="Map controller combos to keyboard shortcuts"
-                                                   Style="{StaticResource CardCaptionStyle}"
-                                                   TextWrapping="Wrap"/>
-                                    </StackPanel>
-                                    <ToggleButton x:Name="HotkeysExpandButton"
-                                                  Grid.Column="1"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  Padding="8,4"
-                                                  Click="HotkeysExpandButton_Click"
-                                                  UseSystemFocusVisuals="True">
-                                        <FontIcon x:Name="HotkeysExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
-                                    </ToggleButton>
-                                </Grid>
-
-                                <!-- Collapsible Content -->
-                                <StackPanel x:Name="HotkeysContent" Visibility="Collapsed" Margin="0,12,0,0">
-                                    <!-- Menu+A Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="View + A" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuAComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuA_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuAKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuAKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuAKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuAKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Menu+B Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="View + B" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuBComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuB_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuBKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuBKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuBKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuBKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Menu+X Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="View + X" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuXComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuX_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuXKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuXKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuXKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuXKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Menu+Y Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="View + Y" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuYComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuY_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuYKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuYKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuYKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuYKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Menu+DpadUp Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Menu + ↑" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuDpadUpComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuDpadUp_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuDpadUpKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuDpadUpKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuDpadUpKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadUpKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Menu+DpadDown Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Menu + ↓" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuDpadDownComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuDpadDown_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuDpadDownKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuDpadDownKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuDpadDownKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadDownKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Menu+DpadLeft Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Menu + ←" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuDpadLeftComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuDpadLeft_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuDpadLeftKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuDpadLeftKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuDpadLeftKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadLeftKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Menu+DpadRight Row -->
-                                    <StackPanel Margin="0,0,0,8">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="80"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Text="Menu + →" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
-                                            <ComboBox x:Name="HotkeyMenuDpadRightComboBox" Grid.Column="1"
-                                                      Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectionChanged="HotkeyMenuDpadRight_SelectionChanged"
-                                                      UseSystemFocusVisuals="True"
-                                                      FocusVisualPrimaryBrush="White">
-                                                <ComboBoxItem Content="Disabled" Tag="0"/>
-                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
-                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
-                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
-                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
-                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
-                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
-                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
-                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
-                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
-                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
-                                            </ComboBox>
-                                        </Grid>
-                                        <StackPanel x:Name="HotkeyMenuDpadRightKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
-                                            <ItemsControl x:Name="HotkeyMenuDpadRightKeyTags">
-                                                <ItemsControl.ItemsPanel>
-                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
-                                                </ItemsControl.ItemsPanel>
-                                            </ItemsControl>
-                                            <ComboBox x:Name="HotkeyMenuDpadRightKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadRightKey_SelectionChanged">
-                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Note about hotkeys -->
-                                    <TextBlock Text="Hotkeys work when the widget is running, even when not visible."
-                                               FontSize="11"
-                                               Foreground="#888888"
-                                               TextWrapping="Wrap"
-                                               Margin="0,12,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
@@ -4646,6 +4222,359 @@
                              performance mode (Quiet/Balanced/Performance/Custom). The Custom SPL/SPPL/FPPT
                              sliders were likewise moved to the Performance tab. One source of truth. -->
 
+                        <!-- Hotkeys Card (Collapsible) - Xbox Controller Button Combos -->
+                        <Border x:Name="HotkeysCard" Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <!-- Header with Expand/Collapse -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="Hotkeys" Style="{StaticResource CardTitleStyle}"/>
+                                        <TextBlock x:Name="HotkeysSummary"
+                                                   Text="Map controller combos to keyboard shortcuts"
+                                                   Style="{StaticResource CardCaptionStyle}"
+                                                   TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <ToggleButton x:Name="HotkeysExpandButton"
+                                                  Grid.Column="1"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  Padding="8,4"
+                                                  Click="HotkeysExpandButton_Click"
+                                                  UseSystemFocusVisuals="True">
+                                        <FontIcon x:Name="HotkeysExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
+                                    </ToggleButton>
+                                </Grid>
+
+                                <!-- Collapsible Content -->
+                                <StackPanel x:Name="HotkeysContent" Visibility="Collapsed" Margin="0,12,0,0">
+                                    <!-- Menu+A Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="View + A" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuAComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuA_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuAKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuAKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuAKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuAKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Menu+B Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="View + B" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuBComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuB_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuBKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuBKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuBKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuBKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Menu+X Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="View + X" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuXComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuX_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuXKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuXKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuXKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuXKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Menu+Y Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="View + Y" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuYComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuY_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuYKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuYKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuYKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuYKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Menu+DpadUp Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Menu + ↑" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuDpadUpComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuDpadUp_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuDpadUpKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuDpadUpKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuDpadUpKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadUpKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Menu+DpadDown Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Menu + ↓" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuDpadDownComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuDpadDown_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuDpadDownKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuDpadDownKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuDpadDownKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadDownKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Menu+DpadLeft Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Menu + ←" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuDpadLeftComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuDpadLeft_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuDpadLeftKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuDpadLeftKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuDpadLeftKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadLeftKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Menu+DpadRight Row -->
+                                    <StackPanel Margin="0,0,0,8">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="80"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Menu + →" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="13"/>
+                                            <ComboBox x:Name="HotkeyMenuDpadRightComboBox" Grid.Column="1"
+                                                      Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectionChanged="HotkeyMenuDpadRight_SelectionChanged"
+                                                      UseSystemFocusVisuals="True"
+                                                      FocusVisualPrimaryBrush="White">
+                                                <ComboBoxItem Content="Disabled" Tag="0"/>
+                                                <ComboBoxItem Content="Keyboard Shortcut" Tag="1"/>
+                                                <ComboBoxItem Content="Toggle OSD" Tag="3"/>
+                                                <ComboBoxItem Content="Screenshot" Tag="4"/>
+                                                <ComboBoxItem Content="Alt+Tab" Tag="5"/>
+                                                <ComboBoxItem Content="Alt+F4" Tag="6"/>
+                                                <ComboBoxItem Content="Open Keyboard" Tag="7"/>
+                                                <ComboBoxItem Content="Task Manager" Tag="9"/>
+                                                <ComboBoxItem Content="Focus GoTweaks Lite" Tag="10"/>
+                                                <ComboBoxItem Content="Brightness Up (+5%)" Tag="11"/>
+                                                <ComboBoxItem Content="Brightness Down (-5%)" Tag="12"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel x:Name="HotkeyMenuDpadRightKeyPanel" Orientation="Horizontal" Margin="80,4,0,0" Visibility="Collapsed">
+                                            <ItemsControl x:Name="HotkeyMenuDpadRightKeyTags">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                            </ItemsControl>
+                                            <ComboBox x:Name="HotkeyMenuDpadRightKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                      SelectedIndex="0" SelectionChanged="HotkeyMenuDpadRightKey_SelectionChanged">
+                                                <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Note about hotkeys -->
+                                    <TextBlock Text="Hotkeys work when the widget is running, even when not visible."
+                                               FontSize="11"
+                                               Foreground="#888888"
+                                               TextWrapping="Wrap"
+                                               Margin="0,12,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Fan Full Speed Card -->
                         <Border Style="{StaticResource CardStyle}">
                             <Grid>
@@ -4690,31 +4619,6 @@
                                 </Grid>
 
                             </StackPanel>
-                        </Border>
-
-                        <!-- Battery Section Header -->
-                        <TextBlock Text="Battery" Style="{StaticResource SectionHeaderStyle}"/>
-
-
-                        <!-- Game Bar Section: put GoTweaks in the device-maker slot left of Home -->
-                        <TextBlock Text="Game Bar" Style="{StaticResource SectionHeaderStyle}"/>
-                        <Border Style="{StaticResource CardStyle}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock Text="Show GoTweaks first" Style="{StaticResource CardTitleStyle}"/>
-                                    <TextBlock Text="Takes Legion Space's spot left of Home. Game Bar closes to apply; open it again."
-                                               Style="{StaticResource CardCaptionStyle}"
-                                               TextWrapping="Wrap"/>
-                                </StackPanel>
-                                <ToggleSwitch x:Name="GameBarFirstSlotToggle"
-                                              Grid.Column="1"
-                                              Style="{StaticResource ModernToggleStyle}"
-                                              IsOn="False"/>
-                            </Grid>
                         </Border>
 
                         <!-- Driver Updates Card (Lenovo): machine type + installed BIOS +

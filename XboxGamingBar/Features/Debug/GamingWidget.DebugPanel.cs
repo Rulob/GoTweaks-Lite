@@ -909,8 +909,8 @@ namespace XboxGamingBar
         };
 
         /// <summary>
-        /// "Reset All Settings" (1.9.7d). The helper backs everything up to the Desktop, puts the
-        /// Windows and controller settings back to default and restarts with its settings deleted;
+        /// "Reset All Settings" (1.9.8). The helper backs everything up to the Desktop, puts the
+        /// controller settings back to default and restarts with its settings deleted;
         /// the widget then clears its own storage and closes, so it reopens with the defaults.
         /// </summary>
         private async void ResetAllSettingsButton_Click(object sender, RoutedEventArgs e)
@@ -921,13 +921,12 @@ namespace XboxGamingBar
             try
             {
                 var dialog = new Windows.UI.Popups.MessageDialog(
-                    "This puts GoTweaks back to how it was on a fresh install:\n\n" +
+                    "This puts GoTweaks' settings back to how they were on a fresh install:\n\n" +
                     "• Every GoTweaks setting goes back to its default, including the Global profile, " +
                     "the Quick Settings and overlay layouts, and the hotkeys\n" +
                     "• The controller goes back to the default buttons, deadzones, triggers, vibration and lighting\n" +
-                    "• Windows settings GoTweaks changed are put back as they were before GoTweaks: power " +
-                    "button, screen and sleep timeouts, OS power mode, CPU boost and the Game Bar slot\n" +
-                    "• Game profiles are deleted, unless you choose \"Keep game profiles\"\n\n" +
+                    "• Game profiles are deleted, unless you choose \"Keep game profiles\"\n" +
+                    "• Windows settings (power button, screen and sleep timeouts, touchscreen...) are left as they are\n\n" +
                     "A backup is saved to your Desktop first. \"Import All Data\" brings it back.\n\n" +
                     "GoTweaks closes when it's done; reopen it from Game Bar.",
                     "Reset All Settings");

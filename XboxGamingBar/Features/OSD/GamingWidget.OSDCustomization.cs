@@ -104,7 +104,6 @@ namespace XboxGamingBar
         private int osdProvider = 0;  // 0=RTSS, 1=AMD
         private int amdOverlayLevel = 0;  // Track AMD overlay level: 0=Off, 1-4=Level 1-4 (can't query from AMD)
         private bool isOSDCustomizeExpanded = false;
-        private bool isProfileDetectionExpanded = false;
         private bool isButtonRemappingExpanded = false;
         private bool isGyroSettingsExpanded = false;
         private bool isSpecialRemappingExpanded = false;
@@ -637,22 +636,6 @@ namespace XboxGamingBar
                 OSDOpacityValue.Text = $"{osdOpacity}%";
             SaveOSDConfigToStorage();
             SendOSDConfigToHelper();
-        }
-
-        private void ProfileDetectionExpandToggle_Click(object sender, RoutedEventArgs e)
-        {
-            isProfileDetectionExpanded = !isProfileDetectionExpanded;
-
-            if (ProfileDetectionContent != null)
-            {
-                ProfileDetectionContent.Visibility = isProfileDetectionExpanded ? Visibility.Visible : Visibility.Collapsed;
-            }
-
-            if (ProfileDetectionExpandIcon != null)
-            {
-                // E70D = ChevronDown, E70E = ChevronUp
-                ProfileDetectionExpandIcon.Glyph = isProfileDetectionExpanded ? "\uE70E" : "\uE70D";
-            }
         }
 
         private void ButtonRemappingExpandToggle_Click(object sender, RoutedEventArgs e)

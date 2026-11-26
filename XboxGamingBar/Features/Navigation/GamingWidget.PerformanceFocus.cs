@@ -24,20 +24,20 @@ namespace XboxGamingBar
         /// <summary>The Performance tab's controls, top to bottom.</summary>
         private IEnumerable<Control> PerformanceTabFocusOrder()
         {
-            yield return PerGameProfileToggle;
+            // (Current Profile and its per-game toggle moved to the Profiles tab in 1.9.8.)
             yield return PerformanceOverlayToggle;
             yield return FPSLimitToggle;
             yield return FPSLimitSlider;
-            yield return TDPModeComboBox;
-            yield return CustomTDPSlowSlider;
-            yield return CustomTDPFastSlider;
-            yield return CustomTDPPeakSlider;
             yield return AutoTDPToggle;
             yield return AutoTDPTargetFPSSlider;
             yield return AutoTDPMinSlider;
             yield return AutoTDPMaxSlider;
             yield return AutoTDPPauseWhenUnfocusedToggle;
             yield return AutoTDPFastResponseToggle;
+            yield return TDPModeComboBox;
+            yield return CustomTDPSlowSlider;
+            yield return CustomTDPFastSlider;
+            yield return CustomTDPPeakSlider;
             yield return OSPowerModeComboBox;
             yield return CPUExtrasExpandToggle;
         }

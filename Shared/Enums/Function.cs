@@ -670,9 +670,9 @@
         // { name ("Global" or game), tdp, tdpFast, tdpPeak, fps, osPower, overlay }. Widget -> helper.
         MigrateWidgetProfiles,          // string (JSON)
 
-        // 1.9.7d "Reset all settings": Content = the widget's settings JSON (goes into the backup),
-        // extra key KeepGameProfiles (bool). The helper backs up to the Desktop, restores the
-        // Windows and controller defaults, then restarts with its settings files deleted. Replies
+        // 1.9.8 "Reset all settings": Content = the widget's settings JSON (goes into the backup),
+        // extra key KeepGameProfiles (bool). The helper backs up to the Desktop, writes the
+        // controller defaults, then restarts with its settings files deleted. Replies
         // with the backup folder path, or "Error: ..." (then nothing was reset). Widget -> helper.
         ResetAllSettings,               // string
     }

@@ -1408,7 +1408,7 @@ namespace XboxGamingBar
 
         // ===== Custom Power Limits (Performance tab, Legion-only, Custom mode) =====
         //
-        // UI model: three sliders — TDP (base SPL, 5-50W), SPPT Boost (+0..+10W) and FPPT Boost
+        // UI model: three sliders — TDP (base SPL, 5-35W: the Legion Go 2 maximum, 1.9.8), SPPT Boost (+0..+10W) and FPPT Boost
         // (+0..+15W). The effective limits are SPPT = TDP + SPPT Boost and FPPT = TDP + FPPT Boost,
         // with the invariant SPPT <= FPPT enforced (i.e. SPPT Boost <= FPPT Boost) and both effective
         // limits clamped to CustomTDPCeilingW. Those absolute SPL/SPPT/FPPT values are what we push

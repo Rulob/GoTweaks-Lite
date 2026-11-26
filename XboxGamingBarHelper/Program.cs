@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using Shared.Constants;
 using Shared.Data;
 using Shared.IPC;
@@ -1206,7 +1206,6 @@ namespace XboxGamingBarHelper
                 settingsManager.ProfileCustomGamePath,
                 settingsManager.ProfileGamesOnly,
                 settingsManager.ProfileBlacklistPaths,
-                settingsManager.GameBarFirstSlot,
                 systemManager.ForegroundApp,
                 // Legion Go specific properties
                 legionManager.LegionGoDetected,

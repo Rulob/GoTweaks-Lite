@@ -79,16 +79,16 @@ namespace XboxGamingBarHelper
         }
 
         /// <summary>
-        /// The "Open Game Bar" (Xbox Guide) button action. With Show GoTweaks first on, it opens
-        /// Game Bar on the GoTweaks widget, like the device-maker button does for Legion Space;
-        /// otherwise, or when Game Bar is already open (so the press closes it), it is Win+G.
+        /// The "Open Game Bar" (Xbox Guide) button action. It opens Game Bar on the GoTweaks widget,
+        /// like the device-maker button does for Legion Space; when Game Bar is already open (so
+        /// the press closes it), or that fails, it is Win+G.
         /// </summary>
         private static async void OpenGameBarFromButton()
         {
             try
             {
-                bool firstSlot = settingsManager?.GameBarFirstSlot?.Value == true;
-                if (firstSlot && IsGameBarOpen() != true && await OpenGameBarOnGoTweaksAsync())
+                // GoTweaks always holds the device-maker slot (1.9.8).
+                if (IsGameBarOpen() != true && await OpenGameBarOnGoTweaksAsync())
                 {
                     return;
                 }

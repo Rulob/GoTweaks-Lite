@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -90,8 +90,6 @@
     <Compile Include="Converter\RadeonBoostResolutionStringConverter.cs" />
     <Compile Include="Converter\SharpnessPercentStringConverter.cs" />
     <Compile Include="Data\Profile\DeleteGameProfileProperty.cs" />
-    <Compile Include="Data\Profile\ProfileMatchByExeProperty.cs" />
-    <Compile Include="Data\Profile\ProfileGamesOnlyProperty.cs" />
     <Compile Include="Data\PowerButtonActionProperty.cs" />
     <Compile Include="Data\IntTagComboProperty.cs" />
     <Compile Include="Data\CPUBoostProperty.cs" />
@@ -119,7 +117,6 @@
     <Compile Include="Data\Legion\LegionGyroEnabledProperty.cs" />
     <Compile Include="Data\Legion\LegionVibrationProperty.cs" />
     <Compile Include="Data\Legion\LegionPowerLightProperty.cs" />
-    <Compile Include="Data\Legion\GameBarFirstSlotProperty.cs" />
     <Compile Include="Data\Legion\LegionButtonY1Property.cs" />
     <Compile Include="Data\Legion\LegionButtonY2Property.cs" />
     <Compile Include="Data\Legion\LegionButtonY3Property.cs" />

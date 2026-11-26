@@ -180,12 +180,6 @@ namespace XboxGamingBar
             // Legion tab - Power Light card
             LegionPowerLightToggle.GotFocus += Control_GotFocus;
             LegionPowerLightToggle.LostFocus += Control_LostFocus;
-
-            // Legion tab - Charge Limit card
-
-            // Legion tab - Game Bar card
-            GameBarFirstSlotToggle.GotFocus += Control_GotFocus;
-            GameBarFirstSlotToggle.LostFocus += Control_LostFocus;
         }
 
         private void Control_GotFocus(object sender, RoutedEventArgs e)

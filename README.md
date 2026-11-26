@@ -227,15 +227,22 @@ upstream, and why.
   both sticks at startup), the 80% Charge Limit, and the fan curve editor. The fan always follows
   the firmware curve of the TDP mode; in Custom, GoTweaks writes Lenovo's stock curve (the
   firmware doesn't expose its Balanced curve to copy).
-- **Reset All Settings** (Settings → Debug). Puts GoTweaks back to a fresh install: every setting,
-  the Global profile, the Quick Settings and overlay layouts and the hotkeys go back to their
-  defaults; the controller gets the default buttons, deadzones, triggers, vibration and lighting;
-  and the Windows settings GoTweaks changed (power button, screen and sleep timeouts, OS power
-  mode, CPU boost, Game Bar slot) are put back as they were before GoTweaks. Game profiles are
-  deleted unless you choose "Keep game profiles". Everything is backed up to a Desktop folder first
-  (Import All Data brings it back), then the helper restarts and GoTweaks closes.
+- **Reset All Settings** (Settings → Debug). Puts GoTweaks' settings back to a fresh install:
+  every setting, the Global profile, the Quick Settings and overlay layouts and the hotkeys go
+  back to their defaults, and the controller gets the default buttons, deadzones, triggers,
+  vibration and lighting. Game profiles are deleted unless you choose "Keep game profiles".
+  Windows settings are left alone. Everything is backed up to a Desktop folder first (Import All
+  Data brings it back), then the helper restarts and GoTweaks closes.
 - **Export All Data now saves all widget settings** (it used to save a short list) and the
   helper's real settings file (it was saving an old copy).
+- **GoTweaks always takes Game Bar's first slot** (left of Home, where Legion Space sits); the
+  "Show GoTweaks first" toggle was removed. Prepare for Uninstall still gives the slot back.
+- **Custom TDP remembers its wattage.** Switching to Custom (Performance tab or the Quick Settings
+  TDP Mode box) uses the TDP last set for the active profile instead of starting at 15 W. The
+  Custom TDP slider now tops out at 35 W, the Legion Go 2's maximum.
+- **Layout:** AutoTDP sits above TDP Mode on the Performance tab, the Current Profile card moved
+  to the Profiles tab, the Hotkeys card moved from System to the Legion tab next to the other
+  remapping cards, and the Game Detection card was removed (its two options keep their current values).
 ---
 
 ## 🧩 Features

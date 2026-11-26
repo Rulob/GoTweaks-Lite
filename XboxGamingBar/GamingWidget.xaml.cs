@@ -1,4 +1,4 @@
-﻿using Microsoft.Gaming.XboxGameBar;
+using Microsoft.Gaming.XboxGameBar;
 using Microsoft.Gaming.XboxGameBar.Input;
 using Microsoft.UI.Xaml.Controls;
 using NLog;
@@ -497,7 +497,6 @@ namespace XboxGamingBar
         private readonly XboxGamingBar.Data.AutoTDPSpptBoostProperty autoTDPSpptBoost;
         private readonly XboxGamingBar.Data.AutoTDPFpptBoostProperty autoTDPFpptBoost;
         private readonly XboxGamingBar.Data.AutoTDPFastResponseProperty autoTDPFastResponse;
-        private readonly GameBarFirstSlotProperty gameBarFirstSlot;
         private readonly RunningGameProperty runningGame;
         private readonly PerGameProfileProperty perGameProfile;
         private readonly DeleteGameProfileProperty deleteGameProfile;
@@ -633,8 +632,6 @@ namespace XboxGamingBar
         private bool isLoadingOSPowerMode = false;
 
         // Profile Detection Settings
-        private readonly ProfileMatchByExeProperty profileMatchByExe;
-        private readonly ProfileGamesOnlyProperty profileGamesOnly;
 
         // FPS Limit (RTSS)
         private readonly FPSLimitProperty fpsLimit;
@@ -758,7 +755,6 @@ namespace XboxGamingBar
             autoTDPSpptBoost = new XboxGamingBar.Data.AutoTDPSpptBoostProperty(2);
             autoTDPFpptBoost = new XboxGamingBar.Data.AutoTDPFpptBoostProperty(5);
             autoTDPFastResponse = new XboxGamingBar.Data.AutoTDPFastResponseProperty(AutoTDPFastResponseToggle, this);
-            gameBarFirstSlot = new GameBarFirstSlotProperty(GameBarFirstSlotToggle, this);
             osd =new OSDProperty(0, PerformanceOverlaySlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, DetectedGameText, this);
             // Callback fires after RunningGameProperty updates DetectedGameText.Text on the
@@ -922,9 +918,6 @@ namespace XboxGamingBar
             fpsLimit = new FPSLimitProperty();
             fpsLimit.PropertyChanged += FPSLimitProperty_Changed;
 
-            // Profile Detection Settings
-            profileMatchByExe = new ProfileMatchByExeProperty(ProfileMatchByExeToggle, this);
-            profileGamesOnly = new ProfileGamesOnlyProperty(ProfileGamesOnlyToggle, this);
 
             // Set up Legion tab visibility callback
             legionGoDetected.SetVisibilityCallback(SetLegionTabVisibility);
@@ -986,7 +979,6 @@ namespace XboxGamingBar
                 autoTDPSpptBoost,
                 autoTDPFpptBoost,
                 autoTDPFastResponse,
-                gameBarFirstSlot,
                 legionGoDetected,
                 legionTouchpadEnabled,
                 legionLightMode,
@@ -1057,10 +1049,7 @@ namespace XboxGamingBar
                 deviceSupportsGyro,
                 deviceHasScrollWheel,
                 deviceHasDetachableControllers,
-                deviceHasTouchpad,
-                // Profile Detection Settings
-                profileMatchByExe,
-                profileGamesOnly
+                deviceHasTouchpad
             );
             widgetPropsTimer.Stop();
             Logger.Info($"[TIMING] WidgetProperties creation: {widgetPropsTimer.ElapsedMilliseconds}ms");

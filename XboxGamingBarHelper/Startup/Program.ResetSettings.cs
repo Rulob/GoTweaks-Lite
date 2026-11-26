@@ -14,15 +14,14 @@ using XboxGamingBarHelper.Settings;
 namespace XboxGamingBarHelper
 {
     /// <summary>
-    /// "Reset all settings" (1.9.7d, Settings > Debug). Puts GoTweaks back to a fresh install:
+    /// "Reset all settings" (1.9.8, Settings > Debug). Puts GoTweaks' own settings back to a fresh
+    /// install; Windows settings (power button, timeouts, touchscreen, Game Bar slot...) are left
+    /// as they are.
     ///  1. Backs everything up to a Desktop folder (the same format as Export All Data, so Import
     ///     All Data brings it back). If the backup fails, nothing is reset.
-    ///  2. Puts back the Windows settings GoTweaks changed (CPU boost, EPP, CPU states, OS power
-    ///     mode, power button, display and sleep timeouts, touchscreen, Game Bar slot) and turns
-    ///     adaptive brightness off if GoTweaks turned it on.
-    ///  3. Writes the default controller settings to the hardware (remaps, deadzones, triggers,
+    ///  2. Writes the default controller settings to the hardware (remaps, deadzones, triggers,
     ///     vibration, lighting, touchpad), because the controller keeps them across restarts.
-    ///  4. Restarts the helper. The restart script deletes the settings files only after this
+    ///  3. Restarts the helper. The restart script replaces the settings files only after this
     ///     process has exited, so nothing still in memory can write them back; the new helper
     ///     then starts with a default Global profile and applies it.
     /// The widget clears its own storage and closes itself once this returns.
@@ -61,32 +60,27 @@ namespace XboxGamingBarHelper
                 return response;
             }
 
-            // 2-4 run after the reply (the widget waits 10 s at most; powercfg and the controller
-            // writes can take a few seconds). The widget closes itself meanwhile.
+            // 2-3 run after the reply (the widget waits 10 s at most and the controller writes can
+            // take a few seconds). The widget closes itself meanwhile.
             List<string> filesToDelete = GetSettingsFilesForReset(keepGameProfiles, out string profilesFolder);
-            string cleanupScript = BuildResetCleanupScript(filesToDelete, profilesFolder);
+            string keptSettingsJson = BuildKeptSettingsJson();
+            string cleanupScript = BuildResetCleanupScript(filesToDelete, profilesFolder,
+                LocalSettingsHelper.SettingsFilePath, keptSettingsJson);
             Logger.Info($"ResetAllSettings: backup at {backupPath}; will delete after exit: {string.Join(", ", filesToDelete)}"
-                + (profilesFolder != null ? $", {profilesFolder}\\*.xml" : ""));
+                + (profilesFolder != null ? $", {profilesFolder}\\*.xml" : "")
+                + $"; settings kept: {keptSettingsJson}");
 
             _ = Task.Run(async () =>
             {
                 await Task.Delay(500); // let the reply go out first
-                lock (resetGate)
+                try
                 {
-                    try
-                    {
-                        Services.SystemRestoreService.RestoreForSettingsReset(systemManager);
-                        if (systemManager != null && systemManager.IsAdaptiveBrightnessRequested)
-                        {
-                            systemManager.SetAdaptiveBrightness(false);
-                        }
-                        ResetLegionControllerToDefaults();
-                    }
-                    catch (Exception ex)
-                    {
-                        // Keep going: the files still get deleted and the new helper applies defaults.
-                        Logger.Error(ex, "ResetAllSettings: restoring Windows / controller settings failed");
-                    }
+                    ResetLegionControllerToDefaults();
+                }
+                catch (Exception ex)
+                {
+                    // Keep going: the files still get reset and the new helper applies defaults.
+                    Logger.Error(ex, "ResetAllSettings: writing the default controller settings failed");
                 }
                 await RestartHelperForResetAsync(cleanupScript);
             });
@@ -96,7 +90,24 @@ namespace XboxGamingBarHelper
             return response;
         }
 
-        private static readonly object resetGate = new object();
+        // Helper settings that only record the state of Windows, not a GoTweaks preference. The
+        // reset doesn't touch Windows, so these must survive or GoTweaks would lose track of it:
+        // the Game Bar slot's original owner (put back by Prepare for Uninstall) and whether the
+        // touchscreen is turned off.
+        private static readonly string[] SettingsKeptByReset = { "GameBarFirstSlotBackup", "TouchscreenEnabled" };
+
+        private static string BuildKeptSettingsJson()
+        {
+            var kept = new Dictionary<string, object>();
+            foreach (var key in SettingsKeptByReset)
+            {
+                if (LocalSettingsHelper.TryGetValue<object>(key, out var value) && value != null)
+                {
+                    kept[key] = value is System.Text.Json.JsonElement element ? element.Clone() : value;
+                }
+            }
+            return System.Text.Json.JsonSerializer.Serialize(kept);
+        }
 
         /// <summary>
         /// The files that hold GoTweaks settings: the Global profile, the helper settings (and their
@@ -106,10 +117,10 @@ namespace XboxGamingBarHelper
         /// </summary>
         private static List<string> GetSettingsFilesForReset(bool keepGameProfiles, out string profilesFolder)
         {
+            // The live settings file isn't listed: the script rewrites it with the kept settings.
             var files = new List<string>
             {
                 Profile.ProfileManager.GetGlobalProfilePath(),
-                LocalSettingsHelper.SettingsFilePath,
                 LocalSettingsHelper.LegacySettingsFilePath,
             };
 
@@ -122,13 +133,18 @@ namespace XboxGamingBarHelper
             return files.Where(f => !string.IsNullOrEmpty(f)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         }
 
-        private static string BuildResetCleanupScript(List<string> files, string profilesFolder)
+        private static string BuildResetCleanupScript(List<string> files, string profilesFolder, string settingsPath, string keptSettingsJson)
         {
             string Quote(string s) => "'" + s.Replace("'", "''") + "'";
             var sb = new StringBuilder();
             foreach (var file in files)
             {
                 sb.AppendLine($"Remove-Item -LiteralPath {Quote(file)} -Force -ErrorAction SilentlyContinue");
+            }
+            if (!string.IsNullOrEmpty(settingsPath))
+            {
+                // Rewrite the helper settings with only the kept keys (UTF-8 without BOM).
+                sb.AppendLine($"try {{ [System.IO.File]::WriteAllText({Quote(settingsPath)}, {Quote(keptSettingsJson ?? "{}")}) }} catch {{ Remove-Item -LiteralPath {Quote(settingsPath)} -Force -ErrorAction SilentlyContinue }}");
             }
             if (!string.IsNullOrEmpty(profilesFolder))
             {

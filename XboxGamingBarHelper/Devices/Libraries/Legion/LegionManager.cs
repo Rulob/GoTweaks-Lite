@@ -1124,6 +1124,17 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         /// second delayed reapply as a safety net against late firmware settling.
         /// Runs on the performance-mode debounce timer thread, so the short blocking poll is fine.
         /// </summary>
+        /// <summary>
+        /// Stores the Custom SPL/SPPT/FPPT to use the next time Custom is entered, without writing
+        /// them (only Custom mode takes them; the firmware manages the preset modes' limits).
+        /// </summary>
+        public void RememberCustomTDP(int slow, int fast, int peak)
+        {
+            customTDPSlow = slow;
+            customTDPFast = fast;
+            customTDPPeak = peak;
+        }
+
         private void ReapplyCustomTDPAfterModeSwitch()
         {
             if (wmiService == null) return;

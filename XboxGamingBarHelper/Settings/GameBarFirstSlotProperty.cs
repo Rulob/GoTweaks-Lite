@@ -10,42 +10,25 @@ using XboxGamingBarHelper.Core;
 namespace XboxGamingBarHelper.Settings
 {
     /// <summary>
-    /// "Show GoTweaks first in Game Bar": puts the widget in Game Bar's device-maker slot, the
-    /// one left of Home (Legion Space on Legion devices, Armoury Crate on ASUS). Saved by the
-    /// helper; while on, the slot is re-claimed at every helper start in case something rewrote it.
+    /// "Show GoTweaks first in Game Bar": the widget sits in Game Bar's device-maker slot, the one
+    /// left of Home (Legion Space on Legion devices). Always on since 1.9.8 (the toggle was
+    /// removed): the slot is claimed at every helper start in case something rewrote it, and only
+    /// Prepare for Uninstall gives it back.
     /// </summary>
     internal class GameBarFirstSlotProperty : HelperProperty<bool, SettingsManager>
     {
-        private const string SettingsKey = "GameBarFirstSlot";
-
-        public GameBarFirstSlotProperty(SettingsManager inManager) : base(LoadFromSettings(), null, Function.GameBarFirstSlot, inManager)
+        public GameBarFirstSlotProperty(SettingsManager inManager) : base(true, null, Function.GameBarFirstSlot, inManager)
         {
-            Logger.Info($"GameBarFirstSlot loaded: {Value}");
-            if (Value)
-            {
-                // Game Bar reads the slot only when it starts, so don't restart it from here.
-                GameBarOemSlot.Claim(restartGameBar: false);
-            }
-        }
-
-        private static bool LoadFromSettings()
-        {
-            return LocalSettingsHelper.TryGetValue<bool>(SettingsKey, out var value) && value;
+            // Game Bar reads the slot only when it starts, so don't restart it from here: the
+            // first claim shows up the next time Game Bar starts (e.g. after a reboot).
+            GameBarOemSlot.Claim(restartGameBar: false);
         }
 
         protected override void NotifyPropertyChanged(string propertyName = "")
         {
+            // Nothing can turn it off any more; ignore a stale "off" from an old widget.
             base.NotifyPropertyChanged(propertyName);
-            LocalSettingsHelper.SetValue(SettingsKey, Value);
-            Logger.Info($"GameBarFirstSlot changed to {Value}");
-            if (Value)
-            {
-                GameBarOemSlot.Claim(restartGameBar: true);
-            }
-            else
-            {
-                GameBarOemSlot.Release(restartGameBar: true);
-            }
+            Logger.Info($"GameBarFirstSlot: ignoring a change to {Value}, the slot is always claimed");
         }
     }
 
