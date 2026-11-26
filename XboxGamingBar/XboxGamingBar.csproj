@@ -205,6 +205,9 @@
     <Compile Include="Features\Controller\GamingWidget.ControllerHelperSync.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Features\QuickSettings\GamingWidget.QuickPowerBoxes.cs">
+      <DependentUpon>GamingWidget.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Features\Profile\GamingWidget.ProfileList.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>

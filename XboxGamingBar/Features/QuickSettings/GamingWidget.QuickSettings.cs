@@ -265,8 +265,6 @@ namespace XboxGamingBar
             int order = 0;
 
             // Row 1 - Performance Core (most used)
-            AddTileDefinition("TDPMode", "TDP Mode", "\uE945", order: order++);
-            AddTileDefinition("AutoTDP", "AutoTDP", "\uE9F5", order: order++);
             AddTileDefinition("PowerMode", "Power Mode", "\uEC4A", order: order++); // SpeedHigh
             AddTileDefinition("CPUBoost", "CPU Boost", "\uEEA1", order: order++); // CPU
 

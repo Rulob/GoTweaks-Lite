@@ -211,26 +211,7 @@ namespace XboxGamingBar
                     default: nextMode = 2; break;
                 }
 
-                // For Legion devices, update the Legion property
-                if (isLegion && legionPerformanceMode != null)
-                {
-                    legionPerformanceMode.SetValue(nextMode);
-                }
-
-                // Update TDPModeComboBox
-                int nextIndex = Array.IndexOf(modeValues, nextMode);
-                if (nextIndex >= 0 && TDPModeComboBox != null)
-                {
-                    isUserInitiatedTDPModeChange = true;
-                    TDPModeComboBox.SelectedIndex = nextIndex;
-                    isUserInitiatedTDPModeChange = false;
-                }
-
-                // If switching to Custom mode on Legion, schedule TDP reapply
-                if (isLegion && nextMode == 255)
-                {
-                    ScheduleQsTdpReapply();
-                }
+                ApplyTdpModeFromQuickSettings(nextMode);
 
                 Logger.Info($"TDP Mode cycled from {currentMode} to {nextMode} (isLegion={isLegion})");
             }

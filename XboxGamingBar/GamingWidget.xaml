@@ -778,10 +778,130 @@
                                         Style="{StaticResource ModernSliderStyle}"
                                         Minimum="0"
                                         Maximum="100"
-                                        StepFrequency="1"
+                                        StepFrequency="5"
+                                        SmallChange="5"
+                                        LargeChange="10"
                                         VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
+
+                        <!-- TDP Mode and AutoTDP boxes: always shown above the tiles, half width each.
+                             The header shows the current state; tapping it expands the controls
+                             (GamingWidget.QuickPowerBoxes.cs drives the Performance tab controls). -->
+                        <Grid x:Name="QuickPowerBoxes" ColumnSpacing="8" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- TDP Mode -->
+                            <Border Grid.Column="0" Background="#35393F" CornerRadius="12" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Top">
+                                <StackPanel>
+                                    <Button x:Name="QuickTdpModeHeaderButton"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            Background="Transparent" BorderThickness="0" Padding="12,8"
+                                            Click="QuickTdpModeHeaderButton_Click">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon Grid.Column="0" Glyph="&#xE945;" FontSize="18"
+                                                      Foreground="{StaticResource SystemAccentBrush}"
+                                                      Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="TDP Mode" FontSize="12" Foreground="#888888"/>
+                                                <TextBlock x:Name="QuickTdpModeValueText" Text="--" FontSize="14"
+                                                           FontWeight="SemiBold" Foreground="White"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <FontIcon x:Name="QuickTdpModeChevron" Grid.Column="2" Glyph="&#xE70D;"
+                                                      FontSize="12" Foreground="#B9C0CC" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Button>
+                                    <StackPanel x:Name="QuickTdpModePanel" Visibility="Collapsed" Padding="10,0,10,10" Spacing="6">
+                                        <Grid ColumnSpacing="6" RowSpacing="6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
+                                            <Button x:Name="QuickTdpModeQuiet" Grid.Row="0" Grid.Column="0" Tag="0" Content="Quiet"
+                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
+                                            <Button x:Name="QuickTdpModeBalanced" Grid.Row="0" Grid.Column="1" Tag="1" Content="Balanced"
+                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
+                                            <Button x:Name="QuickTdpModePerformance" Grid.Row="1" Grid.Column="0" Tag="2" Content="Perf."
+                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
+                                            <Button x:Name="QuickTdpModeCustom" Grid.Row="1" Grid.Column="1" Tag="3" Content="Custom"
+                                                    HorizontalAlignment="Stretch" FontSize="12" Padding="4,6" Click="QuickTdpModeOption_Click"/>
+                                        </Grid>
+                                        <Grid>
+                                            <TextBlock Text="TDP" FontSize="12" Foreground="#B9C0CC"/>
+                                            <TextBlock x:Name="QuickTdpValueText" Text="15 W" FontSize="12" Foreground="White"
+                                                       HorizontalAlignment="Right"/>
+                                        </Grid>
+                                        <Slider x:Name="QuickTdpSlider"
+                                                Style="{StaticResource ModernSliderStyle}"
+                                                Minimum="5" Maximum="50" StepFrequency="1" SmallChange="1" Value="15"
+                                                ValueChanged="QuickTdpSlider_ValueChanged"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- AutoTDP -->
+                            <Border Grid.Column="1" Background="#35393F" CornerRadius="12" BorderBrush="#22FFFFFF" BorderThickness="1" VerticalAlignment="Top">
+                                <StackPanel>
+                                    <Button x:Name="QuickAutoTdpHeaderButton"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            Background="Transparent" BorderThickness="0" Padding="12,8"
+                                            Click="QuickAutoTdpHeaderButton_Click">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon Grid.Column="0" Glyph="&#xE9F5;" FontSize="18"
+                                                      Foreground="{StaticResource SystemAccentBrush}"
+                                                      Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="AutoTDP" FontSize="12" Foreground="#888888"/>
+                                                <TextBlock x:Name="QuickAutoTdpValueText" Text="Off" FontSize="14"
+                                                           FontWeight="SemiBold" Foreground="White"
+                                                           TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <FontIcon x:Name="QuickAutoTdpChevron" Grid.Column="2" Glyph="&#xE70D;"
+                                                      FontSize="12" Foreground="#B9C0CC" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Button>
+                                    <StackPanel x:Name="QuickAutoTdpPanel" Visibility="Collapsed" Padding="10,0,10,10" Spacing="6">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="Enabled" FontSize="12" Foreground="#B9C0CC" VerticalAlignment="Center"/>
+                                            <ToggleSwitch x:Name="QuickAutoTdpToggle" Grid.Column="1"
+                                                          Style="{StaticResource ModernToggleStyle}" Width="47"
+                                                          Toggled="QuickAutoTdpToggle_Toggled"/>
+                                        </Grid>
+                                        <Grid>
+                                            <TextBlock Text="Target FPS" FontSize="12" Foreground="#B9C0CC"/>
+                                            <TextBlock x:Name="QuickAutoTdpTargetText" Text="60 FPS" FontSize="12" Foreground="White"
+                                                       HorizontalAlignment="Right"/>
+                                        </Grid>
+                                        <Slider x:Name="QuickAutoTdpTargetSlider"
+                                                Style="{StaticResource ModernSliderStyle}"
+                                                Minimum="30" Maximum="144" StepFrequency="5" SmallChange="5" Value="60"
+                                                ValueChanged="QuickAutoTdpTargetSlider_ValueChanged"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
 
                         <!-- Dynamic Tiles Container - tiles generated in code-behind -->
                         <StackPanel x:Name="QuickSettingsTilesContainer"/>

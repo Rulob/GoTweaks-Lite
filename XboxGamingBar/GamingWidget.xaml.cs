@@ -1112,6 +1112,7 @@ namespace XboxGamingBar
             isLoadingControllerProfile = true;
             SubscribeControlEvents();
             isLoadingControllerProfile = false;
+            SubscribeQuickPowerBoxes(); // Quick Settings TDP Mode / AutoTDP boxes
 
             // Subscribe to per-game profile toggle changes
             PerGameProfileToggle.Toggled += PerGameProfileToggle_Changed;

@@ -213,7 +213,20 @@ upstream, and why.
   joystick mouse, vibration and lighting are kept only by the helper, the same for every game,
   and applied at startup. Starting a game with its own profile no longer resets the gyro to its
   defaults, and deadzone / trigger changes made during a game are no longer lost.
-
+- **Fix: controller settings stuck on their defaults** (1.9.7a / 1.9.7b). Stick deadzones read
+  4%, trigger travel couldn't change and the light brightness showed 100%, because the widget
+  still refused these values from the helper. The FPS limit toggle / slider, the back-button remap
+  controls, vibration, gyro and lighting controls had also stopped sending their changes. All
+  fixed; the helper now only answers the widget's first sync after applying its saved settings.
+- **Quick Settings: TDP Mode and AutoTDP boxes.** Two boxes above the tiles, side by side, show the
+  current TDP mode and AutoTDP state. Tap one to expand it: TDP Mode has Quiet / Balanced /
+  Performance / Custom plus a TDP slider (usable in Custom), AutoTDP has an on/off switch and the
+  target FPS slider. They replace the TDP Mode and AutoTDP tiles. The brightness slider now moves
+  in 5% steps.
+- **Removed:** Desktop Controls (and its Ctrl+Shift+D hotkey), Joystick as Mouse (switched off on
+  both sticks at startup), the 80% Charge Limit, and the fan curve editor. The fan always follows
+  the firmware curve of the TDP mode; in Custom, GoTweaks writes Lenovo's stock curve (the
+  firmware doesn't expose its Balanced curve to copy).
 ---
 
 ## 🧩 Features
@@ -263,13 +276,12 @@ Deep support for the Legion Go 2 with automatic device detection.
 **Fan & performance**
 - Quiet, Balanced, Performance, and Custom modes
 - Custom TDP with fine-grained control (SPL, SPPT, FPPT)
-- Custom-mode fan curve (via Lenovo WMI) and a Fan Full Speed toggle
+- Firmware fan curves in every mode (Lenovo's stock curve in Custom), a live fan RPM / CPU
+  temperature readout and a Fan Full Speed toggle
 
 **Controller settings**
 - **Button Remapping** — customize the M2, M3, Y1, Y2, Y3 buttons
 - **Remap type** — map to keyboard shortcuts, keys, gamepad actions, or mouse buttons
-- **Joystick to Mouse** — emulate a mouse with either stick
-- **Desktop Controls** — map controls to mouse + left/right click, similar to the ROG Ally
 - **Stick Deadzones** — adjust left/right stick deadzones (0–50%)
 - **Gyroscope** — enable/disable with target selection, X/Y sensitivity, axis inversion, and
   activation mode (Hold/Toggle) with a button binding
