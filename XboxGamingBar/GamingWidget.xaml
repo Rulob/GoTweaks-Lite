@@ -3306,8 +3306,200 @@
                                     </ToggleButton>
                                 </Grid>
                                 <StackPanel x:Name="ButtonRemappingContent" Margin="0,12,0,0" Visibility="Collapsed">
-                                    <!-- Back Buttons Section -->
-                                    <TextBlock Text="Back Buttons" FontSize="12" Foreground="#888888" Margin="0,0,0,8"/>
+                                    <!-- Front Buttons: Legion L / R (helper-run actions), Desktop, Page (1.9.8: the Special Remapping card was merged in here) -->
+                                    <TextBlock Text="Front Buttons" FontSize="12" Foreground="#888888" Margin="0,0,0,8"/>
+
+                                    <!-- Legion L Row -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="85"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Legion L"
+                                                   Grid.Column="0"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="13"
+                                                   Foreground="#FFFFFF"/>
+                                        <ComboBox x:Name="LegionLActionComboBox"
+                                                  Grid.Column="1"
+                                                  Style="{StaticResource ModernComboBoxStyle}">
+                                            <ComboBoxItem Content="Disabled" IsSelected="True"/>
+                                            <ComboBoxItem Content="Open Game Bar"/>
+                                            <ComboBoxItem Content="Keyboard Shortcut"/>
+                                            <ComboBoxItem Content="Run Command"/>
+                                            <ComboBoxItem Content="Focus GoTweaks Lite"/>
+                                        </ComboBox>
+                                    </Grid>
+
+                                    <!-- Legion L Shortcut Input (hidden by default) -->
+                                    <StackPanel x:Name="LegionLShortcutPanel" Margin="85,8,0,0" Visibility="Collapsed" Orientation="Horizontal">
+                                        <ItemsControl x:Name="LegionLKeyTags">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                        <ComboBox x:Name="LegionLKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectedIndex="0" SelectionChanged="LegionLKeyComboBox_SelectionChanged">
+                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                        </ComboBox>
+                                    </StackPanel>
+
+                                    <!-- Legion L Command Input (hidden by default) -->
+                                    <Grid x:Name="LegionLCommandGrid" Margin="85,8,0,0" Visibility="Collapsed">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="LegionLCommandTextBox"
+                                                 Grid.Column="0"
+                                                 PlaceholderText="e.g. C:\path\app.exe -arg1"/>
+                                        <Button x:Name="LegionLCommandApplyButton"
+                                                Grid.Column="1"
+                                                Content="Apply"
+                                                Style="{StaticResource ModernButtonStyle}"
+                                                Margin="8,0,0,0"
+                                                Click="LegionLCommandApplyButton_Click"/>
+                                    </Grid>
+
+                                    <!-- Legion R Row -->
+                                    <Grid Margin="0,12,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="85"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Legion R"
+                                                   Grid.Column="0"
+                                                   VerticalAlignment="Center"
+                                                   FontSize="13"
+                                                   Foreground="#FFFFFF"/>
+                                        <ComboBox x:Name="LegionRActionComboBox"
+                                                  Grid.Column="1"
+                                                  Style="{StaticResource ModernComboBoxStyle}">
+                                            <ComboBoxItem Content="Disabled" IsSelected="True"/>
+                                            <ComboBoxItem Content="Open Game Bar"/>
+                                            <ComboBoxItem Content="Keyboard Shortcut"/>
+                                            <ComboBoxItem Content="Run Command"/>
+                                            <ComboBoxItem Content="Focus GoTweaks Lite"/>
+                                        </ComboBox>
+                                    </Grid>
+
+                                    <!-- Legion R Shortcut Input (hidden by default) -->
+                                    <StackPanel x:Name="LegionRShortcutPanel" Margin="85,8,0,0" Visibility="Collapsed" Orientation="Horizontal">
+                                        <ItemsControl x:Name="LegionRKeyTags">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                        </ItemsControl>
+                                        <ComboBox x:Name="LegionRKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
+                                                  SelectedIndex="0" SelectionChanged="LegionRKeyComboBox_SelectionChanged">
+                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                        </ComboBox>
+                                    </StackPanel>
+
+                                    <!-- Legion R Command Input (hidden by default) -->
+                                    <Grid x:Name="LegionRCommandGrid" Margin="85,8,0,0" Visibility="Collapsed">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="LegionRCommandTextBox"
+                                                 Grid.Column="0"
+                                                 PlaceholderText="e.g. C:\path\app.exe -arg1"/>
+                                        <Button x:Name="LegionRCommandApplyButton"
+                                                Grid.Column="1"
+                                                Content="Apply"
+                                                Style="{StaticResource ModernButtonStyle}"
+                                                Margin="8,0,0,0"
+                                                Click="LegionRCommandApplyButton_Click"/>
+                                    </Grid>
+
+                                    <!-- Status Text for Legion buttons -->
+                                    <TextBlock x:Name="LegionRemapStatusText"
+                                               Text=""
+                                               FontSize="12"
+                                               Foreground="#B9C0CC"
+                                               Margin="0,8,0,0"/>
+
+                                <!-- Desktop Button (Win+G default) -->
+                                <StackPanel Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="55"/>
+                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Desktop" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
+                                        <ComboBox x:Name="LegionButtonDesktopTypeComboBox" Grid.Column="1" Margin="0,0,8,0"
+                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>Gamepad</x:String><x:String>Keyboard</x:String><x:String>Mouse</x:String>
+                                        </ComboBox>
+                                        <ComboBox x:Name="LegionButtonDesktopComboBox" Grid.Column="2"
+                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>Disabled</x:String>
+                                            <x:String>LS Click</x:String><x:String>LS Up</x:String><x:String>LS Down</x:String><x:String>LS Left</x:String><x:String>LS Right</x:String>
+                                            <x:String>RS Click</x:String><x:String>RS Up</x:String><x:String>RS Down</x:String><x:String>RS Left</x:String><x:String>RS Right</x:String>
+                                            <x:String>D-Pad Up</x:String><x:String>D-Pad Down</x:String><x:String>D-Pad Left</x:String><x:String>D-Pad Right</x:String>
+                                            <x:String>A</x:String><x:String>B</x:String><x:String>X</x:String><x:String>Y</x:String>
+                                            <x:String>LB</x:String><x:String>LT</x:String><x:String>RB</x:String><x:String>RT</x:String>
+                                            <x:String>View</x:String><x:String>Menu</x:String>
+                                        </ComboBox>
+                                        <ComboBox x:Name="LegionButtonDesktopMouseComboBox" Grid.Column="2" Visibility="Collapsed"
+                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>Left Click</x:String><x:String>Right Click</x:String><x:String>Middle Click</x:String>
+                                            <x:String>Scroll Up</x:String><x:String>Scroll Down</x:String><x:String>Scroll Left</x:String><x:String>Scroll Right</x:String>
+                                        </ComboBox>
+                                    </Grid>
+                                    <StackPanel x:Name="LegionButtonDesktopKeyboardPanel" Visibility="Collapsed" Margin="55,8,0,0" Orientation="Horizontal">
+                                        <StackPanel x:Name="LegionButtonDesktopKeyTags" Orientation="Horizontal"/>
+                                        <ComboBox x:Name="LegionButtonDesktopKeyComboBox" Width="100" Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>0</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <!-- Page Button (Win+Tab default) -->
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="55"/>
+                                            <ColumnDefinition Width="130"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Page" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
+                                        <ComboBox x:Name="LegionButtonPageTypeComboBox" Grid.Column="1" Margin="0,0,8,0"
+                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>Gamepad</x:String><x:String>Keyboard</x:String><x:String>Mouse</x:String>
+                                        </ComboBox>
+                                        <ComboBox x:Name="LegionButtonPageComboBox" Grid.Column="2"
+                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>Disabled</x:String>
+                                            <x:String>LS Click</x:String><x:String>LS Up</x:String><x:String>LS Down</x:String><x:String>LS Left</x:String><x:String>LS Right</x:String>
+                                            <x:String>RS Click</x:String><x:String>RS Up</x:String><x:String>RS Down</x:String><x:String>RS Left</x:String><x:String>RS Right</x:String>
+                                            <x:String>D-Pad Up</x:String><x:String>D-Pad Down</x:String><x:String>D-Pad Left</x:String><x:String>D-Pad Right</x:String>
+                                            <x:String>A</x:String><x:String>B</x:String><x:String>X</x:String><x:String>Y</x:String>
+                                            <x:String>LB</x:String><x:String>LT</x:String><x:String>RB</x:String><x:String>RT</x:String>
+                                            <x:String>View</x:String><x:String>Menu</x:String>
+                                        </ComboBox>
+                                        <ComboBox x:Name="LegionButtonPageMouseComboBox" Grid.Column="2" Visibility="Collapsed"
+                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>Left Click</x:String><x:String>Right Click</x:String><x:String>Middle Click</x:String>
+                                            <x:String>Scroll Up</x:String><x:String>Scroll Down</x:String><x:String>Scroll Left</x:String><x:String>Scroll Right</x:String>
+                                        </ComboBox>
+                                    </Grid>
+                                    <StackPanel x:Name="LegionButtonPageKeyboardPanel" Visibility="Collapsed" Margin="55,8,0,0" Orientation="Horizontal">
+                                        <StackPanel x:Name="LegionButtonPageKeyTags" Orientation="Horizontal"/>
+                                        <ComboBox x:Name="LegionButtonPageKeyComboBox" Width="100" Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
+                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>0</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
+                                        </ComboBox>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                    <!-- Back Buttons: Y1-3, M1-3, scroll wheel and its click -->
+                                    <TextBlock Text="Back Buttons" FontSize="12" Foreground="#888888" Margin="0,12,0,8"/>
 
                                     <!-- Y1 Button -->
                                 <StackPanel Margin="0,0,0,12">
@@ -3538,568 +3730,15 @@
                                         </ComboBox>
                                     </StackPanel>
                                 </StackPanel>
-
-                                    <!-- Front Buttons Section -->
-                                    <TextBlock Text="Front Buttons" FontSize="12" Foreground="#888888" Margin="0,12,0,8"/>
-
-                                <!-- Desktop Button (Win+G default) -->
-                                <StackPanel Margin="0,0,0,12">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="55"/>
-                                            <ColumnDefinition Width="130"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Desktop" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                        <ComboBox x:Name="LegionButtonDesktopTypeComboBox" Grid.Column="1" Margin="0,0,8,0"
-                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>Gamepad</x:String><x:String>Keyboard</x:String><x:String>Mouse</x:String>
-                                        </ComboBox>
-                                        <ComboBox x:Name="LegionButtonDesktopComboBox" Grid.Column="2"
-                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>Disabled</x:String>
-                                            <x:String>LS Click</x:String><x:String>LS Up</x:String><x:String>LS Down</x:String><x:String>LS Left</x:String><x:String>LS Right</x:String>
-                                            <x:String>RS Click</x:String><x:String>RS Up</x:String><x:String>RS Down</x:String><x:String>RS Left</x:String><x:String>RS Right</x:String>
-                                            <x:String>D-Pad Up</x:String><x:String>D-Pad Down</x:String><x:String>D-Pad Left</x:String><x:String>D-Pad Right</x:String>
-                                            <x:String>A</x:String><x:String>B</x:String><x:String>X</x:String><x:String>Y</x:String>
-                                            <x:String>LB</x:String><x:String>LT</x:String><x:String>RB</x:String><x:String>RT</x:String>
-                                            <x:String>View</x:String><x:String>Menu</x:String>
-                                        </ComboBox>
-                                        <ComboBox x:Name="LegionButtonDesktopMouseComboBox" Grid.Column="2" Visibility="Collapsed"
-                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>Left Click</x:String><x:String>Right Click</x:String><x:String>Middle Click</x:String>
-                                            <x:String>Scroll Up</x:String><x:String>Scroll Down</x:String><x:String>Scroll Left</x:String><x:String>Scroll Right</x:String>
-                                        </ComboBox>
-                                    </Grid>
-                                    <StackPanel x:Name="LegionButtonDesktopKeyboardPanel" Visibility="Collapsed" Margin="55,8,0,0" Orientation="Horizontal">
-                                        <StackPanel x:Name="LegionButtonDesktopKeyTags" Orientation="Horizontal"/>
-                                        <ComboBox x:Name="LegionButtonDesktopKeyComboBox" Width="100" Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>0</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                        </ComboBox>
-                                    </StackPanel>
-                                </StackPanel>
-
-                                <!-- Page Button (Win+Tab default) -->
-                                <StackPanel>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="55"/>
-                                            <ColumnDefinition Width="130"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Page" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                        <ComboBox x:Name="LegionButtonPageTypeComboBox" Grid.Column="1" Margin="0,0,8,0"
-                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>Gamepad</x:String><x:String>Keyboard</x:String><x:String>Mouse</x:String>
-                                        </ComboBox>
-                                        <ComboBox x:Name="LegionButtonPageComboBox" Grid.Column="2"
-                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>Disabled</x:String>
-                                            <x:String>LS Click</x:String><x:String>LS Up</x:String><x:String>LS Down</x:String><x:String>LS Left</x:String><x:String>LS Right</x:String>
-                                            <x:String>RS Click</x:String><x:String>RS Up</x:String><x:String>RS Down</x:String><x:String>RS Left</x:String><x:String>RS Right</x:String>
-                                            <x:String>D-Pad Up</x:String><x:String>D-Pad Down</x:String><x:String>D-Pad Left</x:String><x:String>D-Pad Right</x:String>
-                                            <x:String>A</x:String><x:String>B</x:String><x:String>X</x:String><x:String>Y</x:String>
-                                            <x:String>LB</x:String><x:String>LT</x:String><x:String>RB</x:String><x:String>RT</x:String>
-                                            <x:String>View</x:String><x:String>Menu</x:String>
-                                        </ComboBox>
-                                        <ComboBox x:Name="LegionButtonPageMouseComboBox" Grid.Column="2" Visibility="Collapsed"
-                                                  Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>Left Click</x:String><x:String>Right Click</x:String><x:String>Middle Click</x:String>
-                                            <x:String>Scroll Up</x:String><x:String>Scroll Down</x:String><x:String>Scroll Left</x:String><x:String>Scroll Right</x:String>
-                                        </ComboBox>
-                                    </Grid>
-                                    <StackPanel x:Name="LegionButtonPageKeyboardPanel" Visibility="Collapsed" Margin="55,8,0,0" Orientation="Horizontal">
-                                        <StackPanel x:Name="LegionButtonPageKeyTags" Orientation="Horizontal"/>
-                                        <ComboBox x:Name="LegionButtonPageKeyComboBox" Width="100" Style="{StaticResource ModernComboBoxStyle}" SelectedIndex="0">
-                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>0</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                        </ComboBox>
-                                    </StackPanel>
-                                </StackPanel>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-
-                        <!-- Deadzones Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Deadzones" Style="{StaticResource CardTitleStyle}" Grid.Column="0"/>
-                                    <ToggleButton x:Name="StickDeadzonesExpandToggle"
-                                                  Grid.Column="1"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  Padding="8,4"
-                                                  Click="StickDeadzonesExpandToggle_Click">
-                                        <FontIcon x:Name="StickDeadzonesExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
-                                    </ToggleButton>
-                                </Grid>
-                                <StackPanel x:Name="StickDeadzonesContent" Spacing="12" Margin="0,12,0,0" Visibility="Collapsed">
-                                    <!-- Stick Deadzones Section -->
-                                    <TextBlock Text="Stick Deadzones" FontSize="12" Foreground="#888888" Margin="0,0,0,4"/>
-
-                                    <!-- Left Stick Deadzone -->
-                                    <StackPanel>
-                                        <Grid>
-                                            <TextBlock Text="Left Stick" FontSize="13" Foreground="#B9C0CC"/>
-                                            <TextBlock x:Name="LegionLeftStickDeadzoneValue"
-                                                       Text="4%"
-                                                       Style="{StaticResource CardValueStyle}"/>
-                                        </Grid>
-                                        <Slider x:Name="LegionLeftStickDeadzoneSlider"
-                                                Style="{StaticResource ModernSliderStyle}"
-                                                Minimum="0" Maximum="50"
-                                                Value="4"
-                                                StepFrequency="1"/>
-                                    </StackPanel>
-
-                                    <!-- Right Stick Deadzone -->
-                                    <StackPanel>
-                                        <Grid>
-                                            <TextBlock Text="Right Stick" FontSize="13" Foreground="#B9C0CC"/>
-                                            <TextBlock x:Name="LegionRightStickDeadzoneValue"
-                                                       Text="4%"
-                                                       Style="{StaticResource CardValueStyle}"/>
-                                        </Grid>
-                                        <Slider x:Name="LegionRightStickDeadzoneSlider"
-                                                Style="{StaticResource ModernSliderStyle}"
-                                                Minimum="0" Maximum="50"
-                                                Value="4"
-                                                StepFrequency="1"/>
-                                    </StackPanel>
-
-                                    <!-- Trigger Travel Section -->
-                                    <TextBlock Text="Trigger Travel" FontSize="12" Foreground="#888888" Margin="0,16,0,4"/>
-
-                                    <!-- Hair Triggers Toggle -->
-                                    <Grid Margin="0,0,0,8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Hair Triggers" FontSize="13" Foreground="#B9C0CC" VerticalAlignment="Center"/>
-                                        <ToggleSwitch x:Name="LegionHairTriggersToggle" Grid.Column="1" OnContent="" OffContent="" Margin="0,0,-8,0"/>
-                                    </Grid>
-
-                                    <!-- Left Trigger -->
-                                    <StackPanel x:Name="LeftTriggerPanel">
-                                        <TextBlock Text="Left Trigger" FontSize="12" Foreground="#888888" Margin="0,0,0,4"/>
-                                        <StackPanel>
-                                            <Grid>
-                                                <TextBlock Text="Dead Zone" FontSize="13" Foreground="#B9C0CC"/>
-                                                <TextBlock x:Name="LegionLeftTriggerStartValue"
-                                                           Text="0%"
-                                                           Style="{StaticResource CardValueStyle}"/>
-                                            </Grid>
-                                            <Slider x:Name="LegionLeftTriggerStartSlider"
-                                                    Style="{StaticResource ModernSliderStyle}"
-                                                    Minimum="0" Maximum="50"
-                                                    Value="0"
-                                                    StepFrequency="1"/>
-                                        </StackPanel>
-                                        <StackPanel>
-                                            <Grid>
-                                                <TextBlock Text="Full Press" FontSize="13" Foreground="#B9C0CC"/>
-                                                <TextBlock x:Name="LegionLeftTriggerEndValue"
-                                                           Text="0%"
-                                                           Style="{StaticResource CardValueStyle}"/>
-                                            </Grid>
-                                            <Slider x:Name="LegionLeftTriggerEndSlider"
-                                                    Style="{StaticResource ModernSliderStyle}"
-                                                    Minimum="0" Maximum="99"
-                                                    Value="0"
-                                                    StepFrequency="1"/>
-                                        </StackPanel>
-                                    </StackPanel>
-
-                                    <!-- Right Trigger -->
-                                    <StackPanel x:Name="RightTriggerPanel">
-                                        <TextBlock Text="Right Trigger" FontSize="12" Foreground="#888888" Margin="0,0,0,4"/>
-                                        <StackPanel>
-                                            <Grid>
-                                                <TextBlock Text="Dead Zone" FontSize="13" Foreground="#B9C0CC"/>
-                                                <TextBlock x:Name="LegionRightTriggerStartValue"
-                                                           Text="0%"
-                                                           Style="{StaticResource CardValueStyle}"/>
-                                            </Grid>
-                                            <Slider x:Name="LegionRightTriggerStartSlider"
-                                                    Style="{StaticResource ModernSliderStyle}"
-                                                    Minimum="0" Maximum="50"
-                                                    Value="0"
-                                                    StepFrequency="1"/>
-                                        </StackPanel>
-                                        <StackPanel>
-                                            <Grid>
-                                                <TextBlock Text="Full Press" FontSize="13" Foreground="#B9C0CC"/>
-                                                <TextBlock x:Name="LegionRightTriggerEndValue"
-                                                           Text="0%"
-                                                           Style="{StaticResource CardValueStyle}"/>
-                                            </Grid>
-                                            <Slider x:Name="LegionRightTriggerEndSlider"
-                                                    Style="{StaticResource ModernSliderStyle}"
-                                                    Minimum="0" Maximum="99"
-                                                    Value="0"
-                                                    StepFrequency="1"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Gyro Settings Section (hidden on devices without HID gyro support) -->
-                        <StackPanel x:Name="GyroSection">
-                        <!-- Gyro Settings Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Gyro Settings" Style="{StaticResource CardTitleStyle}" Grid.Column="0"/>
-                                    <ToggleButton x:Name="GyroSettingsExpandToggle"
-                                                  Grid.Column="1"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  Padding="8,4"
-                                                  Click="GyroSettingsExpandToggle_Click">
-                                        <FontIcon x:Name="GyroSettingsExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
-                                    </ToggleButton>
-                                </Grid>
-                                <StackPanel x:Name="GyroSettingsContent" Spacing="12" Margin="0,12,0,0" Visibility="Collapsed">
-                                    <!-- Gyro Target -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Target" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                    <ComboBox x:Name="LegionGyroTargetComboBox"
-                                              Grid.Column="1"
-                                              Style="{StaticResource ModernComboBoxStyle}"
-                                              HorizontalAlignment="Stretch"
-                                              SelectedIndex="0">
-                                        <x:String>Disabled</x:String>
-                                        <x:String>Left Stick</x:String>
-                                        <x:String>Right Stick</x:String>
-                                        <x:String>Mouse</x:String>
-                                    </ComboBox>
-                                </Grid>
-
-                                <!-- Gyro Sensitivity X -->
-                                <StackPanel>
-                                    <Grid>
-                                        <TextBlock Text="Sensitivity X" FontSize="13" Foreground="#B9C0CC"/>
-                                        <TextBlock x:Name="LegionGyroSensitivityXValue"
-                                                   Text="50"
-                                                   Style="{StaticResource CardValueStyle}"/>
-                                    </Grid>
-                                    <Slider x:Name="LegionGyroSensitivityXSlider"
-                                            Style="{StaticResource ModernSliderStyle}"
-                                            Minimum="1" Maximum="100"
-                                            Value="50"
-                                            StepFrequency="1"/>
-                                </StackPanel>
-
-                                <!-- Gyro Sensitivity Y -->
-                                <StackPanel>
-                                    <Grid>
-                                        <TextBlock Text="Sensitivity Y" FontSize="13" Foreground="#B9C0CC"/>
-                                        <TextBlock x:Name="LegionGyroSensitivityYValue"
-                                                   Text="50"
-                                                   Style="{StaticResource CardValueStyle}"/>
-                                    </Grid>
-                                    <Slider x:Name="LegionGyroSensitivityYSlider"
-                                            Style="{StaticResource ModernSliderStyle}"
-                                            Minimum="1" Maximum="100"
-                                            Value="50"
-                                            StepFrequency="1"/>
-                                </StackPanel>
-
-                                <!-- Gyro Deadzone -->
-                                <StackPanel>
-                                    <Grid>
-                                        <TextBlock Text="Deadzone" FontSize="13" Foreground="#B9C0CC"/>
-                                        <TextBlock x:Name="LegionGyroDeadzoneValue"
-                                                   Text="10"
-                                                   Style="{StaticResource CardValueStyle}"/>
-                                    </Grid>
-                                    <Slider x:Name="LegionGyroDeadzoneSlider"
-                                            Style="{StaticResource ModernSliderStyle}"
-                                            Minimum="1" Maximum="100"
-                                            Value="10"
-                                            StepFrequency="1"/>
-                                </StackPanel>
-
-                                <!-- Gyro Invert X/Y Toggles -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
-                                        <TextBlock Text="Invert X" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14" Margin="0,0,12,0"/>
-                                        <ToggleSwitch x:Name="LegionGyroInvertXToggle"
-                                                      Style="{StaticResource ModernToggleStyle}"
-                                                      IsOn="False"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                        <TextBlock Text="Invert Y" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14" Margin="0,0,12,0"/>
-                                        <ToggleSwitch x:Name="LegionGyroInvertYToggle"
-                                                      Style="{StaticResource ModernToggleStyle}"
-                                                      IsOn="False"/>
-                                    </StackPanel>
-                                </Grid>
-
-                                <!-- Gyro Mapping Type -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Mapping" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                    <ComboBox x:Name="LegionGyroMappingTypeComboBox"
-                                              Grid.Column="1"
-                                              Style="{StaticResource ModernComboBoxStyle}"
-                                              HorizontalAlignment="Stretch"
-                                              SelectedIndex="0">
-                                        <x:String>Instant</x:String>
-                                        <x:String>Continuous</x:String>
-                                    </ComboBox>
-                                </Grid>
-
-                                <!-- Gyro Activation Mode -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Activation" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                    <ComboBox x:Name="LegionGyroActivationModeComboBox"
-                                              Grid.Column="1"
-                                              Style="{StaticResource ModernComboBoxStyle}"
-                                              HorizontalAlignment="Stretch"
-                                              SelectedIndex="0">
-                                        <x:String>Hold</x:String>
-                                        <x:String>Toggle</x:String>
-                                    </ComboBox>
-                                </Grid>
-
-                                <!-- Gyro Activation Button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Button" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                    <ComboBox x:Name="LegionGyroActivationButtonComboBox"
-                                              Grid.Column="1"
-                                              Style="{StaticResource ModernComboBoxStyle}"
-                                              HorizontalAlignment="Stretch"
-                                              SelectedIndex="0">
-                                        <x:String>None</x:String>
-                                        <x:String>LB</x:String>
-                                        <x:String>LT</x:String>
-                                        <x:String>RB</x:String>
-                                        <x:String>RT</x:String>
-                                        <x:String>Y1</x:String>
-                                        <x:String>Y2</x:String>
-                                        <x:String>M2</x:String>
-                                        <x:String>M3</x:String>
-                                    </ComboBox>
-                                </Grid>
-
-                                <!-- Gyro Calibration -->
-                                <StackPanel Margin="0,4,0,0">
-                                    <Button x:Name="LegionCalibrateGyroButton"
-                                            Content="Calibrate gyro"
-                                            Style="{StaticResource ModernButtonStyle}"
-                                            HorizontalAlignment="Stretch"
-                                            Click="LegionCalibrateGyroButton_Click"/>
-                                    <TextBlock x:Name="LegionCalibrateGyroStatus"
-                                               Text="Hold the controllers still and press the button — bias is captured by the controller firmware."
-                                               FontSize="11"
-                                               Foreground="#888888"
-                                               TextWrapping="Wrap"
-                                               Margin="0,6,0,0"/>
-                                </StackPanel>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-                        </StackPanel>
-                        <!-- End Gyro Section -->
-
-
-                        </StackPanel>
-                        <!-- End Controller Remapping Section -->
-
-                        <!-- Special Remapping Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Special Remapping" Style="{StaticResource CardTitleStyle}"/>
-                                        <TextBlock Text="Map Legion L/R buttons and scroll wheel to custom actions"
-                                                   Style="{StaticResource CardCaptionStyle}"/>
-                                    </StackPanel>
-                                    <ToggleButton x:Name="SpecialRemappingExpandButton"
-                                                  Grid.Column="1"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  Padding="8,4"
-                                                  Click="SpecialRemappingExpandButton_Click">
-                                        <FontIcon x:Name="SpecialRemappingExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
-                                    </ToggleButton>
-                                </Grid>
-
-                                <StackPanel x:Name="SpecialRemappingContent" Visibility="Collapsed" Margin="0,12,0,0">
-                                    <!-- Legion Buttons Section -->
-                                    <TextBlock Text="LEGION BUTTONS" FontSize="11" FontWeight="SemiBold" Foreground="#B9C0CC" Margin="0,0,0,8"/>
-
-                                    <!-- Legion L Row -->
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="85"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Legion L:"
-                                                   Grid.Column="0"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="13"
-                                                   Foreground="#FFFFFF"/>
-                                        <ComboBox x:Name="LegionLActionComboBox"
-                                                  Grid.Column="1"
-                                                  Style="{StaticResource ModernComboBoxStyle}">
-                                            <ComboBoxItem Content="Disabled" IsSelected="True"/>
-                                            <ComboBoxItem Content="Open Game Bar"/>
-                                            <ComboBoxItem Content="Keyboard Shortcut"/>
-                                            <ComboBoxItem Content="Run Command"/>
-                                            <ComboBoxItem Content="Focus GoTweaks Lite"/>
-                                        </ComboBox>
-                                    </Grid>
-
-                                    <!-- Legion L Shortcut Input (hidden by default) -->
-                                    <StackPanel x:Name="LegionLShortcutPanel" Margin="85,8,0,0" Visibility="Collapsed" Orientation="Horizontal">
-                                        <ItemsControl x:Name="LegionLKeyTags">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal"/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                        </ItemsControl>
-                                        <ComboBox x:Name="LegionLKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                  SelectedIndex="0" SelectionChanged="LegionLKeyComboBox_SelectionChanged">
-                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                        </ComboBox>
-                                    </StackPanel>
-
-                                    <!-- Legion L Command Input (hidden by default) -->
-                                    <Grid x:Name="LegionLCommandGrid" Margin="85,8,0,0" Visibility="Collapsed">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="LegionLCommandTextBox"
-                                                 Grid.Column="0"
-                                                 PlaceholderText="e.g. C:\path\app.exe -arg1"/>
-                                        <Button x:Name="LegionLCommandApplyButton"
-                                                Grid.Column="1"
-                                                Content="Apply"
-                                                Style="{StaticResource ModernButtonStyle}"
-                                                Margin="8,0,0,0"
-                                                Click="LegionLCommandApplyButton_Click"/>
-                                    </Grid>
-
-                                    <!-- Legion R Row -->
-                                    <Grid Margin="0,12,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="85"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Legion R:"
-                                                   Grid.Column="0"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="13"
-                                                   Foreground="#FFFFFF"/>
-                                        <ComboBox x:Name="LegionRActionComboBox"
-                                                  Grid.Column="1"
-                                                  Style="{StaticResource ModernComboBoxStyle}">
-                                            <ComboBoxItem Content="Disabled" IsSelected="True"/>
-                                            <ComboBoxItem Content="Open Game Bar"/>
-                                            <ComboBoxItem Content="Keyboard Shortcut"/>
-                                            <ComboBoxItem Content="Run Command"/>
-                                            <ComboBoxItem Content="Focus GoTweaks Lite"/>
-                                        </ComboBox>
-                                    </Grid>
-
-                                    <!-- Legion R Shortcut Input (hidden by default) -->
-                                    <StackPanel x:Name="LegionRShortcutPanel" Margin="85,8,0,0" Visibility="Collapsed" Orientation="Horizontal">
-                                        <ItemsControl x:Name="LegionRKeyTags">
-                                            <ItemsControl.ItemsPanel>
-                                                <ItemsPanelTemplate>
-                                                    <StackPanel Orientation="Horizontal"/>
-                                                </ItemsPanelTemplate>
-                                            </ItemsControl.ItemsPanel>
-                                        </ItemsControl>
-                                        <ComboBox x:Name="LegionRKeyComboBox" Width="90" Style="{StaticResource ModernComboBoxStyle}"
-                                                  SelectedIndex="0" SelectionChanged="LegionRKeyComboBox_SelectionChanged">
-                                            <x:String>+ Key</x:String><x:String>A</x:String><x:String>B</x:String><x:String>C</x:String><x:String>D</x:String><x:String>E</x:String><x:String>F</x:String><x:String>G</x:String><x:String>H</x:String><x:String>I</x:String><x:String>J</x:String><x:String>K</x:String><x:String>L</x:String><x:String>M</x:String><x:String>N</x:String><x:String>O</x:String><x:String>P</x:String><x:String>Q</x:String><x:String>R</x:String><x:String>S</x:String><x:String>T</x:String><x:String>U</x:String><x:String>V</x:String><x:String>W</x:String><x:String>X</x:String><x:String>Y</x:String><x:String>Z</x:String><x:String>0</x:String><x:String>1</x:String><x:String>2</x:String><x:String>3</x:String><x:String>4</x:String><x:String>5</x:String><x:String>6</x:String><x:String>7</x:String><x:String>8</x:String><x:String>9</x:String><x:String>F1</x:String><x:String>F2</x:String><x:String>F3</x:String><x:String>F4</x:String><x:String>F5</x:String><x:String>F6</x:String><x:String>F7</x:String><x:String>F8</x:String><x:String>F9</x:String><x:String>F10</x:String><x:String>F11</x:String><x:String>F12</x:String><x:String>Enter</x:String><x:String>Esc</x:String><x:String>Space</x:String><x:String>Tab</x:String><x:String>Backspace</x:String><x:String>Up</x:String><x:String>Down</x:String><x:String>Left</x:String><x:String>Right</x:String><x:String>LCtrl</x:String><x:String>LShift</x:String><x:String>LAlt</x:String><x:String>LWin</x:String><x:String>RCtrl</x:String><x:String>RShift</x:String><x:String>RAlt</x:String><x:String>RWin</x:String><x:String>Home</x:String><x:String>End</x:String><x:String>PgUp</x:String><x:String>PgDn</x:String><x:String>Insert</x:String><x:String>Delete</x:String><x:String>PrintScr</x:String><x:String>Pause</x:String><x:String>VolUp</x:String><x:String>VolDown</x:String><x:String>VolMute</x:String><x:String>[</x:String><x:String>]</x:String>
-                                        </ComboBox>
-                                    </StackPanel>
-
-                                    <!-- Legion R Command Input (hidden by default) -->
-                                    <Grid x:Name="LegionRCommandGrid" Margin="85,8,0,0" Visibility="Collapsed">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="LegionRCommandTextBox"
-                                                 Grid.Column="0"
-                                                 PlaceholderText="e.g. C:\path\app.exe -arg1"/>
-                                        <Button x:Name="LegionRCommandApplyButton"
-                                                Grid.Column="1"
-                                                Content="Apply"
-                                                Style="{StaticResource ModernButtonStyle}"
-                                                Margin="8,0,0,0"
-                                                Click="LegionRCommandApplyButton_Click"/>
-                                    </Grid>
-
-                                    <!-- Status Text for Legion buttons -->
-                                    <TextBlock x:Name="LegionRemapStatusText"
-                                               Text=""
-                                               FontSize="12"
-                                               Foreground="#B9C0CC"
-                                               Margin="0,8,0,0"/>
-
-                                    <!-- Scroll Wheel Section (hidden on devices without scroll wheel) -->
-                                    <StackPanel x:Name="ScrollWheelSection">
-                                        <!-- Divider -->
-                                        <Border Height="1" Background="#33FFFFFF" Margin="0,16,0,16"/>
-
-                                        <!-- Scroll Wheel Header -->
-                                        <TextBlock Text="SCROLL WHEEL" FontSize="11" FontWeight="SemiBold" Foreground="#B9C0CC" Margin="0,0,0,8"/>
-
+                                    <!-- Scroll wheel (hidden on devices without one) -->
+                                    <StackPanel x:Name="ScrollWheelSection" Margin="0,12,0,0">
                                     <!-- Scroll Wheel Row (unified - direction not available) -->
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="85"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Scroll:"
+                                        <TextBlock Text="Scroll"
                                                    Grid.Column="0"
                                                    VerticalAlignment="Center"
                                                    FontSize="13"
@@ -4154,7 +3793,7 @@
                                             <ColumnDefinition Width="85"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Text="Scroll Click:"
+                                        <TextBlock Text="Scroll Click"
                                                    Grid.Column="0"
                                                    VerticalAlignment="Center"
                                                    FontSize="13"
@@ -4213,14 +3852,6 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-
-                        <!-- Fan Settings Section Header -->
-                        <TextBlock Text="Fan Settings" Style="{StaticResource SectionHeaderStyle}"/>
-
-                        <!-- The Legion-tab "Power Profile" dropdown was removed: the Performance tab's
-                             TDP Mode dropdown (TDPModeComboBox) is now the single control for the
-                             performance mode (Quiet/Balanced/Performance/Custom). The Custom SPL/SPPL/FPPT
-                             sliders were likewise moved to the Performance tab. One source of truth. -->
 
                         <!-- Hotkeys Card (Collapsible) - Xbox Controller Button Combos -->
                         <Border x:Name="HotkeysCard" Style="{StaticResource CardStyle}">
@@ -4574,6 +4205,336 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+
+
+                        <!-- Deadzones Card -->
+                        <Border Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Deadzones" Style="{StaticResource CardTitleStyle}" Grid.Column="0"/>
+                                    <ToggleButton x:Name="StickDeadzonesExpandToggle"
+                                                  Grid.Column="1"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  Padding="8,4"
+                                                  Click="StickDeadzonesExpandToggle_Click">
+                                        <FontIcon x:Name="StickDeadzonesExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
+                                    </ToggleButton>
+                                </Grid>
+                                <StackPanel x:Name="StickDeadzonesContent" Spacing="12" Margin="0,12,0,0" Visibility="Collapsed">
+                                    <!-- Stick Deadzones Section -->
+                                    <TextBlock Text="Stick Deadzones" FontSize="12" Foreground="#888888" Margin="0,0,0,4"/>
+
+                                    <!-- Left Stick Deadzone -->
+                                    <StackPanel>
+                                        <Grid>
+                                            <TextBlock Text="Left Stick" FontSize="13" Foreground="#B9C0CC"/>
+                                            <TextBlock x:Name="LegionLeftStickDeadzoneValue"
+                                                       Text="4%"
+                                                       Style="{StaticResource CardValueStyle}"/>
+                                        </Grid>
+                                        <Slider x:Name="LegionLeftStickDeadzoneSlider"
+                                                Style="{StaticResource ModernSliderStyle}"
+                                                Minimum="0" Maximum="50"
+                                                Value="4"
+                                                StepFrequency="1"/>
+                                    </StackPanel>
+
+                                    <!-- Right Stick Deadzone -->
+                                    <StackPanel>
+                                        <Grid>
+                                            <TextBlock Text="Right Stick" FontSize="13" Foreground="#B9C0CC"/>
+                                            <TextBlock x:Name="LegionRightStickDeadzoneValue"
+                                                       Text="4%"
+                                                       Style="{StaticResource CardValueStyle}"/>
+                                        </Grid>
+                                        <Slider x:Name="LegionRightStickDeadzoneSlider"
+                                                Style="{StaticResource ModernSliderStyle}"
+                                                Minimum="0" Maximum="50"
+                                                Value="4"
+                                                StepFrequency="1"/>
+                                    </StackPanel>
+
+                                    <!-- Trigger Travel Section -->
+                                    <TextBlock Text="Trigger Travel" FontSize="12" Foreground="#888888" Margin="0,16,0,4"/>
+
+                                    <!-- Hair Triggers Toggle -->
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="Hair Triggers" FontSize="13" Foreground="#B9C0CC" VerticalAlignment="Center"/>
+                                        <ToggleSwitch x:Name="LegionHairTriggersToggle" Grid.Column="1" OnContent="" OffContent="" Margin="0,0,-8,0"/>
+                                    </Grid>
+
+                                    <!-- Left Trigger -->
+                                    <StackPanel x:Name="LeftTriggerPanel">
+                                        <TextBlock Text="Left Trigger" FontSize="12" Foreground="#888888" Margin="0,0,0,4"/>
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="Dead Zone" FontSize="13" Foreground="#B9C0CC"/>
+                                                <TextBlock x:Name="LegionLeftTriggerStartValue"
+                                                           Text="0%"
+                                                           Style="{StaticResource CardValueStyle}"/>
+                                            </Grid>
+                                            <Slider x:Name="LegionLeftTriggerStartSlider"
+                                                    Style="{StaticResource ModernSliderStyle}"
+                                                    Minimum="0" Maximum="50"
+                                                    Value="0"
+                                                    StepFrequency="1"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="Full Press" FontSize="13" Foreground="#B9C0CC"/>
+                                                <TextBlock x:Name="LegionLeftTriggerEndValue"
+                                                           Text="0%"
+                                                           Style="{StaticResource CardValueStyle}"/>
+                                            </Grid>
+                                            <Slider x:Name="LegionLeftTriggerEndSlider"
+                                                    Style="{StaticResource ModernSliderStyle}"
+                                                    Minimum="0" Maximum="99"
+                                                    Value="0"
+                                                    StepFrequency="1"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Right Trigger -->
+                                    <StackPanel x:Name="RightTriggerPanel">
+                                        <TextBlock Text="Right Trigger" FontSize="12" Foreground="#888888" Margin="0,0,0,4"/>
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="Dead Zone" FontSize="13" Foreground="#B9C0CC"/>
+                                                <TextBlock x:Name="LegionRightTriggerStartValue"
+                                                           Text="0%"
+                                                           Style="{StaticResource CardValueStyle}"/>
+                                            </Grid>
+                                            <Slider x:Name="LegionRightTriggerStartSlider"
+                                                    Style="{StaticResource ModernSliderStyle}"
+                                                    Minimum="0" Maximum="50"
+                                                    Value="0"
+                                                    StepFrequency="1"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <Grid>
+                                                <TextBlock Text="Full Press" FontSize="13" Foreground="#B9C0CC"/>
+                                                <TextBlock x:Name="LegionRightTriggerEndValue"
+                                                           Text="0%"
+                                                           Style="{StaticResource CardValueStyle}"/>
+                                            </Grid>
+                                            <Slider x:Name="LegionRightTriggerEndSlider"
+                                                    Style="{StaticResource ModernSliderStyle}"
+                                                    Minimum="0" Maximum="99"
+                                                    Value="0"
+                                                    StepFrequency="1"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Gyro Settings Section (hidden on devices without HID gyro support) -->
+                        <StackPanel x:Name="GyroSection">
+                        <!-- Gyro Settings Card -->
+                        <Border Style="{StaticResource CardStyle}">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Gyro Settings" Style="{StaticResource CardTitleStyle}" Grid.Column="0"/>
+                                    <ToggleButton x:Name="GyroSettingsExpandToggle"
+                                                  Grid.Column="1"
+                                                  IsChecked="False"
+                                                  VerticalAlignment="Center"
+                                                  Background="Transparent"
+                                                  BorderThickness="0"
+                                                  Padding="8,4"
+                                                  Click="GyroSettingsExpandToggle_Click">
+                                        <FontIcon x:Name="GyroSettingsExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
+                                    </ToggleButton>
+                                </Grid>
+                                <StackPanel x:Name="GyroSettingsContent" Spacing="12" Margin="0,12,0,0" Visibility="Collapsed">
+                                    <!-- Gyro Target -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Target" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
+                                    <ComboBox x:Name="LegionGyroTargetComboBox"
+                                              Grid.Column="1"
+                                              Style="{StaticResource ModernComboBoxStyle}"
+                                              HorizontalAlignment="Stretch"
+                                              SelectedIndex="0">
+                                        <x:String>Disabled</x:String>
+                                        <x:String>Left Stick</x:String>
+                                        <x:String>Right Stick</x:String>
+                                        <x:String>Mouse</x:String>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Gyro Sensitivity X -->
+                                <StackPanel>
+                                    <Grid>
+                                        <TextBlock Text="Sensitivity X" FontSize="13" Foreground="#B9C0CC"/>
+                                        <TextBlock x:Name="LegionGyroSensitivityXValue"
+                                                   Text="50"
+                                                   Style="{StaticResource CardValueStyle}"/>
+                                    </Grid>
+                                    <Slider x:Name="LegionGyroSensitivityXSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="1" Maximum="100"
+                                            Value="50"
+                                            StepFrequency="1"/>
+                                </StackPanel>
+
+                                <!-- Gyro Sensitivity Y -->
+                                <StackPanel>
+                                    <Grid>
+                                        <TextBlock Text="Sensitivity Y" FontSize="13" Foreground="#B9C0CC"/>
+                                        <TextBlock x:Name="LegionGyroSensitivityYValue"
+                                                   Text="50"
+                                                   Style="{StaticResource CardValueStyle}"/>
+                                    </Grid>
+                                    <Slider x:Name="LegionGyroSensitivityYSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="1" Maximum="100"
+                                            Value="50"
+                                            StepFrequency="1"/>
+                                </StackPanel>
+
+                                <!-- Gyro Deadzone -->
+                                <StackPanel>
+                                    <Grid>
+                                        <TextBlock Text="Deadzone" FontSize="13" Foreground="#B9C0CC"/>
+                                        <TextBlock x:Name="LegionGyroDeadzoneValue"
+                                                   Text="10"
+                                                   Style="{StaticResource CardValueStyle}"/>
+                                    </Grid>
+                                    <Slider x:Name="LegionGyroDeadzoneSlider"
+                                            Style="{StaticResource ModernSliderStyle}"
+                                            Minimum="1" Maximum="100"
+                                            Value="10"
+                                            StepFrequency="1"/>
+                                </StackPanel>
+
+                                <!-- Gyro Invert X/Y Toggles -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                        <TextBlock Text="Invert X" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14" Margin="0,0,12,0"/>
+                                        <ToggleSwitch x:Name="LegionGyroInvertXToggle"
+                                                      Style="{StaticResource ModernToggleStyle}"
+                                                      IsOn="False"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                        <TextBlock Text="Invert Y" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14" Margin="0,0,12,0"/>
+                                        <ToggleSwitch x:Name="LegionGyroInvertYToggle"
+                                                      Style="{StaticResource ModernToggleStyle}"
+                                                      IsOn="False"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Gyro Mapping Type -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Mapping" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
+                                    <ComboBox x:Name="LegionGyroMappingTypeComboBox"
+                                              Grid.Column="1"
+                                              Style="{StaticResource ModernComboBoxStyle}"
+                                              HorizontalAlignment="Stretch"
+                                              SelectedIndex="0">
+                                        <x:String>Instant</x:String>
+                                        <x:String>Continuous</x:String>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Gyro Activation Mode -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Activation" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
+                                    <ComboBox x:Name="LegionGyroActivationModeComboBox"
+                                              Grid.Column="1"
+                                              Style="{StaticResource ModernComboBoxStyle}"
+                                              HorizontalAlignment="Stretch"
+                                              SelectedIndex="0">
+                                        <x:String>Hold</x:String>
+                                        <x:String>Toggle</x:String>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Gyro Activation Button -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="Button" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
+                                    <ComboBox x:Name="LegionGyroActivationButtonComboBox"
+                                              Grid.Column="1"
+                                              Style="{StaticResource ModernComboBoxStyle}"
+                                              HorizontalAlignment="Stretch"
+                                              SelectedIndex="0">
+                                        <x:String>None</x:String>
+                                        <x:String>LB</x:String>
+                                        <x:String>LT</x:String>
+                                        <x:String>RB</x:String>
+                                        <x:String>RT</x:String>
+                                        <x:String>Y1</x:String>
+                                        <x:String>Y2</x:String>
+                                        <x:String>M2</x:String>
+                                        <x:String>M3</x:String>
+                                    </ComboBox>
+                                </Grid>
+
+                                <!-- Gyro Calibration -->
+                                <StackPanel Margin="0,4,0,0">
+                                    <Button x:Name="LegionCalibrateGyroButton"
+                                            Content="Calibrate gyro"
+                                            Style="{StaticResource ModernButtonStyle}"
+                                            HorizontalAlignment="Stretch"
+                                            Click="LegionCalibrateGyroButton_Click"/>
+                                    <TextBlock x:Name="LegionCalibrateGyroStatus"
+                                               Text="Hold the controllers still and press the button — bias is captured by the controller firmware."
+                                               FontSize="11"
+                                               Foreground="#888888"
+                                               TextWrapping="Wrap"
+                                               Margin="0,6,0,0"/>
+                                </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                        </StackPanel>
+                        <!-- End Gyro Section -->
+
+
+                        </StackPanel>
+                        <!-- End Controller Remapping Section -->
+
+                        <!-- Fan Settings Section Header -->
+                        <TextBlock Text="Fan Settings" Style="{StaticResource SectionHeaderStyle}"/>
+
+                        <!-- The Legion-tab "Power Profile" dropdown was removed: the Performance tab's
+                             TDP Mode dropdown (TDPModeComboBox) is now the single control for the
+                             performance mode (Quiet/Balanced/Performance/Custom). The Custom SPL/SPPL/FPPT
+                             sliders were likewise moved to the Performance tab. One source of truth. -->
 
                         <!-- Fan Full Speed Card -->
                         <Border Style="{StaticResource CardStyle}">

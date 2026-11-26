@@ -241,8 +241,10 @@ upstream, and why.
   TDP Mode box) uses the TDP last set for the active profile instead of starting at 15 W. The
   Custom TDP slider now tops out at 35 W, the Legion Go 2's maximum.
 - **Layout:** AutoTDP sits above TDP Mode on the Performance tab, the Current Profile card moved
-  to the Profiles tab, the Hotkeys card moved from System to the Legion tab next to the other
-  remapping cards, and the Game Detection card was removed (its two options keep their current values).
+  to the Profiles tab, and the Game Detection card was removed (its two options keep their
+  current values). On the Legion tab, Button Remapping now holds every remappable button: Front
+  Buttons (Legion L, Legion R, Desktop, Page) then Back Buttons (Y1-3, M1-3, Scroll, Scroll Click),
+  so the Special Remapping card is gone; the Hotkeys card moved from System to right below it.
 ---
 
 ## 🧩 Features

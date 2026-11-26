@@ -106,7 +106,6 @@ namespace XboxGamingBar
         private bool isOSDCustomizeExpanded = false;
         private bool isButtonRemappingExpanded = false;
         private bool isGyroSettingsExpanded = false;
-        private bool isSpecialRemappingExpanded = false;
         private bool isStickDeadzonesExpanded = false;
         private bool isTouchpadVibrationExpanded = false;
         private bool isLightingExpanded = false;
@@ -738,21 +737,6 @@ namespace XboxGamingBar
             }
         }
 
-        private void SpecialRemappingExpandButton_Click(object sender, RoutedEventArgs e)
-        {
-            isSpecialRemappingExpanded = !isSpecialRemappingExpanded;
-
-            if (SpecialRemappingContent != null)
-            {
-                SpecialRemappingContent.Visibility = isSpecialRemappingExpanded ? Visibility.Visible : Visibility.Collapsed;
-            }
-
-            if (SpecialRemappingExpandIcon != null)
-            {
-                // E70D = ChevronDown, E70E = ChevronUp
-                SpecialRemappingExpandIcon.Glyph = isSpecialRemappingExpanded ? "\uE70E" : "\uE70D";
-            }
-        }
 
 
 
