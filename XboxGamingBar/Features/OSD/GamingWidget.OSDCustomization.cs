@@ -111,8 +111,6 @@ namespace XboxGamingBar
         private bool isStickDeadzonesExpanded = false;
         private bool isTouchpadVibrationExpanded = false;
         private bool isLightingExpanded = false;
-        private bool isFanCurveExpanded = false;
-        private bool fanCurveGraphInitialized = false;
 
         // Display and OSD settings
         private bool adaptiveBrightnessEnabled = false;
@@ -121,31 +119,6 @@ namespace XboxGamingBar
         private int osdOpacity = 50;  // percentage 10-100; 50% by default to protect OLED panels
         private bool isLoadingOLEDSettings = false;
         private bool isLoadingPerformanceOverlaySetting = false;
-        private readonly Windows.UI.Xaml.Shapes.Ellipse[] fanCurvePoints = new Windows.UI.Xaml.Shapes.Ellipse[10];
-        private int[] currentFanCurveValues = new int[10];
-        private int draggedPointIndex = -1;
-        private bool isDraggingPoint = false;
-
-        // Legion Go fan curve temperature thresholds (°C) - FIXED by EC at 10°C increments
-        private static readonly int[] FanCurveTemperatures = { 10, 20, 30, 40, 50, 60, 70, 80, 90, 100 };
-        // Minimum fan speeds - set to 0 since EC enforces its own thermal protection floor
-        // EC override floor: 0-44°C=0%, 45°C=27%, 50°C=40%, 55°C=55%, 60°C=65%, 70°C=85%, 80+°C=100%
-        private static readonly int[] FanCurveMinSpeeds = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-        // EC Override Floor points: (temperature, minimum fan %) - what the EC enforces regardless of user curve
-        private static readonly (int temp, int floor)[] ECFloorPoints = new[]
-        {
-            (10, 0), (20, 0), (30, 0), (44, 0),
-            (45, 27), (50, 40), (55, 55), (60, 65), (70, 85),
-            (80, 100), (90, 100), (100, 100)
-        };
-        // Fan curve preset definitions (values are fan % for temps 10,20,30,40,50,60,70,80,90,100°C)
-        private static readonly Dictionary<string, int[]> FanCurvePresets = new Dictionary<string, int[]>
-        {
-            { "Silent", new int[] { 0, 0, 0, 27, 30, 40, 55, 65, 80, 100 } },       // Silent (Safe)
-            { "Balanced", new int[] { 0, 0, 25, 30, 35, 45, 55, 70, 85, 100 } },    // Balanced
-            { "Performance", new int[] { 30, 35, 40, 45, 50, 60, 70, 80, 90, 100 } }, // Performance
-            { "MaxCooling", new int[] { 40, 45, 50, 55, 60, 70, 80, 90, 100, 100 } }  // Max Cooling
-        };
         private bool isCPUExtrasExpanded = false;
         private bool isDebugExpanded = false;
         private int deviceTDPMin = 4;
@@ -766,38 +739,6 @@ namespace XboxGamingBar
             }
         }
 
-        private void FanCurveExpandToggle_Click(object sender, RoutedEventArgs e)
-        {
-            isFanCurveExpanded = !isFanCurveExpanded;
-
-            if (FanCurveContent != null)
-            {
-                FanCurveContent.Visibility = isFanCurveExpanded ? Visibility.Visible : Visibility.Collapsed;
-            }
-
-            if (FanCurveExpandIcon != null)
-            {
-                // E70D = ChevronDown, E70E = ChevronUp
-                FanCurveExpandIcon.Glyph = isFanCurveExpanded ? "\uE70E" : "\uE70D";
-            }
-
-            // Initialize graph on first expand
-            if (isFanCurveExpanded && !fanCurveGraphInitialized)
-            {
-                InitializeFanCurveGraph();
-            }
-
-            // Tell helper whether to push the fan-control sensor temp (0x01) used by the
-            // fan-curve graph's own info panel, and to speed up its refresh cadence. RPM and
-            // the header CPU temp stream continuously regardless of this flag (see
-            // LegionManager.RefreshFanSpeed), so the header never needs clearing here.
-            legionFanCurveVisible?.SetVisible(isFanCurveExpanded);
-
-            if (isFanCurveExpanded)
-            {
-                UpdateActiveModeLabel();
-            }
-        }
         private void CPUExtrasExpandToggle_Click(object sender, RoutedEventArgs e)
         {
             isCPUExtrasExpanded = !isCPUExtrasExpanded;

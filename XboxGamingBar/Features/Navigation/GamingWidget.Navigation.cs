@@ -218,7 +218,7 @@ namespace XboxGamingBar
                         LegionScrollViewer.Visibility = Visibility.Visible;
                         LegionScrollViewer.ChangeView(null, 0, null, true);
                         // Update fan curve visibility when switching to Legion tab
-                        legionFanCurveVisible?.SetVisible(isFanCurveExpanded);
+                        legionFanCurveVisible?.SetVisible(true); // keeps the fan RPM / temperature readout live
                         // Force remap UI refresh when Legion tab becomes active.
                         RefreshLegionEnhancedRemapUi();
                         break;

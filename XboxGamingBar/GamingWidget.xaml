@@ -4539,17 +4539,14 @@
                         <!-- Fan Curve Graph Card -->
                         <Border x:Name="LegionFanCurveCard" Style="{StaticResource CardStyle}">
                             <StackPanel>
-                                <!-- Header with expand toggle -->
+                                <!-- Live fan speed and CPU temperature. The fan follows the firmware curve of the TDP mode (Lenovo's stock curve in Custom). -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <TextBlock Text="Fan Curve" Style="{StaticResource CardTitleStyle}"/>
-                                        <!-- Live hardware readout: fan RPM + the temperature currently
-                                             driving the fan. Always shown while the card is expanded,
-                                             independent of which mode's curve is selected below. -->
+                                        <TextBlock Text="Fan" Style="{StaticResource CardTitleStyle}"/>
                                         <StackPanel Margin="0,4,0,0">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="Fan:" FontSize="12" FontWeight="SemiBold" Foreground="#B9C0CC" VerticalAlignment="Center" Margin="0,0,4,0"/>
@@ -4560,179 +4557,9 @@
                                                 <TextBlock x:Name="FanHeaderTempLabel" Text="--°C" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource SystemAccentBrush}" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </StackPanel>
-                                        <!-- Spells out that the graph below edits the Custom-mode curve, and
-                                             whether the console is currently running it. Set in UpdateActiveModeLabel. -->
-                                        <TextBlock x:Name="FanCurveActiveModeLabel"
-                                                   FontSize="10" Foreground="#88B0E0" Margin="0,2,0,0"
-                                                   TextWrapping="Wrap" Visibility="Collapsed"/>
                                     </StackPanel>
-                                    <ToggleButton x:Name="FanCurveExpandToggle"
-                                                  Grid.Column="1"
-                                                  IsChecked="False"
-                                                  VerticalAlignment="Center"
-                                                  Background="Transparent"
-                                                  BorderThickness="0"
-                                                  Padding="8,4"
-                                                  Click="FanCurveExpandToggle_Click">
-                                        <FontIcon x:Name="FanCurveExpandIcon" Glyph="&#xE70D;" FontSize="12"/>
-                                    </ToggleButton>
                                 </Grid>
 
-                                <Border Height="1" Background="#33FFFFFF" Margin="0,10,0,0"/>
-
-                                <!-- Info / warning collapsed by default to keep the card tidy. Contains
-                                     the safety warning and a short behavioral explainer. -->
-                                <muxc:Expander x:Name="FanCurveInfoExpander"
-                                               Margin="0,8,0,0"
-                                               HorizontalAlignment="Stretch"
-                                               HorizontalContentAlignment="Stretch"
-                                               IsExpanded="False">
-                                    <muxc:Expander.Header>
-                                        <TextBlock Text="Info &amp; safety notes" FontSize="12" Foreground="#B9C0CC"/>
-                                    </muxc:Expander.Header>
-                                    <StackPanel>
-                                        <Border Background="#3D2A1A" CornerRadius="4" Padding="10"
-                                                x:Name="FanCurveWarningBorder">
-                                            <StackPanel>
-                                                <TextBlock Foreground="#FFB060" FontWeight="SemiBold" FontSize="12">
-                                                    ⚠ Aggressive curves can damage hardware
-                                                </TextBlock>
-                                                <TextBlock Foreground="#DDB890" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
-                                                           Text="• Never 0% above ~50°C"/>
-                                            </StackPanel>
-                                        </Border>
-
-                                        <Border Background="{StaticResource PageBackgroundBrush}" CornerRadius="4" Padding="10" Margin="0,8,0,0">
-                                            <StackPanel>
-                                                <TextBlock FontSize="11" Foreground="#888888" TextWrapping="Wrap"
-                                                           Text="• This curve is applied through Lenovo WMI while TDP Mode is Custom, with firmware-enforced floors&#x0a;• Quiet, Balanced and Performance use the firmware's own fan curves&#x0a;• Axis labels (10°C–100°C) are how the curve is stored; firmware may map temps differently"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </StackPanel>
-                                </muxc:Expander>
-
-                                <!-- Expandable graph content -->
-                                <StackPanel x:Name="FanCurveContent" Margin="0,12,0,0" Visibility="Collapsed">
-                                    <!-- Y-axis label -->
-                                    <TextBlock Text="Fan %" FontSize="11" Foreground="#888888" Margin="0,0,0,4"/>
-
-                                    <!-- Graph area -->
-                                    <Grid Height="150">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="30"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- Y-axis labels (percentage scale) -->
-                                        <StackPanel Grid.Column="0" VerticalAlignment="Stretch">
-                                            <TextBlock Text="100" FontSize="10" Foreground="#888888" VerticalAlignment="Top"/>
-                                            <TextBlock Text="75" FontSize="10" Foreground="#888888" VerticalAlignment="Top" Margin="0,25,0,0"/>
-                                            <TextBlock Text="50" FontSize="10" Foreground="#888888" VerticalAlignment="Top" Margin="0,25,0,0"/>
-                                            <TextBlock Text="25" FontSize="10" Foreground="#888888" VerticalAlignment="Top" Margin="0,25,0,0"/>
-                                            <TextBlock Text="0" FontSize="10" Foreground="#888888" VerticalAlignment="Bottom"/>
-                                        </StackPanel>
-
-                                        <!-- Canvas for drawing the graph -->
-                                        <Canvas x:Name="FanCurveCanvas"
-                                                Grid.Column="1"
-                                                Background="#1A1A1A"
-                                                PointerPressed="FanCurveCanvas_PointerPressed"
-                                                PointerMoved="FanCurveCanvas_PointerMoved"
-                                                PointerReleased="FanCurveCanvas_PointerReleased"
-                                                PointerCaptureLost="FanCurveCanvas_PointerReleased"
-                                                SizeChanged="FanCurveCanvas_SizeChanged">
-                                            <!-- Grid lines drawn in code-behind -->
-
-                                            <!-- Fill under the curve -->
-                                            <Polygon x:Name="FanCurveFill"
-                                                     Fill="#3300AAFF"
-                                                     Stroke="Transparent"/>
-
-                                            <!-- Firmware protection-floor line (dashed orange reference line) -->
-                                            <Polyline x:Name="ECFloorPolyline"
-                                                      Stroke="#FF6600"
-                                                      StrokeThickness="1.5"
-                                                      StrokeDashArray="4,2"
-                                                      Opacity="0.7"/>
-
-                                            <!-- The curve line -->
-                                            <Polyline x:Name="FanCurvePolyline"
-                                                      Stroke="#00AAFF"
-                                                      StrokeThickness="2"
-                                                      StrokeLineJoin="Round"/>
-
-                                            <!-- Temperature indicator line (vertical dashed line) - on top of curve -->
-                                            <Line x:Name="TempIndicatorLine"
-                                                  Y1="0" Y2="150"
-                                                  Stroke="#FF8800"
-                                                  StrokeThickness="2"
-                                                  StrokeDashArray="4,2"
-                                                  Visibility="Collapsed"/>
-
-                                            <!-- RPM indicator line (horizontal dashed line) - on top of curve -->
-                                            <Line x:Name="RPMIndicatorLine"
-                                                  X1="0" X2="300"
-                                                  Stroke="#00FF88"
-                                                  StrokeThickness="2"
-                                                  StrokeDashArray="4,2"
-                                                  Visibility="Collapsed"/>
-
-                                            <!-- Control points are created in code-behind -->
-                                        </Canvas>
-                                    </Grid>
-
-                                    <!-- X-axis labels — one per curve breakpoint. The breakpoints are
-                                         how the curve is stored regardless of how it is applied.
-                                         Under the firmware path Lenovo's mapping from
-                                         sensor temp to curve point may not be 1:1 with these
-                                         labels — the Info expander notes that — but hiding the
-                                         labels entirely was worse: users had no temp reference
-                                         at all when editing a non-EC-override curve. -->
-                                    <Grid x:Name="FanCurveTempAxisGrid" Margin="30,4,0,0">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0" Text="10°C" FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="1" Text="20"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="2" Text="30"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="3" Text="40"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="4" Text="50"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="5" Text="60"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="6" Text="70"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="7" Text="80"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="8" Text="90"   FontSize="9"  Foreground="#888888" HorizontalAlignment="Left"/>
-                                        <TextBlock Grid.Column="8" Text="100°C" FontSize="9" Foreground="#888888" HorizontalAlignment="Right"/>
-                                    </Grid>
-
-                                    <!-- Legacy locked-state hint, retained as collapsed shim so
-                                         the code-behind reference (FanCurveLockedAxisHint) still
-                                         resolves. The temp axis grid is now always visible. -->
-                                    <TextBlock x:Name="FanCurveLockedAxisHint"
-                                               Visibility="Collapsed"
-                                               FontSize="9" Foreground="#888888"
-                                               HorizontalAlignment="Center"/>
-
-                                    <!-- Current temperature display (true CPU temperature). -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0" HorizontalAlignment="Center">
-                                        <TextBlock x:Name="CurrentTempPrefixLabel" Text="CPU Temp: " FontSize="12" Foreground="#888888"/>
-                                        <TextBlock x:Name="CurrentTempLabel" Text="--°C" FontSize="12" Foreground="#FF8800" FontWeight="SemiBold"/>
-                                    </StackPanel>
-
-                                    <!-- Firmware protection-floor legend; shown while the viewed curve is the one
-                                         actually running (see RefreshFanCurveGraphForUnlockState). -->
-                                    <StackPanel x:Name="ECFloorLegendPanel" Orientation="Horizontal" Margin="0,4,0,0" HorizontalAlignment="Center">
-                                        <Line X1="0" Y1="0" X2="20" Y2="0" Stroke="#FF8800" StrokeThickness="2" StrokeDashArray="4,2" VerticalAlignment="Center"/>
-                                        <TextBlock Text=" EC Protection Floor" FontSize="10" Foreground="#888888" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </StackPanel>
                             </StackPanel>
                         </Border>
 

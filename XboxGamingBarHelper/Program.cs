@@ -767,11 +767,6 @@ namespace XboxGamingBarHelper
                 pipeServer.Connected += (s, e) =>
                 {
                     Logger.Info("Widget connected via Named Pipe");
-                    // Snapshot every saved per-mode fan curve + unlock state so the
-                    // widget can populate its cache and let the user edit any mode
-                    // without changing the running power mode.
-                    try { legionManager?.PushAllPerModeStateToWidget(); }
-                    catch (Exception ex) { Logger.Warn($"Failed to push per-mode fan curve state on connect: {ex.Message}"); }
                     // Controller battery/connection state is change-gated at the source, so a
                     // widget connecting after the last change (boot: battery pinned at 100%)
                     // would otherwise show "--" / Detached until something changes. The widget
@@ -1225,8 +1220,6 @@ namespace XboxGamingBarHelper
                 legionManager.LegionCustomTDPFast,
                 legionManager.LegionCustomTDPPeak,
                 legionManager.LegionFanFullSpeed,
-                legionManager.LegionFanCurveData,
-                legionManager.LegionFanCurvePerMode,
                 legionManager.LegionCPUCurrentTemp,
                 legionManager.LegionFanSensorTemp,
                 legionManager.LegionCPUFanRPM,

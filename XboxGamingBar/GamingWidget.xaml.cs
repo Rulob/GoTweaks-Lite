@@ -543,8 +543,6 @@ namespace XboxGamingBar
         private readonly LegionCustomTDPFastProperty legionCustomTDPFast;
         private readonly LegionCustomTDPPeakProperty legionCustomTDPPeak;
         private readonly LegionFanFullSpeedProperty legionFanFullSpeed;
-        private readonly LegionFanCurveGraphProperty legionFanCurveGraph;
-        private readonly LegionFanCurvePerModeProperty legionFanCurvePerMode;
         private readonly LegionCPUTempProperty legionCPUTemp;
         private readonly LegionFanSensorTempProperty legionFanSensorTemp;
         private readonly LegionCPUFanRPMProperty legionCPUFanRPM;
@@ -824,14 +822,10 @@ namespace XboxGamingBar
             legionFanFullSpeed = new LegionFanFullSpeedProperty(LegionFanFullSpeedToggle, this);
 
             // Fan curve graph properties
-            legionFanCurveGraph = new LegionFanCurveGraphProperty(this);
-            legionFanCurveGraph.SetGraphUpdateCallback(OnFanCurveUpdated);
             // Per-mode channel: helper pushes one message per TdpMode (1=Quiet, 2=Balanced,
             // 3=Performance, 255=Custom) on connect so the widget can let the user edit any
             // mode's curve without changing power mode. Outbound edits also go through this
             // channel keyed by the dropdown-selected mode (not the active mode).
-            legionFanCurvePerMode = new LegionFanCurvePerModeProperty(this);
-            legionFanCurvePerMode.SetCallback(OnFanCurvePerModeReceived);
             legionCPUTemp = new LegionCPUTempProperty(this);
             legionCPUTemp.SetTempUpdateCallback(OnCPUTempUpdated);
             legionFanSensorTemp = new LegionFanSensorTempProperty(this);
@@ -1004,8 +998,6 @@ namespace XboxGamingBar
                 legionCustomTDPFast,
                 legionCustomTDPPeak,
                 legionFanFullSpeed,
-                legionFanCurveGraph,
-                legionFanCurvePerMode,
                 legionCPUTemp,
                 legionFanSensorTemp,
                 legionCPUFanRPM,

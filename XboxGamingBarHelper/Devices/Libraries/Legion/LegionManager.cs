@@ -84,14 +84,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         public event System.Action CustomTDPApplied;
 
         private bool fanFullSpeed = false;
-        private ushort[] fanCurve = new ushort[10] { 44, 48, 55, 60, 71, 79, 87, 87, 100, 100 }; // active Legion Go fan curve — points to whichever per-mode slot is currently selected
-        // Per-mode curve storage (Rodpad LeGo2-Fan-Control pattern). Each TdpMode value
-        // (Quiet=1, Balanced=2, Performance=3, Custom=255) keeps its own 10-point fan
-        // curve; mode change swaps the active curve. Persisted as separate LocalSettings
-        // keys (LegionFanCurve_<mode>) with the legacy "LegionFanCurve" key kept in sync
-        // with the active mode for backward compat.
-        private readonly Dictionary<int, ushort[]> fanCurvesByMode = new Dictionary<int, ushort[]>();
-        private static readonly int[] AllPerformanceModes = { 1, 2, 3, 255 };
         private bool gyroEnabled = false;
         private int vibrationLevel = 2; // Medium
         private bool powerLightEnabled = true;
@@ -169,11 +161,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         public readonly LegionCustomTDPFastProperty LegionCustomTDPFast;
         public readonly LegionCustomTDPPeakProperty LegionCustomTDPPeak;
         public readonly LegionFanFullSpeedProperty LegionFanFullSpeed;
-        public readonly LegionFanCurveDataProperty LegionFanCurveData;
-        // Per-mode pipe channel — lets the widget edit a mode's saved curve without
-        // changing the running power mode. Active-mode hardware writes still go through
-        // LegionFanCurveData.
-        public readonly LegionFanCurvePerModeProperty LegionFanCurvePerMode;
         public readonly LegionCPUCurrentTempProperty LegionCPUCurrentTemp;
         public readonly LegionFanSensorTempProperty LegionFanSensorTemp;
         public readonly LegionCPUFanRPMProperty LegionCPUFanRPM;
@@ -302,99 +289,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             LegionCustomTDPPeak = new LegionCustomTDPPeakProperty(customTDPPeak, this);
             LegionFanFullSpeed = new LegionFanFullSpeedProperty(fanFullSpeed, this);
 
-            // Initialize fan curve - first try LocalSettings, then device
-            if (isLegionGoDetected)
-            {
-                var fanCurveTimer = System.Diagnostics.Stopwatch.StartNew();
-
-                // Load all per-mode curves into the dict; backfill missing modes from the
-                // legacy single-curve key (so users who upgrade from a build that only had
-                // one fan curve get all four mode slots seeded with their existing curve
-                // instead of reverting to defaults).
-                bool loadedAnyPerModeCurve = LoadAllPerModeFanCurves();
-                bool loadedFromSettings = false;
-
-                if (loadedAnyPerModeCurve || fanCurvesByMode.ContainsKey(performanceMode))
-                {
-                    if (fanCurvesByMode.TryGetValue(performanceMode, out var modeCurve)
-                        && modeCurve != null && modeCurve.Length == 10)
-                    {
-                        Array.Copy(modeCurve, fanCurve, 10);
-                        loadedFromSettings = true;
-                        Logger.Info($"Fan curve loaded for mode {performanceMode}: {string.Join(",", fanCurve)}");
-                    }
-                }
-
-                // If no saved curve, read from device
-                if (!loadedFromSettings)
-                {
-                    Logger.Info("Reading fan curve from device...");
-                    const int fanCurveTimeoutMs = 5000;
-                    var fanCurveTask = Task.Run(() =>
-                    {
-                        try
-                        {
-                            return wmiService?.GetFanCurve();
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Warn($"GetFanCurve exception: {ex.Message}");
-                            return null;
-                        }
-                    });
-
-                    if (fanCurveTask.Wait(fanCurveTimeoutMs))
-                    {
-                        var curveResult = fanCurveTask.Result;
-                        if (curveResult.HasValue && curveResult.Value.Success && curveResult.Value.FanSpeeds?.Length == 10)
-                        {
-                            fanCurve = curveResult.Value.FanSpeeds;
-                            Logger.Info($"Fan curve loaded from device: {string.Join(",", fanCurve)}");
-                        }
-                        else
-                        {
-                            Logger.Warn($"Failed to load fan curve from device, using defaults: {string.Join(",", fanCurve)}");
-                        }
-                    }
-                    else
-                    {
-                        Logger.Warn($"GetFanCurve timed out after {fanCurveTimeoutMs}ms, using defaults: {string.Join(",", fanCurve)}");
-                    }
-                }
-                fanCurveTimer.Stop();
-                Logger.Info($"[TIMING] LegionManager.FanCurve read: {fanCurveTimer.ElapsedMilliseconds}ms");
-
-                // Write the loaded fan curve to hardware now. Without this the saved curve
-                // only lived in memory + LocalSettings — it got pushed to the widget via
-                // LegionFanCurveData.EnableDeviceWrites() but never reached the controller.
-                // Users reported "fan curve not working at all anymore" because the device
-                // kept running its firmware default; the user's curve only applied if they
-                // nudged the slider manually after the ~5 s startup grace period.
-                //
-                // Skip if we're reading in a performance mode that isn't Custom (255) —
-                // preset modes (Quiet=1, Balanced=2, Performance=3) have their own
-                // hardware-managed curves and writing here would be ignored anyway, but
-                // logging the skip is useful for triage.
-                try
-                {
-                    var result = wmiService?.SetFanCurve(fanCurve);
-                    if (result.HasValue && result.Value.Success)
-                    {
-                        Logger.Info($"Fan curve applied to hardware on startup: [{string.Join(",", fanCurve)}]%");
-                    }
-                    else if (result.HasValue)
-                    {
-                        Logger.Warn($"Fan curve startup apply failed: {result.Value.Message}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn($"Fan curve startup apply threw: {ex.Message}");
-                }
-            }
-            string fanCurveString = string.Join(",", fanCurve.Select(v => (int)v));
-            LegionFanCurveData = new LegionFanCurveDataProperty(fanCurveString, this);
-            LegionFanCurvePerMode = new LegionFanCurvePerModeProperty(this);
             LegionCPUCurrentTemp = new LegionCPUCurrentTempProperty(0, this);
             LegionFanSensorTemp = new LegionFanSensorTempProperty(0, this);
             LegionCPUFanRPM = new LegionCPUFanRPMProperty(0, this);
@@ -533,53 +427,8 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
                 LegionCustomTDPPeak.SetValueSilent(customTDPPeak);
                 LegionFanFullSpeed.SetValueSilent(fanFullSpeed);
 
-                // Reload the curve from the per-mode slots now that we know
-                // the actual mode WMI returned. The earlier load at line ~312 used the
-                // performanceMode field default (Balanced=2), so if the user was in a
-                // different mode at last shutdown the wrong slots were active until this
-                // moment — which surfaced as "fan curve reset after update".
-                try
-                {
-                    if (fanCurvesByMode.TryGetValue(performanceMode, out var modeCurve)
-                        && modeCurve != null && modeCurve.Length == 10)
-                    {
-                        bool same = true;
-                        for (int i = 0; i < 10; i++) { if (fanCurve[i] != modeCurve[i]) { same = false; break; } }
-                        if (!same)
-                        {
-                            Array.Copy(modeCurve, fanCurve, 10);
-                            Logger.Info($"Fan curve re-loaded for actual mode {performanceMode} after WMI read: [{string.Join(",", fanCurve)}]%");
-                        }
-                        // Align legacy LegionFanCurveData with the actual mode's curve
-                        // so EnableDeviceWrites (5s grace timer) doesn't push the stale
-                        // default-mode-2 curve. AlignSilent updates Value + _lastSentValue.
-                        try
-                        {
-                            string actualCurveStr = string.Join(",", fanCurve.Select(v => (int)v));
-                            LegionFanCurveData?.AlignSilent(actualCurveStr);
-                        }
-                        catch (Exception ex) { Logger.Debug($"Failed to align legacy LegionFanCurveData after WMI read: {ex.Message}"); }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn($"Failed to reload fan curve for actual mode {performanceMode}: {ex.Message}");
-                }
-            }
-
-            // Enable fan curve device writes after startup grace period (only for Legion Go)
-            // This prevents the widget's sync from overwriting the device's fan curve on startup
-            if (isLegionGoDetected)
-            {
-                var fanCurveEnableTimer = new System.Timers.Timer(STARTUP_GRACE_PERIOD_MS);
-                fanCurveEnableTimer.Elapsed += (s, e) =>
-                {
-                    fanCurveEnableTimer.Stop();
-                    fanCurveEnableTimer.Dispose();
-                    LegionFanCurveData?.EnableDeviceWrites();
-                };
-                fanCurveEnableTimer.AutoReset = false;
-                fanCurveEnableTimer.Start();
+                // Custom mode runs on the fan table GoTweaks writes: Lenovo's stock curve (1.9.7c).
+                ApplyStockFanCurveIfCustom("startup");
             }
 
             constructorTimer.Stop();
@@ -1656,217 +1505,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
 
         // === Per-mode fan curve storage (Rodpad pattern) ============================
 
-        private static string FanCurveKeyForMode(int mode) => $"LegionFanCurve_{mode}";
-
-        // Tries to read a 10-point fan curve from a LocalSettings key. Returns null if
-        // missing or malformed.
-        private static ushort[] TryLoadCurveFromKey(string key)
-        {
-            try
-            {
-                if (!Settings.LocalSettingsHelper.TryGetValue<string>(key, out string s) || string.IsNullOrEmpty(s))
-                    return null;
-                var parts = s.Split(',');
-                if (parts.Length != 10) return null;
-                var arr = new ushort[10];
-                for (int i = 0; i < 10; i++)
-                {
-                    if (!int.TryParse(parts[i].Trim(), out int v)) return null;
-                    arr[i] = (ushort)Math.Max(0, Math.Min(100, v));
-                }
-                return arr;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        // Loads all four mode curves into the dict. Migration: if no per-mode keys exist
-        // yet but the legacy "LegionFanCurve" key does, copy that single curve into all
-        // four slots so users keep their saved curve after upgrade. Missing slots are
-        // filled with the Lenovo default. Returns true if at least one per-mode key was
-        // found on disk (vs all coming from migration / defaults).
-        private bool LoadAllPerModeFanCurves()
-        {
-            bool foundAny = false;
-            foreach (int mode in AllPerformanceModes)
-            {
-                var loaded = TryLoadCurveFromKey(FanCurveKeyForMode(mode));
-                if (loaded != null)
-                {
-                    fanCurvesByMode[mode] = loaded;
-                    foundAny = true;
-                }
-            }
-
-            if (!foundAny)
-            {
-                var legacy = TryLoadCurveFromKey("LegionFanCurve");
-                if (legacy != null)
-                {
-                    foreach (int mode in AllPerformanceModes)
-                        fanCurvesByMode[mode] = (ushort[])legacy.Clone();
-                    Logger.Info($"Migrated legacy LegionFanCurve into per-mode slots: [{string.Join(",", legacy)}]%");
-                }
-            }
-
-            // Backfill any modes that didn't load (or had no legacy migration source) with
-            // Lenovo's stock curve so we never have a missing slot.
-            foreach (int mode in AllPerformanceModes)
-            {
-                if (!fanCurvesByMode.ContainsKey(mode))
-                    fanCurvesByMode[mode] = (ushort[])LenovoWMIService.DefaultFanCurve.Clone();
-            }
-
-            return foundAny;
-        }
-
-        // Persists the given curve to the per-mode LocalSettings key. Also updates the
-        // legacy single-curve key when the saved mode is the one currently active, so
-        // older code paths (and downgrade scenarios) stay consistent.
-        private void SaveCurveForMode(int mode, ushort[] curve)
-        {
-            if (curve == null || curve.Length != 10) return;
-            fanCurvesByMode[mode] = (ushort[])curve.Clone();
-            try
-            {
-                string s = string.Join(",", curve.Select(v => (int)v));
-                Settings.LocalSettingsHelper.SetValue(FanCurveKeyForMode(mode), s);
-                if (mode == performanceMode)
-                    Settings.LocalSettingsHelper.SetValue("LegionFanCurve", s);
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"SaveCurveForMode({mode}) failed: {ex.Message}");
-            }
-        }
-
-        // === Per-mode pipe channels (LegionFanCurvePerMode) ====
-
-        // Parse "<mode>:v0,v1,…,v9" coming from the widget. Updates that mode's slot in
-        // fanCurvesByMode + LocalSettings. If the named mode is the active power mode,
-        // also reroutes through SetFanCurveFromString so the WMI table reflects
-        // the edit immediately.
-        public void OnFanCurvePerModePayload(string payload)
-        {
-            if (string.IsNullOrEmpty(payload)) return;
-            try
-            {
-                int colon = payload.IndexOf(':');
-                if (colon <= 0) { Logger.Warn($"OnFanCurvePerModePayload: malformed payload '{payload}'"); return; }
-                if (!int.TryParse(payload.Substring(0, colon), out int mode)) return;
-                string csv = payload.Substring(colon + 1);
-                var parts = csv.Split(',');
-                if (parts.Length != 10) { Logger.Warn($"OnFanCurvePerModePayload: expected 10 values, got {parts.Length} for mode {mode}"); return; }
-                var curve = new ushort[10];
-                for (int i = 0; i < 10; i++)
-                {
-                    if (!ushort.TryParse(parts[i], out ushort v)) return;
-                    curve[i] = (ushort)Math.Max(0, Math.Min(100, (int)v));
-                }
-
-                // For the active mode, route through SetFanCurveFromString so the EC
-                // override anchor + active-curve state stay in sync. For non-active
-                // modes, just persist to the slot — no hardware write.
-                if (mode == performanceMode)
-                {
-                    SetFanCurveFromString(csv);
-                }
-                else
-                {
-                    SaveCurveForMode(mode, curve);
-                    Logger.Info($"Per-mode fan curve saved for mode {mode} (not active): [{string.Join(",", curve)}]%");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"OnFanCurvePerModePayload failed for '{payload}': {ex.Message}");
-            }
-        }
-
-        // Push every mode's saved curve to the widget. Called once on
-        // pipe connect so the widget can cache all four modes locally and let the user
-        // edit any of them. Each SetValue call carries a unique "<mode>:..." prefix, so
-        // GenericProperty's equality check never collapses the four messages.
-        public void PushAllPerModeStateToWidget()
-        {
-            if (!isLegionGoDetected) return;
-            try
-            {
-                foreach (var mode in AllPerformanceModes)
-                {
-                    if (fanCurvesByMode.TryGetValue(mode, out var curve)
-                        && curve != null && curve.Length == 10)
-                    {
-                        string csv = string.Join(",", curve.Select(v => (int)v));
-                        // PushOutbound (not SetValue) so our own push doesn't trigger
-                        // the helper-side parser → no redundant SaveCurveForMode +
-                        // potential WMI re-write for the active-mode push.
-                        LegionFanCurvePerMode?.PushOutbound($"{mode}:{csv}");
-                    }
-                }
-                Logger.Info("Pushed all per-mode fan curves to widget on pipe connect.");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"PushAllPerModeStateToWidget failed: {ex.Message}");
-            }
-        }
-
-        // Send a single mode's curve to the widget — used after internal mode-driven
-        // edits (e.g. the active curve was reshaped via SetFanCurveFromString and we
-        // need the widget cache to stay current for that mode).
-        private void PushPerModeCurveToWidget(int mode)
-        {
-            try
-            {
-                if (fanCurvesByMode.TryGetValue(mode, out var curve)
-                    && curve != null && curve.Length == 10)
-                {
-                    string csv = string.Join(",", curve.Select(v => (int)v));
-                    LegionFanCurvePerMode?.PushOutbound($"{mode}:{csv}");
-                }
-            }
-            catch (Exception ex) { Logger.Debug($"PushPerModeCurveToWidget({mode}) failed: {ex.Message}"); }
-        }
-
-        // Called from SetPerformanceMode whenever the active power mode actually changes
-        // (after debounce). Saves the active curve to the OUTGOING mode's slot in case
-        // the user edited it while in that mode, then loads the INCOMING mode's curve
-        // into the active state and pushes it to the widget so the displayed curve matches.
-        private void OnPerformanceModeChanged(int oldMode, int newMode)
-        {
-            if (oldMode == newMode) return;
-            try
-            {
-                // 1. Save outgoing mode's curve snapshot (in case of in-flight edits)
-                if (fanCurve != null && fanCurve.Length == 10)
-                    SaveCurveForMode(oldMode, fanCurve);
-
-                // 2. Load incoming mode's curve into the active state.
-                if (fanCurvesByMode.TryGetValue(newMode, out var newCurve)
-                    && newCurve != null && newCurve.Length == 10)
-                {
-                    Array.Copy(newCurve, fanCurve, 10);
-                    Logger.Info($"Fan curve swapped for mode change {oldMode}→{newMode}: [{string.Join(",", fanCurve)}]%");
-                }
-
-                // 3. Push the new curve to the widget so its UI reflects the active mode.
-                //    ForceSetValue bypasses the equality check (string may match byte-for-byte
-                //    if both modes had the same shape).
-                try
-                {
-                    string s = string.Join(",", fanCurve.Select(v => (int)v));
-                    LegionFanCurveData?.ForceSetValue(s);
-                }
-                catch (Exception ex) { Logger.Debug($"Failed to push state to widget after mode change: {ex.Message}"); }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"OnPerformanceModeChanged({oldMode}→{newMode}) failed: {ex.Message}");
-            }
-        }
 
         public void SetFanFullSpeed(bool enabled)
         {
@@ -1892,119 +1530,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             catch (Exception ex)
             {
                 Logger.Error($"Error setting fan full speed: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Sets the fan curve from a comma-separated string of 10 values.
-        /// Only applies when in Custom TDP mode (255).
-        /// </summary>
-        public void SetFanCurveFromString(string curveData)
-        {
-            if (wmiService == null)
-            {
-                Logger.Warn("Cannot set fan curve: WMI service not available");
-                return;
-            }
-
-            if (string.IsNullOrEmpty(curveData))
-            {
-                Logger.Warn("Empty fan curve data received");
-                return;
-            }
-
-            try
-            {
-                var parts = curveData.Split(',');
-                if (parts.Length != 10)
-                {
-                    Logger.Warn($"Invalid fan curve data: expected 10 values, got {parts.Length}");
-                    return;
-                }
-
-                for (int i = 0; i < 10; i++)
-                {
-                    if (int.TryParse(parts[i].Trim(), out int value))
-                    {
-                        fanCurve[i] = (ushort)Math.Max(0, Math.Min(100, value));
-                    }
-                    else
-                    {
-                        Logger.Warn($"Invalid fan curve value at index {i}: {parts[i]}");
-                        return;
-                    }
-                }
-
-                Logger.Info($"Fan curve parsed: [{string.Join(", ", fanCurve)}]%");
-
-                // Keep the legacy LegionFanCurveData property in sync with the active
-                // curve. SetValueSilent skips NotifyPropertyChanged so we don't echo back
-                // to the widget (the per-mode channel already handled the inbound).
-                try
-                {
-                    string normalized = string.Join(",", fanCurve.Select(v => (int)v));
-                    LegionFanCurveData?.SetValueSilent(normalized);
-                }
-                catch (Exception ex) { Logger.Debug($"Failed to sync legacy LegionFanCurveData: {ex.Message}"); }
-
-                // Apply the fan curve (it's saved on the controller)
-                ApplyFanCurve();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error parsing fan curve data: {ex.Message}");
-            }
-        }
-
-        private void ApplyFanCurve()
-        {
-            // Persist always — per-mode storage means edits are kept in their own slot and
-            // used when the user later switches to that mode. The WMI Fan_Set_Table call
-            // below stays gated on Custom mode because preset modes have
-            // firmware-controlled curves that ignore Fan_Set_Table writes.
-            SaveFanCurveToSettings();
-
-            if (performanceMode != 255)
-            {
-                Logger.Info($"Fan curve persisted for mode {performanceMode} but not pushed to Lenovo WMI (preset modes use firmware curves).");
-                return;
-            }
-
-            if (wmiService == null)
-            {
-                Logger.Warn("Cannot apply fan curve via WMI: service not available");
-                return;
-            }
-
-            try
-            {
-                var result = wmiService.SetFanCurve(fanCurve);
-                if (result.Success)
-                    Logger.Info($"Fan curve applied (Custom mode): [{string.Join(", ", fanCurve)}]%");
-                else
-                    Logger.Error($"Failed to apply fan curve: {result.Message}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error applying fan curve: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Saves the current fan curve to settings for persistence. Per-mode aware:
-        /// writes to LegionFanCurve_&lt;currentMode&gt; AND the legacy LegionFanCurve key
-        /// (kept synced with the active mode for backward compat).
-        /// </summary>
-        private void SaveFanCurveToSettings()
-        {
-            try
-            {
-                SaveCurveForMode(performanceMode, fanCurve);
-                Logger.Info($"Fan curve saved for mode {performanceMode}: [{string.Join(",", fanCurve)}]%");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Failed to save fan curve: {ex.Message}");
             }
         }
 
@@ -2434,6 +1959,32 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             }
         }
 
+        // Fan curves (1.9.7c): Quiet / Balanced / Performance run the firmware's own curves. In
+        // Custom the firmware runs the custom fan table, which GoTweaks sets to Lenovo's stock
+        // curve whenever the device enters Custom (the firmware doesn't expose its Balanced
+        // table, so it can't be copied). The fan curve editor was removed.
+        private void OnPerformanceModeChanged(int oldMode, int newMode)
+        {
+            if (oldMode == newMode) return;
+            if (newMode == 255) ApplyStockFanCurveIfCustom("mode change");
+        }
+
+        private void ApplyStockFanCurveIfCustom(string reason)
+        {
+            if (performanceMode != 255 || wmiService == null) return;
+            try
+            {
+                var result = wmiService.SetFanCurve(LenovoWMIService.DefaultFanCurve);
+                if (result.Success)
+                    Logger.Info($"Custom mode ({reason}): stock fan curve applied [{string.Join(",", LenovoWMIService.DefaultFanCurve)}]%");
+                else
+                    Logger.Warn($"Custom mode ({reason}): stock fan curve not applied: {result.Message}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Custom mode ({reason}): stock fan curve threw: {ex.Message}");
+            }
+        }
         /// <summary>
         /// Gets the current CPU fan speed in RPM. Returns 0 if Legion Go is not detected.
         /// </summary>

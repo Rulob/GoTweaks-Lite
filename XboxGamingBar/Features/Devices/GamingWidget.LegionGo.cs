@@ -1262,8 +1262,6 @@ namespace XboxGamingBar
             {
                 lastTDPModeIndex = selectedIndex;
                 UpdateTDPSliderEnabledState();
-                try { SyncFanCurvePresetComboToActiveMode(); }
-                catch (Exception ex) { Logger.Debug($"SyncFanCurvePresetComboToActiveMode failed: {ex.Message}"); }
                 return;
             }
 
