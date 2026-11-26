@@ -721,23 +721,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         }
     }
 
-    // Battery Charge Limit (80%)
-    internal class LegionChargeLimitProperty : HelperProperty<bool, LegionManager>
-    {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-        public LegionChargeLimitProperty(bool initialValue, LegionManager inManager) : base(initialValue, null, Function.LegionChargeLimit, inManager)
-        {
-        }
-
-        protected override void NotifyPropertyChanged(string propertyName = "")
-        {
-            base.NotifyPropertyChanged(propertyName);
-            Logger.Info($"LegionChargeLimit changed to {Value}");
-            Manager?.SetChargeLimit(Value);
-        }
-    }
-
     // Button Y1 remap (JSON ButtonMapping: Type, GamepadAction, KeyboardKeys[], MouseButton)
     internal class LegionButtonY1Property : HelperProperty<string, LegionManager>
     {
@@ -1242,40 +1225,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         }
     }
 
-    // Joystick as Mouse Mode (0=Disabled, 1=Left Stick, 2=Right Stick)
-    internal class LegionJoystickAsMouseModeProperty : HelperProperty<int, LegionManager>
-    {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-        public LegionJoystickAsMouseModeProperty(int initialValue, LegionManager inManager) : base(initialValue, null, Function.LegionJoystickAsMouseMode, inManager)
-        {
-        }
-
-        protected override void NotifyPropertyChanged(string propertyName = "")
-        {
-            base.NotifyPropertyChanged(propertyName);
-            Logger.Info($"LegionJoystickAsMouseMode changed to {Value}");
-            Manager?.SetJoystickAsMouseMode(Value);
-        }
-    }
-
-    // Joystick Mouse Sensitivity (10-100)
-    internal class LegionJoystickMouseSensProperty : HelperProperty<int, LegionManager>
-    {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-        public LegionJoystickMouseSensProperty(int initialValue, LegionManager inManager) : base(initialValue, null, Function.LegionJoystickMouseSens, inManager)
-        {
-        }
-
-        protected override void NotifyPropertyChanged(string propertyName = "")
-        {
-            base.NotifyPropertyChanged(propertyName);
-            Logger.Info($"LegionJoystickMouseSens changed to {Value}");
-            Manager?.SetJoystickMouseSens(Value);
-        }
-    }
-
     // Gamepad Button Mapping (JSON string for all 24 buttons)
     internal class LegionGamepadMappingProperty : HelperProperty<string, LegionManager>
     {
@@ -1290,24 +1239,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             base.NotifyPropertyChanged(propertyName);
             Logger.Info($"LegionGamepadMapping changed to {Value}");
             Manager?.ApplyGamepadButtonMappings(Value);
-        }
-    }
-
-    // Desktop Controls Preset (state tracking - actual application via JoystickAsMouseMode + GamepadButtonMapping)
-    internal class LegionDesktopControlsProperty : HelperProperty<bool, LegionManager>
-    {
-        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
-
-        public LegionDesktopControlsProperty(bool initialValue, LegionManager inManager) : base(initialValue, null, Function.LegionDesktopControls, inManager)
-        {
-        }
-
-        protected override void NotifyPropertyChanged(string propertyName = "")
-        {
-            base.NotifyPropertyChanged(propertyName);
-            Logger.Info($"LegionDesktopControls changed to {Value}");
-            // Note: Actual application happens through JoystickAsMouseMode and GamepadButtonMapping
-            // properties, so this property mainly serves as state tracking for the UI toggle
         }
     }
 

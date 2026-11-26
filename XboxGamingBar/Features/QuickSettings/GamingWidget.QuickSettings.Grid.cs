@@ -447,8 +447,8 @@ namespace XboxGamingBar
         {
             // Skip Legion tiles if not detected
             if ((tile.Id == "LegionTouchpad" || tile.Id == "LegionLightMode" ||
-                 tile.Id == "LegionDesktopControls" || tile.Id == "LegionRemapControls" ||
-                 tile.Id == "LegionChargeLimit" || tile.Id == "LegionPowerLight" ||
+                 tile.Id == "LegionRemapControls" ||
+                 tile.Id == "LegionPowerLight" ||
                  tile.Id == "LegionVibration" || tile.Id == "LegionVibrationMode" ||
                  tile.Id == "LegionControllerMode" ||
                  tile.Id == "Touchscreen") &&

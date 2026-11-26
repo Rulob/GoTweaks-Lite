@@ -59,75 +59,13 @@ namespace XboxGamingBar.Data
         // into the profile on the next SaveControllerProfile, turning the lights white.
         private static readonly HashSet<Function> WidgetOwnedPropertiesInitial = new HashSet<Function>();
 
-        // Properties that should NEVER be synced from helper - widget is always the source of truth.
-        // The helper applies values to hardware but doesn't persist them across restarts,
-        // so the widget (which loads from controller profiles) is authoritative.
-        private static readonly HashSet<Function> NeverSyncFromHelper = new HashSet<Function>
-        {
-            // OSD level - loaded from LocalSettings (PerformanceOverlayLevel)
-            Function.OSD,
-            // Lighting - loaded from controller profiles; helper defaults to #FFFFFF
-            Function.LegionLightMode,
-            Function.LegionLightColor,
-            Function.LegionLightBrightness,
-            Function.LegionLightSpeed,
-            Function.LegionPowerLight,
-            // Vibration - loaded from controller profiles; helper hard-defaults to Medium(2)/FPS(1)
-            // and does NOT persist across restarts. Without this guard, a BatchGet that races the
-            // widget's startup send leaks the helper default back into the combo, which fires
-            // SelectionChanged → ControllerSettingChanged → saves the default into the profile,
-            // so the user's vibration setting intermittently reverts after a console restart.
-            Function.LegionVibration,
-            Function.LegionVibrationMode,
-
-            // ── All remaining controller-profile settings ────────────────────────────────
-            // Every setting below is WIDGET-OWNED: persisted in the per-controller LocalSettings
-            // profile, loaded at startup via ApplyControllerProfile, and re-pushed to the helper
-            // after pipe connect (ResendActiveControllerProfileToHelper). The helper only APPLIES
-            // them to hardware — it hard-defaults them at startup and never persists them. They
-            // are therefore vulnerable to the exact same BatchGet-race clobber as vibration/lighting
-            // (helper default leaks back → control change handler saves the default into the
-            // profile → user's setting reverts "sometimes" after a restart). The widget is the sole
-            // source of truth (it also drives per-game profile switching itself via
-            // ApplyControllerProfile, and re-pushes on connect via ResendActiveControllerProfileToHelper),
-            // so it must never accept these from the helper. (#vibration-persistence-fix follow-up —
-            // GoTweaks is the source of truth.)
-            //
-            // DELIBERATELY EXCLUDED (do NOT add): Function.LegionDesktopControls and
-            // Function.LegionJoystickAsMouseMode. Those two are toggled by HOTKEY on the helper and
-            // pushed back to the widget (Program.HotkeyHandlers.cs ForceSetValue) so the UI reflects
-            // the hardware-button state — they are genuinely bidirectional and MUST keep syncing from
-            // the helper. (Their defaults are the disabled state, so the startup clobber is benign.)
-            // Button remaps
-            Function.LegionButtonY1,
-            Function.LegionButtonY2,
-            Function.LegionButtonY3,
-            Function.LegionButtonM1,
-            Function.LegionButtonM2,
-            Function.LegionButtonM3,
-            Function.LegionButtonDesktop,
-            Function.LegionButtonPage,
-            Function.LegionGamepadButtonMapping,
-            // Gyro
-            Function.LegionGyroTarget,
-            Function.LegionGyroSensitivityX,
-            Function.LegionGyroSensitivityY,
-            Function.LegionGyroInvertX,
-            Function.LegionGyroInvertY,
-            Function.LegionGyroMappingType,
-            Function.LegionGyroActivationMode,
-            Function.LegionGyroActivationButton,
-            Function.LegionGyroDeadzone,
-            // Sticks
-            Function.LegionLeftStickDeadzone,
-            Function.LegionRightStickDeadzone,
-            // Triggers
-            Function.LegionLeftTriggerStart,
-            Function.LegionLeftTriggerEnd,
-            Function.LegionRightTriggerStart,
-            Function.LegionRightTriggerEnd,
-            Function.LegionHairTriggers
-        };
+        // Properties that should never be synced from the helper. Empty since 1.9.7c: the helper
+        // owns the overlay state and every controller setting (it saves them in its Global
+        // profile and applies them at startup), so the widget takes them from it. Before, the
+        // widget loaded these from its own LocalSettings copy and refused the helper's values;
+        // with that copy gone (1.9.7a / 1.9.7b) the controls were stuck on their XAML defaults
+        // (e.g. 4% stick deadzones, 100% light brightness).
+        private static readonly HashSet<Function> NeverSyncFromHelper = new HashSet<Function>();
 
         // Set to true during initial startup to skip widget-owned property sync (widget loaded from profiles/settings)
         // After first sync, this is cleared so subsequent syncs include these from helper

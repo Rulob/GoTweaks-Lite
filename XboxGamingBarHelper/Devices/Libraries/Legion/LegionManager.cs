@@ -95,7 +95,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         private bool gyroEnabled = false;
         private int vibrationLevel = 2; // Medium
         private bool powerLightEnabled = true;
-        private bool chargeLimitEnabled = false;
 
         // Controller remapping state (cached)
         private bool nintendoLayoutEnabled = false;
@@ -182,7 +181,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         public readonly LegionGyroEnabledProperty LegionGyroEnabled;
         public readonly LegionVibrationProperty LegionVibration;
         public readonly LegionPowerLightProperty LegionPowerLight;
-        public readonly LegionChargeLimitProperty LegionChargeLimit;
 
         // Controller remapping properties
         public readonly LegionButtonY1Property LegionButtonY1;
@@ -225,14 +223,11 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         public readonly LegionTouchpadVibrationProperty LegionTouchpadVibration;
 
         // Joystick as mouse properties (per-game profile)
-        public readonly LegionJoystickAsMouseModeProperty LegionJoystickAsMouseMode;
-        public readonly LegionJoystickMouseSensProperty LegionJoystickMouseSens;
 
         // Gamepad button mapping (per-game profile)
         public readonly LegionGamepadMappingProperty LegionGamepadMapping;
 
         // Desktop controls preset (per-game profile state tracking)
-        public readonly LegionDesktopControlsProperty LegionDesktopControls;
 
         // Controller battery properties
         public readonly ControllerBatteryLeftProperty ControllerBatteryLeft;
@@ -409,74 +404,8 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             LegionVibration = new LegionVibrationProperty(vibrationLevel, this);
             LegionPowerLight = new LegionPowerLightProperty(powerLightEnabled, this);
 
-            // Battery charge limit: read the current EC/WMI state at startup. On some Legion
-            // hardware the EC retains it across reboot; on the Legion Go 2 (Z2E) it does NOT —
-            // the EC reads back "off" every boot, so the toggle appears to never save (issue
-            // #88 bug #5). We therefore reconcile the EC state against the user's persisted
-            // preference below and re-apply if the firmware dropped it.
-            try
-            {
-                const int chargeLimitTimeoutMs = 2000;
-                var chargeLimitTask = Task.Run(() =>
-                {
-                    try { return wmiService?.GetBatteryChargeLimit(); }
-                    catch (Exception ex)
-                    {
-                        Logger.Warn($"GetBatteryChargeLimit exception: {ex.Message}");
-                        return null;
-                    }
-                });
-
-                if (chargeLimitTask.Wait(chargeLimitTimeoutMs))
-                {
-                    var r = chargeLimitTask.Result;
-                    if (r.HasValue && r.Value.Success && r.Value.Result.HasValue)
-                    {
-                        chargeLimitEnabled = r.Value.Result.Value == 1;
-                        Logger.Info($"Battery charge limit (80%) read from EC: {(chargeLimitEnabled ? "Enabled" : "Disabled")}");
-                    }
-                    else
-                    {
-                        Logger.Warn($"GetBatteryChargeLimit failed, defaulting to Disabled: {r?.Message}");
-                    }
-                }
-                else
-                {
-                    Logger.Warn($"GetBatteryChargeLimit timed out after {chargeLimitTimeoutMs}ms, defaulting to Disabled");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Charge limit startup read threw: {ex.Message}");
-            }
-
-            // Reconcile against the user's persisted preference. If they previously turned the
-            // limit ON but the firmware dropped it across reboot (EC now reads off), re-apply it
-            // so the setting actually sticks instead of silently reverting (issue #88 bug #5).
-            try
-            {
-                if (Settings.LocalSettingsHelper.TryGetValue("LegionChargeLimit", out bool desiredChargeLimit)
-                    && desiredChargeLimit && !chargeLimitEnabled && wmiService != null)
-                {
-                    Logger.Info("Battery charge limit: persisted preference is ON but EC reads off — re-applying.");
-                    var reapply = wmiService.SetBatteryChargeLimit(true);
-                    if (reapply.Success)
-                    {
-                        chargeLimitEnabled = true;
-                        Logger.Info("Battery charge limit (80%) re-applied from saved preference on startup.");
-                    }
-                    else
-                    {
-                        Logger.Warn($"Battery charge limit re-apply failed: {reapply.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn($"Charge limit preference reconcile threw: {ex.Message}");
-            }
-
-            LegionChargeLimit = new LegionChargeLimitProperty(chargeLimitEnabled, this);
+            // Battery charge limit (80%) was removed in 1.9.7c. The Legion Go 2 EC drops it at every
+            // boot and GoTweaks used to re-apply it from a saved preference; without that it stays off.
 
             // Initialize controller remapping properties (JSON ButtonMapping format)
             LegionButtonY1 = new LegionButtonY1Property("", this);
@@ -526,14 +455,11 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             catch (Exception ex) { Logger.Warn($"Touchpad vibration startup apply failed: {ex.Message}"); }
 
             // Initialize joystick as mouse properties (per-game profile)
-            LegionJoystickAsMouseMode = new LegionJoystickAsMouseModeProperty(joystickAsMouseMode, this);
-            LegionJoystickMouseSens = new LegionJoystickMouseSensProperty(joystickMouseSens, this);
 
             // Initialize gamepad button mapping property (per-game profile)
             LegionGamepadMapping = new LegionGamepadMappingProperty("", this);
 
             // Initialize desktop controls property (per-game profile state tracking)
-            LegionDesktopControls = new LegionDesktopControlsProperty(false, this);
 
             // Initialize controller battery properties
             ControllerBatteryLeft = new ControllerBatteryLeftProperty(-1, this);
@@ -2168,38 +2094,6 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
             catch (Exception ex)
             {
                 Logger.Error($"Error setting power light: {ex.Message}");
-            }
-        }
-
-        public void SetChargeLimit(bool enabled)
-        {
-            if (wmiService == null)
-            {
-                Logger.Warn("Cannot set charge limit: WMI service not available");
-                return;
-            }
-
-            try
-            {
-                var result = wmiService.SetBatteryChargeLimit(enabled);
-                if (result.Success)
-                {
-                    chargeLimitEnabled = enabled;
-                    // Persist the user's preference so we can re-apply it on boot. On the Legion Go 2
-                    // (Z2E) the EC does NOT retain the 80% limit across reboot, so reading the EC at
-                    // startup yields "off" and the toggle appears to never save (issue #88 bug #5).
-                    try { Settings.LocalSettingsHelper.SetValue("LegionChargeLimit", enabled); }
-                    catch (Exception persistEx) { Logger.Debug($"Failed to persist LegionChargeLimit: {persistEx.Message}"); }
-                    Logger.Info($"Battery charge limit (80%) {(enabled ? "enabled" : "disabled")}");
-                }
-                else
-                {
-                    Logger.Error($"Failed to set charge limit: {result.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error setting charge limit: {ex.Message}");
             }
         }
 

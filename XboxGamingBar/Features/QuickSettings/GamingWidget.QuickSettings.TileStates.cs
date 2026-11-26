@@ -721,32 +721,6 @@ namespace XboxGamingBar
                     }
                 }
 
-                // Legion Desktop Controls tile
-                if (qsTileMap.TryGetValue("LegionDesktopControls", out var desktopTile) && desktopTile.TileButton != null)
-                {
-                    if (legionGoDetected?.Value == true)
-                    {
-                        bool enabled = LegionDesktopControlsToggle?.IsOn ?? false;
-                        desktopTile.StateText.Text = enabled ? "On" : "Off";
-                        desktopTile.StateText.Foreground = enabled ? accentForeground : offForeground;
-                        SetTileAccentBar(desktopTile, enabled);
-                        desktopTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                    }
-                }
-
-                // Legion Charge Limit tile (80% battery limit)
-                if (qsTileMap.TryGetValue("LegionChargeLimit", out var chargeLimitTile) && chargeLimitTile.TileButton != null)
-                {
-                    if (legionGoDetected?.Value == true)
-                    {
-                        bool enabled = legionChargeLimit?.Value ?? false;
-                        chargeLimitTile.StateText.Text = enabled ? "80%" : "Off";
-                        chargeLimitTile.StateText.Foreground = enabled ? accentForeground : offForeground;
-                        SetTileAccentBar(chargeLimitTile, enabled);
-                        chargeLimitTile.TileButton.Background = enabled ? tileOnBrush : tileOffBrush;
-                    }
-                }
-
                 // Legion Power Light tile
                 if (qsTileMap.TryGetValue("LegionPowerLight", out var powerLightTile) && powerLightTile.TileButton != null)
                 {

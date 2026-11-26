@@ -327,14 +327,11 @@ namespace XboxGamingBar
         public bool HairTriggers { get; set; } = false;    // Hair triggers preset (0%/1%)
 
         // Joystick as mouse (per-game profile)
-        public int JoystickAsMouseMode { get; set; } = 0;  // 0=Disabled, 1=Left Stick, 2=Right Stick
-        public int JoystickMouseSens { get; set; } = 50;   // 10-100
 
         // Gamepad button remapping (per-game profile)
         public Dictionary<string, ButtonMapping> GamepadButtonMappings { get; set; } = new Dictionary<string, ButtonMapping>();
 
         // Desktop Controls preset (per-game profile)
-        public bool DesktopControlsEnabled { get; set; } = false;
 
         // Lighting (per-game profile)
         public int LightMode { get; set; } = 1;          // 0=Off, 1=Solid, 2=Pulse, 3=Dynamic, 4=Spiral
@@ -381,14 +378,11 @@ namespace XboxGamingBar
                 RightTriggerEnd = this.RightTriggerEnd,
                 HairTriggers = this.HairTriggers,
                 // Joystick as mouse
-                JoystickAsMouseMode = this.JoystickAsMouseMode,
-                JoystickMouseSens = this.JoystickMouseSens,
                 // Gamepad button mappings
                 GamepadButtonMappings = this.GamepadButtonMappings.ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value.Clone()),
                 // Desktop Controls preset
-                DesktopControlsEnabled = this.DesktopControlsEnabled,
                 // Lighting
                 LightMode = this.LightMode,
                 LightColorR = this.LightColorR,
@@ -558,7 +552,6 @@ namespace XboxGamingBar
         private readonly LegionGyroEnabledProperty legionGyroEnabled;
         private readonly LegionVibrationProperty legionVibration;
         private readonly LegionPowerLightProperty legionPowerLight;
-        private readonly LegionChargeLimitProperty legionChargeLimit;
 
         // Legion controller remapping properties
         private readonly LegionButtonY1Property legionButtonY1;
@@ -599,15 +592,12 @@ namespace XboxGamingBar
         private readonly LegionTouchpadVibrationProperty legionTouchpadVibration;
 
         // Joystick as mouse properties
-        private readonly LegionJoystickAsMouseModeProperty legionJoystickAsMouseMode;
-        private readonly LegionJoystickMouseSensProperty legionJoystickMouseSens;
 
         // Gamepad button mapping property
         private readonly LegionGamepadMappingProperty legionGamepadMapping;
         private Dictionary<string, ButtonMapping> gamepadButtonMappings = new Dictionary<string, ButtonMapping>();
 
         // Desktop controls preset (synced from helper for hotkey support)
-        private readonly LegionDesktopControlsProperty legionDesktopControls;
 
         // Controller battery properties (from HID input reports)
         private readonly ControllerBatteryLeftProperty controllerBatteryLeft;
@@ -853,7 +843,6 @@ namespace XboxGamingBar
             legionGyroEnabled = new LegionGyroEnabledProperty(null, this); // Gyro removed from UI, kept for backwards compatibility
             legionVibration = new LegionVibrationProperty(LegionVibrationComboBox, this);
             legionPowerLight = new LegionPowerLightProperty(LegionPowerLightToggle, this);
-            legionChargeLimit = new LegionChargeLimitProperty(LegionChargeLimitToggle, this);
 
             // Controller remapping properties (not auto-bound, use SendMapping())
             legionButtonY1 = new LegionButtonY1Property(LegionButtonY1ComboBox, this);
@@ -895,14 +884,11 @@ namespace XboxGamingBar
             legionTouchpadVibration = new LegionTouchpadVibrationProperty(LegionTouchpadVibrationComboBox, this);
 
             // Joystick as mouse properties
-            legionJoystickAsMouseMode = new LegionJoystickAsMouseModeProperty(LegionJoystickAsMouseComboBox, LegionJoystickMouseSensGrid, this);
-            legionJoystickMouseSens = new LegionJoystickMouseSensProperty(LegionJoystickMouseSensSlider, this);
 
             // Gamepad button mapping property
             legionGamepadMapping = new LegionGamepadMappingProperty();
 
             // Desktop controls preset (synced from helper for hotkey)
-            legionDesktopControls = new LegionDesktopControlsProperty(LegionDesktopControlsToggle, this);
 
             // Controller battery properties (read-only)
             controllerBatteryLeft = new ControllerBatteryLeftProperty();
@@ -1028,7 +1014,6 @@ namespace XboxGamingBar
                 legionVibration,
                 legionVibrationMode,
                 legionPowerLight,
-                legionChargeLimit,
                 legionTouchpadVibration,
                 legionGamepadMapping,
                 legionButtonY1,
@@ -1064,9 +1049,6 @@ namespace XboxGamingBar
                 fpsLimit,
                 osPowerMode,
                 tdpLimits,
-                legionDesktopControls,
-                legionJoystickAsMouseMode,
-                legionJoystickMouseSens,
                 controllerBatteryLeft,
                 controllerBatteryRight,
                 controllerChargingLeft,
@@ -1135,6 +1117,8 @@ namespace XboxGamingBar
             // Controller settings are device-wide and owned by the helper (1.9.7a): the bound
             // controls follow its values on sync, and the back-button remap UI is rebuilt from
             // its mappings (LegionButtonMapping_PropertyChanged).
+            isLoadingControllerProfile = true;
+            SubscribeControlEvents();
             isLoadingControllerProfile = false;
 
             // Subscribe to per-game profile toggle changes

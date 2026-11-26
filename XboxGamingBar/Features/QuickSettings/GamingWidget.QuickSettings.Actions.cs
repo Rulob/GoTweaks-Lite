@@ -139,12 +139,6 @@ namespace XboxGamingBar
                             case "LegionVibrationMode":
                                 CycleLegionVibrationMode();
                                 break;
-                            case "LegionDesktopControls":
-                                ToggleLegionDesktopControls();
-                                break;
-                            case "LegionChargeLimit":
-                                ToggleLegionChargeLimit();
-                                break;
                             // Action tiles
                             case "ActionTaskManager":
                                 LaunchTaskManager();
@@ -894,32 +888,6 @@ namespace XboxGamingBar
                 int nextMode = (currentMode % 5) + 1; // 1-5: FPS, Racing, AVG, SPG, RPG
                 legionVibrationMode.SetValue(nextMode);
                 Logger.Info($"Legion Vibration mode cycled from {currentMode} to {nextMode}");
-            }
-        }
-
-        private void ToggleLegionDesktopControls()
-        {
-            if (legionGoDetected?.Value == true && LegionDesktopControlsToggle != null)
-            {
-                bool newValue = !LegionDesktopControlsToggle.IsOn;
-                LegionDesktopControlsToggle.IsOn = newValue;
-                // The Toggled event handler will apply the mappings
-                Logger.Info($"Legion Desktop Controls toggled to {newValue}");
-            }
-        }
-
-        private void ToggleLegionChargeLimit()
-        {
-            if (legionGoDetected?.Value == true && legionChargeLimit != null)
-            {
-                bool newValue = !legionChargeLimit.Value;
-                legionChargeLimit.SetValue(newValue);
-                // Also update the toggle in Legion tab if it exists
-                if (LegionChargeLimitToggle != null)
-                {
-                    LegionChargeLimitToggle.IsOn = newValue;
-                }
-                Logger.Info($"Legion Charge Limit toggled to {(newValue ? "80%" : "Off")}");
             }
         }
 

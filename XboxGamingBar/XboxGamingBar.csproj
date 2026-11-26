@@ -119,7 +119,6 @@
     <Compile Include="Data\Legion\LegionGyroEnabledProperty.cs" />
     <Compile Include="Data\Legion\LegionVibrationProperty.cs" />
     <Compile Include="Data\Legion\LegionPowerLightProperty.cs" />
-    <Compile Include="Data\Legion\LegionChargeLimitProperty.cs" />
     <Compile Include="Data\Legion\GameBarFirstSlotProperty.cs" />
     <Compile Include="Data\Legion\LegionButtonY1Property.cs" />
     <Compile Include="Data\Legion\LegionButtonY2Property.cs" />
@@ -129,7 +128,6 @@
     <Compile Include="Data\Legion\LegionButtonM3Property.cs" />
     <Compile Include="Data\Legion\LegionButtonDesktopProperty.cs" />
     <Compile Include="Data\Legion\LegionButtonPageProperty.cs" />
-    <Compile Include="Data\Legion\LegionDesktopControlsProperty.cs" />
     <Compile Include="Data\Legion\LegionVibrationModeProperty.cs" />
     <Compile Include="Data\Legion\LegionGyroTargetProperty.cs" />
     <Compile Include="Data\Legion\LegionGyroSensitivityXProperty.cs" />
@@ -148,8 +146,6 @@
     <Compile Include="Data\Legion\LegionRightTriggerEndProperty.cs" />
     <Compile Include="Data\Legion\LegionHairTriggersProperty.cs" />
     <Compile Include="Data\Legion\LegionTouchpadVibrationProperty.cs" />
-    <Compile Include="Data\Legion\LegionJoystickAsMouseModeProperty.cs" />
-    <Compile Include="Data\Legion\LegionJoystickMouseSensProperty.cs" />
     <Compile Include="Data\Legion\LegionGamepadMappingProperty.cs" />
     <Compile Include="Data\Controller\ControllerBatteryLeftProperty.cs" />
     <Compile Include="Data\Controller\ControllerBatteryRightProperty.cs" />
@@ -267,9 +263,6 @@
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Controller\GamingWidget.TriggerTravel.cs">
-      <DependentUpon>GamingWidget.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Features\Controller\GamingWidget.DesktopControlsPreset.cs">
       <DependentUpon>GamingWidget.xaml</DependentUpon>
     </Compile>
     <Compile Include="Features\Controller\GamingWidget.NintendoLayoutPreset.cs">

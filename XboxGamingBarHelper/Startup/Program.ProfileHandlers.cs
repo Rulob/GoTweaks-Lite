@@ -272,17 +272,8 @@ namespace XboxGamingBarHelper
                 legionManager.LegionHairTriggers.SetValue(profile.LegionHairTriggers.Value);
             }
 
-            // Joystick as mouse
-            if (profile.LegionJoystickAsMouseMode.HasValue)
-            {
-                Logger.Debug($"Applying LegionJoystickAsMouseMode: {profile.LegionJoystickAsMouseMode.Value}");
-                legionManager.LegionJoystickAsMouseMode.SetValue(profile.LegionJoystickAsMouseMode.Value);
-            }
-            if (profile.LegionJoystickMouseSens.HasValue)
-            {
-                Logger.Debug($"Applying LegionJoystickMouseSens: {profile.LegionJoystickMouseSens.Value}");
-                legionManager.LegionJoystickMouseSens.SetValue(profile.LegionJoystickMouseSens.Value);
-            }
+            // Joystick as mouse was removed (1.9.7c): make sure neither stick is left acting as one.
+            legionManager.DisableJoystickAsMouse();
 
             // Gamepad mapping
             if (!string.IsNullOrEmpty(profile.LegionGamepadMapping))

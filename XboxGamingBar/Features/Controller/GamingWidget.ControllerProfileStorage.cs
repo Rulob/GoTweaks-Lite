@@ -117,10 +117,6 @@ namespace XboxGamingBar
                 profile.RightTriggerEnd = container.Values.ContainsKey("RightTriggerEnd") ? (int)container.Values["RightTriggerEnd"] : 0;
                 profile.HairTriggers = container.Values.ContainsKey("HairTriggers") ? (bool)container.Values["HairTriggers"] : false;
 
-                // Joystick as mouse
-                profile.JoystickAsMouseMode = container.Values.ContainsKey("JoystickAsMouseMode") ? (int)container.Values["JoystickAsMouseMode"] : 0;
-                profile.JoystickMouseSens = container.Values.ContainsKey("JoystickMouseSens") ? (int)container.Values["JoystickMouseSens"] : 50;
-
                 // Gamepad button mappings (deserialize from JSON)
                 profile.GamepadButtonMappings = new Dictionary<string, ButtonMapping>();
                 if (container.Values.ContainsKey("GamepadButtonMappings"))
@@ -140,9 +136,6 @@ namespace XboxGamingBar
                 }
 
                 // Desktop Controls preset
-                profile.DesktopControlsEnabled = container.Values.ContainsKey("DesktopControlsEnabled")
-                    ? (bool)container.Values["DesktopControlsEnabled"]
-                    : false;
 
                 // Lighting - only load if explicitly saved (to avoid defaulting to white for old profiles)
                 profile.HasExplicitLighting = container.Values.ContainsKey("LightColorR");
@@ -1234,66 +1227,10 @@ namespace XboxGamingBar
                         LegionRightTriggerEndValue.Text = $"{profile.RightTriggerEnd}%";
                 }
 
-                // Apply joystick as mouse settings
-                if (LegionJoystickAsMouseComboBox != null)
-                {
-                    // Set UI first
-                    if (LegionJoystickAsMouseComboBox.Items.Count > profile.JoystickAsMouseMode)
-                    {
-                        LegionJoystickAsMouseComboBox.SelectedIndex = profile.JoystickAsMouseMode;
-                    }
-                    // Show/hide sensitivity grid based on mode
-                    if (LegionJoystickMouseSensGrid != null)
-                        LegionJoystickMouseSensGrid.Visibility = profile.JoystickAsMouseMode > 0
-                            ? Windows.UI.Xaml.Visibility.Visible
-                            : Windows.UI.Xaml.Visibility.Collapsed;
-                    // Send value to helper (SetValue instead of SetValueSilent)
-                    legionJoystickAsMouseMode?.SetValue(profile.JoystickAsMouseMode);
-                }
-                if (LegionJoystickMouseSensSlider != null)
-                {
-                    LegionJoystickMouseSensSlider.Value = profile.JoystickMouseSens;
-                    if (LegionJoystickMouseSensValue != null)
-                        LegionJoystickMouseSensValue.Text = profile.JoystickMouseSens.ToString();
-                }
-
                 // Apply gamepad button mappings
                 gamepadButtonMappings = profile.GamepadButtonMappings?.ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value.Clone()) ?? new Dictionary<string, ButtonMapping>();
-
-                // Apply Desktop Controls toggle state (with event unsubscription to prevent handler firing)
-                if (LegionDesktopControlsToggle != null)
-                {
-                    LegionDesktopControlsToggle.Toggled -= LegionDesktopControls_Toggled;
-                    try
-                    {
-                        LegionDesktopControlsToggle.IsOn = profile.DesktopControlsEnabled;
-                        // Apply/clear Desktop Controls mappings
-                        if (profile.DesktopControlsEnabled)
-                        {
-                            // Override Joystick as Mouse to Right Stick for Desktop Controls preset
-                            if (LegionJoystickAsMouseComboBox != null)
-                                LegionJoystickAsMouseComboBox.SelectedIndex = 2; // Right Stick
-                            if (LegionJoystickMouseSensGrid != null)
-                                LegionJoystickMouseSensGrid.Visibility = Windows.UI.Xaml.Visibility.Visible;
-                            // Send joystick as mouse mode to helper
-                            legionJoystickAsMouseMode?.SetValue(2);
-                            // Apply the desktop control button mappings to the controller
-                            ApplyDesktopControlMappings();
-                        }
-                        else
-                        {
-                            // Clear the desktop control button mappings from the controller
-                            // Note: JoystickAsMouseMode is preserved from profile (already applied above)
-                            ClearDesktopControlMappings();
-                        }
-                    }
-                    finally
-                    {
-                        LegionDesktopControlsToggle.Toggled += LegionDesktopControls_Toggled;
-                    }
-                }
 
                 // Apply lighting settings
                 if (LegionLightModeComboBox != null)
@@ -1339,7 +1276,7 @@ namespace XboxGamingBar
                     LegionPowerLightToggle.IsOn = profile.PowerLight;
                 }
 
-                Logger.Info($"Applied controller profile: Y1={FormatButtonMapping(profile.ButtonY1)}, Y2={FormatButtonMapping(profile.ButtonY2)}, Y3={FormatButtonMapping(profile.ButtonY3)}, M1={FormatButtonMapping(profile.ButtonM1)}, M2={FormatButtonMapping(profile.ButtonM2)}, M3={FormatButtonMapping(profile.ButtonM3)}, Vib={profile.VibrationLevel}, VibMode={profile.VibrationMode}, GyroTarget={profile.GyroTarget}, LDZ={profile.LeftStickDeadzone}, RDZ={profile.RightStickDeadzone}, GamepadMappings={profile.GamepadButtonMappings?.Count ?? 0}, DesktopControls={profile.DesktopControlsEnabled}, LightMode={profile.LightMode}");
+                Logger.Info($"Applied controller profile: Y1={FormatButtonMapping(profile.ButtonY1)}, Y2={FormatButtonMapping(profile.ButtonY2)}, Y3={FormatButtonMapping(profile.ButtonY3)}, M1={FormatButtonMapping(profile.ButtonM1)}, M2={FormatButtonMapping(profile.ButtonM2)}, M3={FormatButtonMapping(profile.ButtonM3)}, Vib={profile.VibrationLevel}, VibMode={profile.VibrationMode}, GyroTarget={profile.GyroTarget}, LDZ={profile.LeftStickDeadzone}, RDZ={profile.RightStickDeadzone}, GamepadMappings={profile.GamepadButtonMappings?.Count ?? 0}, LightMode={profile.LightMode}");
 
                 // Set timestamp BEFORE sending to prevent any queued events from causing duplicate sends
                 // Use 2 second window since HID commands take ~1.5s to complete (50ms per button × ~30 buttons)
@@ -1408,15 +1345,11 @@ namespace XboxGamingBar
                 RightTriggerStart = (int)(LegionRightTriggerStartSlider?.Value ?? 0),
                 RightTriggerEnd = (int)(LegionRightTriggerEndSlider?.Value ?? 0),
                 HairTriggers = LegionHairTriggersToggle?.IsOn ?? false,
-                // Joystick as mouse
-                JoystickAsMouseMode = LegionJoystickAsMouseComboBox?.SelectedIndex ?? 0,
-                JoystickMouseSens = (int)(LegionJoystickMouseSensSlider?.Value ?? 50),
                 // Gamepad button mappings
                 GamepadButtonMappings = gamepadButtonMappings.ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value.Clone()),
                 // Desktop Controls preset
-                DesktopControlsEnabled = LegionDesktopControlsToggle?.IsOn ?? false,
                 // Lighting - preserve existing color if color picker not available
                 LightMode = LegionLightModeComboBox?.SelectedIndex ?? currentProfile.LightMode,
                 LightColorR = colorR,
@@ -1438,7 +1371,7 @@ namespace XboxGamingBar
 
         /// <summary>
         /// Debounced entry point for slider ValueChanged events (gyro sensitivity/deadzone,
-        /// stick deadzones, trigger travel, joystick-mouse sensitivity, light brightness/speed).
+        /// stick deadzones, trigger travel, light brightness/speed).
         /// Raw ValueChanged fires continuously while the thumb moves; ControllerSettingChanged
         /// does a profile-storage write plus button-mapping/lighting IPC sends on every call,
         /// so without this a drag fires dozens of writes+sends in under a second. The value
@@ -1694,9 +1627,6 @@ namespace XboxGamingBar
                     LegionRightTriggerStartValue.Text = $"{(int)LegionRightTriggerStartSlider.Value}%";
                 else if (sender == LegionRightTriggerEndSlider && LegionRightTriggerEndValue != null)
                     LegionRightTriggerEndValue.Text = $"{(int)LegionRightTriggerEndSlider.Value}%";
-                // Joystick as mouse sensitivity slider
-                else if (sender == LegionJoystickMouseSensSlider && LegionJoystickMouseSensValue != null)
-                    LegionJoystickMouseSensValue.Text = ((int)LegionJoystickMouseSensSlider.Value).ToString();
             }
             catch (Exception ex)
             {

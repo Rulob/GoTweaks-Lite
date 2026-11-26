@@ -175,15 +175,6 @@ namespace XboxGamingBarHelper
             {
                 RouteProfileSave(false, "LegionHairTriggers", cur => cur.LegionHairTriggers = legionManager.LegionHairTriggers.Value);
             }
-            // Joystick as mouse
-            else if (sender == legionManager?.LegionJoystickAsMouseMode)
-            {
-                RouteProfileSave(false, "LegionJoystickAsMouseMode", cur => cur.LegionJoystickAsMouseMode = legionManager.LegionJoystickAsMouseMode.Value);
-            }
-            else if (sender == legionManager?.LegionJoystickMouseSens)
-            {
-                RouteProfileSave(false, "LegionJoystickMouseSens", cur => cur.LegionJoystickMouseSens = legionManager.LegionJoystickMouseSens.Value);
-            }
             // Gamepad mapping (covered by the ButtonMappings flag alongside the Y/M/Desktop/Page buttons)
             else if (sender == legionManager?.LegionGamepadMapping)
             {

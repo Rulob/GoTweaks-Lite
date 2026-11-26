@@ -15,6 +15,57 @@ namespace XboxGamingBar
     {
         private bool buttonMappingUiSyncQueued;
 
+        /// <summary>
+        /// Wires the controls whose changes are handled in code rather than by a bound property:
+        /// the FPS limit toggle / slider, the back-button remap controls, and the controller
+        /// settings (their handlers send to the helper and keep the value labels current).
+        /// These lived in SubscribeToSettingsChanges together with the old profile auto-saves;
+        /// 1.9.7a removed that method with the saves and left these unwired.
+        /// </summary>
+        private void SubscribeControlEvents()
+        {
+            FPSLimitToggle.Toggled += FPSLimitToggle_Toggled;
+            FPSLimitSlider.ValueChanged += FPSLimitSlider_ValueChanged;
+
+            foreach (string buttonName in LegionRemapButtonNames)
+            {
+                InitializeButtonMappingEvents(buttonName);
+            }
+
+            if (LegionVibrationComboBox != null) LegionVibrationComboBox.SelectionChanged += ControllerSettingChanged;
+            if (LegionVibrationModeComboBox != null) LegionVibrationModeComboBox.SelectionChanged += ControllerSettingChanged;
+
+            if (LegionGyroTargetComboBox != null) LegionGyroTargetComboBox.SelectionChanged += ControllerSettingChanged;
+            if (LegionGyroSensitivityXSlider != null) LegionGyroSensitivityXSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionGyroSensitivityYSlider != null) LegionGyroSensitivityYSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionGyroInvertXToggle != null) LegionGyroInvertXToggle.Toggled += ControllerSettingChanged;
+            if (LegionGyroInvertYToggle != null) LegionGyroInvertYToggle.Toggled += ControllerSettingChanged;
+            if (LegionGyroMappingTypeComboBox != null) LegionGyroMappingTypeComboBox.SelectionChanged += ControllerSettingChanged;
+            if (LegionGyroActivationModeComboBox != null) LegionGyroActivationModeComboBox.SelectionChanged += ControllerSettingChanged;
+            if (LegionGyroActivationButtonComboBox != null) LegionGyroActivationButtonComboBox.SelectionChanged += ControllerSettingChanged;
+            if (LegionGyroDeadzoneSlider != null) LegionGyroDeadzoneSlider.ValueChanged += ControllerSliderSettingChanged;
+
+            if (LegionLeftStickDeadzoneSlider != null) LegionLeftStickDeadzoneSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionRightStickDeadzoneSlider != null) LegionRightStickDeadzoneSlider.ValueChanged += ControllerSliderSettingChanged;
+
+            if (LegionLeftTriggerStartSlider != null) LegionLeftTriggerStartSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionLeftTriggerEndSlider != null) LegionLeftTriggerEndSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionRightTriggerStartSlider != null) LegionRightTriggerStartSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionRightTriggerEndSlider != null) LegionRightTriggerEndSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionHairTriggersToggle != null) LegionHairTriggersToggle.Toggled += LegionHairTriggers_Toggled;
+
+            if (LegionPowerLightToggle != null) LegionPowerLightToggle.Toggled += ControllerSettingChanged;
+            if (LegionLightModeComboBox != null) LegionLightModeComboBox.SelectionChanged += ControllerSettingChanged;
+            // LegionColorPicker sends from LegionColorPicker_ColorChanged (GamingWidget.LegionGo.cs).
+            if (LegionBrightnessSlider != null) LegionBrightnessSlider.ValueChanged += ControllerSliderSettingChanged;
+            if (LegionSpeedSlider != null) LegionSpeedSlider.ValueChanged += ControllerSliderSettingChanged;
+
+            foreach (string buttonName in LegionRemapButtonNames)
+            {
+                UpdateButtonGamepadComboControls(buttonName);
+            }
+        }
+
         /// <summary>Subscribes the eight button-mapping properties to the helper sync below.</summary>
         private void SubscribeButtonMappingHelperSync()
         {

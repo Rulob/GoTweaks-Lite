@@ -917,7 +917,7 @@ namespace XboxGamingBar
                     // Legion settings
                     "LegionL_Action", "LegionL_Shortcut", "LegionL_Command",
                     "LegionR_Action", "LegionR_Shortcut", "LegionR_Command",
-                    "LegionTouchpadVibration", "LegionDesktopControls",
+                    "LegionTouchpadVibration",
                     // Controller hotkey settings
                     "ControllerHotkeyConfig",
                     // Display settings

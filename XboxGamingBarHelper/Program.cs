@@ -1234,7 +1234,6 @@ namespace XboxGamingBarHelper
                 legionManager.LegionGyroEnabled,
                 legionManager.LegionVibration,
                 legionManager.LegionPowerLight,
-                legionManager.LegionChargeLimit,
                 legionManager.LegionButtonY1,
                 legionManager.LegionButtonY2,
                 legionManager.LegionButtonY3,
@@ -1269,12 +1268,9 @@ namespace XboxGamingBarHelper
                 // Touchpad vibration (GLOBAL setting)
                 legionManager.LegionTouchpadVibration,
                 // Joystick as mouse properties
-                legionManager.LegionJoystickAsMouseMode,
-                legionManager.LegionJoystickMouseSens,
                 // Gamepad button mapping
                 legionManager.LegionGamepadMapping,
                 // Desktop controls preset (state tracking for UI sync)
-                legionManager.LegionDesktopControls,
                 // Controller battery properties (read-only, from HID)
                 legionManager.ControllerBatteryLeft,
                 legionManager.ControllerBatteryRight,
@@ -1351,8 +1347,6 @@ namespace XboxGamingBarHelper
                 legionManager.LegionRightTriggerEnd.PropertyChanged += LegionControllerSetting_PropertyChanged;
                 legionManager.LegionHairTriggers.PropertyChanged += LegionControllerSetting_PropertyChanged;
                 // Joystick as mouse
-                legionManager.LegionJoystickAsMouseMode.PropertyChanged += LegionControllerSetting_PropertyChanged;
-                legionManager.LegionJoystickMouseSens.PropertyChanged += LegionControllerSetting_PropertyChanged;
                 // Gamepad mapping (24 buttons JSON)
                 legionManager.LegionGamepadMapping.PropertyChanged += LegionControllerSetting_PropertyChanged;
                 // Other controller settings
@@ -1384,14 +1378,10 @@ namespace XboxGamingBarHelper
             // AutoTDP paces itself on its own thread (see AutoTDPManager.RunLoop), not the main loop.
             autoTDPManager.Start();
 
-
             initTimer.Stop();
             Logger.Info($"[TIMING] Helper initialization (managers + properties): {initTimer.ElapsedMilliseconds}ms");
-
-            // Mark managers as ready - BatchGet requests will now be processed
-            // Pipe server was started earlier, widget may already be connected and waiting
-            _managersReady = true;
-            Logger.Info("Managers ready - BatchGet requests will now be processed");
+            // BatchGet requests are only answered once the saved profile and controller settings
+            // have been applied (_managersReady below), so the widget never syncs startup defaults.
 
             // Silently stage a migration snapshot for a future package rebrand (no identity
             // change in this release - see Program.MigrationStaging.cs). Fire-and-forget,
@@ -1540,6 +1530,11 @@ namespace XboxGamingBarHelper
                     isApplyingProfile = false;
                 }
             }
+
+            // Mark managers as ready - BatchGet requests will now be processed (the pipe server was
+            // started earlier; a widget may already be connected and retrying).
+            _managersReady = true;
+            Logger.Info("Managers ready - BatchGet requests will now be processed");
 
             Logger.Info($"[TIMING] Helper fully initialized and ready");
 

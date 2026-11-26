@@ -288,7 +288,6 @@ namespace XboxGamingBar
             AddTileDefinition("Keyboard", "Keyboard", "\uE765", isTrigger: true, order: order++);
             AddTileDefinition("LegionTouchpad", "Touchpad", "\uE962", order: order++);
             AddTileDefinition("Touchscreen", "Touchscreen", "\uE815", order: order++);
-            AddTileDefinition("LegionDesktopControls", "Desktop", "\uE7F4", order: order++);
             // Legion Space style X-Input / D-Input switch; state text shows the active mode.
             AddTileDefinition("LegionControllerMode", "Input Mode", "\uE7FC", order: order++);
 
@@ -297,7 +296,6 @@ namespace XboxGamingBar
             AddTileDefinition("LegionVibration", "Vibration", "\uE877", order: order++); // Vibrate
             AddTileDefinition("LegionVibrationMode", "Vib. Mode", "\uE877", order: order++); // Vibrate
             AddTileDefinition("LegionPowerLight", "Power Light", "\uE781", order: order++); // LEDLight
-            AddTileDefinition("LegionChargeLimit", "Charge Limit", "\uEA95", order: order++); // BatterySaver10
             AddTileDefinition("LegionFanFullSpeed", "Fan Max", "\uE9CA", order: order++);
             AddTileDefinition("Battery", "Battery", "\uE83F", order: order++); // Battery10
 

@@ -3914,24 +3914,6 @@
                             </StackPanel>
                         </Border>
 
-                        <!-- Desktop Controls Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock Text="Desktop Controls" Style="{StaticResource CardTitleStyle}"/>
-                                    <TextBlock Text="RS→Mouse, DPAD/LS→Arrows, A→Enter, B→Esc (Ctrl+Shift+D)"
-                                               Style="{StaticResource CardCaptionStyle}"/>
-                                </StackPanel>
-                                <ToggleSwitch x:Name="LegionDesktopControlsToggle"
-                                              Grid.Column="1"
-                                              Style="{StaticResource ModernToggleStyle}"
-                                              IsOn="False"/>
-                            </Grid>
-                        </Border>
 
                         <!-- Deadzones Card -->
                         <Border Style="{StaticResource CardStyle}">
@@ -4250,47 +4232,6 @@
                         </StackPanel>
                         <!-- End Gyro Section -->
 
-                        <!-- Joystick as Mouse Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <StackPanel Spacing="12">
-                                <TextBlock Text="Joystick as Mouse" Style="{StaticResource CardTitleStyle}"/>
-                                <TextBlock Text="Use a joystick to control mouse cursor"
-                                           Style="{StaticResource CardCaptionStyle}"/>
-
-                                <!-- Mode Selection -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Stick" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                    <ComboBox x:Name="LegionJoystickAsMouseComboBox" Grid.Column="1"
-                                              Width="120" HorizontalAlignment="Left"
-                                              Style="{StaticResource ModernComboBoxStyle}">
-                                        <ComboBoxItem Content="Disabled" Tag="0"/>
-                                        <ComboBoxItem Content="Left Stick" Tag="1"/>
-                                        <ComboBoxItem Content="Right Stick" Tag="2"/>
-                                    </ComboBox>
-                                </Grid>
-
-                                <!-- Sensitivity (shown when not disabled) -->
-                                <Grid x:Name="LegionJoystickMouseSensGrid" Visibility="Collapsed">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Sensitivity" VerticalAlignment="Center" Foreground="#B9C0CC" FontSize="14"/>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Slider x:Name="LegionJoystickMouseSensSlider"
-                                                Width="120" Minimum="10" Maximum="100" Value="50"
-                                                Style="{StaticResource ModernSliderStyle}"/>
-                                        <TextBlock x:Name="LegionJoystickMouseSensValue"
-                                                   Text="50" Width="30" Margin="8,0,0,0"
-                                                   VerticalAlignment="Center" Foreground="#B9C0CC"/>
-                                    </StackPanel>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
 
                         </StackPanel>
                         <!-- End Controller Remapping Section -->
@@ -4798,24 +4739,6 @@
                         <!-- Battery Section Header -->
                         <TextBlock Text="Battery" Style="{StaticResource SectionHeaderStyle}"/>
 
-                        <!-- Battery Charge Limit Card -->
-                        <Border Style="{StaticResource CardStyle}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock Text="Charge Limit (80%)" Style="{StaticResource CardTitleStyle}"/>
-                                    <TextBlock Text="Limit battery charge to extend lifespan"
-                                               Style="{StaticResource CardCaptionStyle}"/>
-                                </StackPanel>
-                                <ToggleSwitch x:Name="LegionChargeLimitToggle"
-                                              Grid.Column="1"
-                                              Style="{StaticResource ModernToggleStyle}"
-                                              IsOn="False"/>
-                            </Grid>
-                        </Border>
 
                         <!-- Game Bar Section: put GoTweaks in the device-maker slot left of Home -->
                         <TextBlock Text="Game Bar" Style="{StaticResource SectionHeaderStyle}"/>

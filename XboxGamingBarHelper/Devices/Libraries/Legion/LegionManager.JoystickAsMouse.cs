@@ -17,49 +17,15 @@ namespace XboxGamingBarHelper.Devices.Libraries.Legion
         private int joystickMouseSens = 50;   // 10-100
 
         /// <summary>
-        /// Sets joystick as mouse mode (0=Disabled, 1=Left Stick, 2=Right Stick).
+        /// Turns the firmware joystick-as-mouse mode off on both sticks. The feature (and Desktop
+        /// Controls, which used it) was removed in 1.9.7c; this runs at startup so a stick isn't
+        /// left acting as a mouse with no way to turn it off.
         /// </summary>
-        public void SetJoystickAsMouseMode(int mode)
+        public void DisableJoystickAsMouse()
         {
-            int previousMode = joystickAsMouseMode;
-            joystickAsMouseMode = mode;
-
-            // Disable previous stick if it was enabled
-            if (previousMode == 1)
-            {
-                ApplyJoystickAsMouse(true, false, joystickMouseSens);
-            }
-            else if (previousMode == 2)
-            {
-                ApplyJoystickAsMouse(false, false, joystickMouseSens);
-            }
-
-            // Enable new stick if not disabled
-            if (mode == 1)
-            {
-                ApplyJoystickAsMouse(true, true, joystickMouseSens);
-            }
-            else if (mode == 2)
-            {
-                ApplyJoystickAsMouse(false, true, joystickMouseSens);
-            }
-        }
-
-        /// <summary>
-        /// Sets joystick mouse sensitivity (10-100).
-        /// </summary>
-        public void SetJoystickMouseSens(int sensitivity)
-        {
-            joystickMouseSens = sensitivity;
-            // Only apply if a joystick is active
-            if (joystickAsMouseMode == 1)
-            {
-                ApplyJoystickAsMouse(true, true, sensitivity);
-            }
-            else if (joystickAsMouseMode == 2)
-            {
-                ApplyJoystickAsMouse(false, true, sensitivity);
-            }
+            joystickAsMouseMode = 0;
+            ApplyJoystickAsMouse(true, false, joystickMouseSens);
+            ApplyJoystickAsMouse(false, false, joystickMouseSens);
         }
 
         /// <summary>
