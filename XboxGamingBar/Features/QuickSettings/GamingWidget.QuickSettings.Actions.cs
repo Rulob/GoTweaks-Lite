@@ -982,7 +982,7 @@ namespace XboxGamingBar
         {
             if (Column2Button == null || Column3Button == null || Column4Button == null) return;
 
-            var accent = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+            var accent = CurrentAccentColor;
             var selectedBrush = new SolidColorBrush(accent);
             var selectedText = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x0A, 0x1A, 0x24));
             var normalText = new SolidColorBrush(Windows.UI.Colors.White);

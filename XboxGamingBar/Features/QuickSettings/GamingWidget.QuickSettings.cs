@@ -197,13 +197,14 @@ namespace XboxGamingBar
                 // Active-tile accent signal lives in the state text color and the
                 // bottom accent bar (see SetTileAccentBar) - tile background/icon/name
                 // stay neutral/white always.
-                var liveAccent = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
-                ApplyLiveAccentColor(liveAccent);
+                var liveAccent = ReadAccentColor();
+                WatchAccentColor();
 
                 tileOffBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x1C, 0x1F, 0x25)); // card colour (1.9.9a)
                 tileOnBrush = tileOffBrush;
 
                 tileAccentBrush = new SolidColorBrush(liveAccent);
+                ApplyLiveAccentColor(liveAccent);
                 // Same muted gray as the state text's "off" color, so the bar is
                 // always present (every tile) but reads as grayed-out when inactive.
                 // 1.9.9a: the "bar" is now the icon chip; off = a dark chip with a light icon.
@@ -241,18 +242,44 @@ namespace XboxGamingBar
             }
         }
 
+        // ---- Windows accent colour (1.9.9c) -----------------------------------------------------
+        // Read from UISettings (live) rather than the XAML ThemeResource, which inside Game Bar can
+        // resolve to the default blue and only refreshes when the widget is recreated.
+        private static Windows.UI.Color? liveAccentColor;
+        private Windows.UI.ViewManagement.UISettings accentUiSettings;
+
+        /// <summary>The current Windows accent (Light2 variant, as used on dark backgrounds).</summary>
+        internal static Windows.UI.Color CurrentAccentColor => liveAccentColor ?? ReadAccentColor();
+
+        private static Windows.UI.Color ReadAccentColor()
+        {
+            try
+            {
+                return new Windows.UI.ViewManagement.UISettings().GetColorValue(Windows.UI.ViewManagement.UIColorType.AccentLight2);
+            }
+            catch
+            {
+                return (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+            }
+        }
+
         /// <summary>
-        /// 1.9.9c: points the page's accent brush (gauge, tab icons, sliders, switches, accent
-        /// text) at the live Windows accent, the same colour the tiles use. Inside Game Bar the
-        /// brush's XAML ThemeResource can resolve to the default blue instead.
+        /// Points the page's accent brush (gauge, tab icons, sliders, switches, checkboxes, accent
+        /// text) and the tile accent brush at <paramref name="accent"/>. Both brushes are shared
+        /// instances, so everything using them repaints at once.
         /// </summary>
         private void ApplyLiveAccentColor(Windows.UI.Color accent)
         {
             try
             {
+                liveAccentColor = accent;
                 if (Resources.TryGetValue("SystemAccentBrush", out object value) && value is SolidColorBrush brush && brush.Color != accent)
                 {
                     brush.Color = accent;
+                }
+                if (tileAccentBrush != null && tileAccentBrush.Color != accent)
+                {
+                    tileAccentBrush.Color = accent;
                 }
             }
             catch (Exception ex)
@@ -261,6 +288,42 @@ namespace XboxGamingBar
             }
         }
 
+        /// <summary>Follows Windows accent changes right away (wired once per widget instance).</summary>
+        private void WatchAccentColor()
+        {
+            if (accentUiSettings != null) return;
+            try
+            {
+                accentUiSettings = new Windows.UI.ViewManagement.UISettings();
+                accentUiSettings.ColorValuesChanged += (s, e) =>
+                {
+                    _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    {
+                        try
+                        {
+                            if (App.GetActiveGamingWidget() != this) return;
+                            var accent = ReadAccentColor();
+                            if (liveAccentColor == accent) return;
+                            Logger.Info($"Windows accent colour changed to {accent}");
+                            ApplyLiveAccentColor(accent);
+                            UpdateQuickSettingsTileStates();
+                            UpdateQuickPowerBoxes();
+                            PaintOSPowerModeButtons();
+                            PaintFpsLimitPresets();
+                            PaintProfileQuickButtons();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warn($"Accent colour refresh failed: {ex.Message}");
+                        }
+                    });
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"WatchAccentColor failed: {ex.Message}");
+            }
+        }
         /// <summary>
         /// Refresh Quick Settings tiles when Legion status changes
         /// </summary>

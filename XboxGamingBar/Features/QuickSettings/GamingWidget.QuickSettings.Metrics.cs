@@ -192,7 +192,7 @@ namespace XboxGamingBar
         /// </summary>
         private void UpdateMetricsDisplay()
         {
-            var accent = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+            var accent = CurrentAccentColor;
             var green = Windows.UI.Color.FromArgb(255, 0x8C, 0xD8, 0x67);
             var orange = Windows.UI.Color.FromArgb(255, 0xFF, 0xB3, 0x5C);
             var red = Windows.UI.Color.FromArgb(255, 0xFF, 0x6B, 0x6B);
@@ -626,7 +626,7 @@ namespace XboxGamingBar
                 var indexText = new TextBlock
                 {
                     Text = $"{i + 1}",
-                    Foreground = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"]),
+                    Foreground = new SolidColorBrush(CurrentAccentColor),
                     FontSize = 11,
                     FontWeight = Windows.UI.Text.FontWeights.SemiBold,
                     VerticalAlignment = VerticalAlignment.Center

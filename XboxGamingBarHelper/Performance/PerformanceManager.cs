@@ -1305,14 +1305,9 @@ namespace XboxGamingBarHelper.Performance
                     int performanceMode = legionManager.CurrentPerformanceMode;
                     if (performanceMode != 255) // Not Custom mode
                     {
-                        // The mode name, plus the preset's own limits as the firmware reports them
-                        // (1.9.9c: the Quick tab dial shows the preset's SPL). Mode name alone when
-                        // the limits can't be read.
-                        string modeName = LegionManager.GetPerformanceModeName(performanceMode);
-                        var (pSlow, pFast, pPeak) = legionManager.GetCurrentTDPValues();
-                        string presetString = pSlow.HasValue && pFast.HasValue && pPeak.HasValue
-                            ? $"{modeName} SPL:{pSlow}W SPPL:{pFast}W FPPT:{pPeak}W"
-                            : modeName;
+                        // Mode name only: Lenovo WMI reports the same limits in every preset (37 W
+                        // on the Go 2, checked on device), so they are not the preset's own.
+                        string presetString = LegionManager.GetPerformanceModeName(performanceMode);
                         if (presetString != lastTdpString)
                         {
                             Logger.Info($"UpdateCurrentTDP: Mode changed to '{presetString}', sending update");

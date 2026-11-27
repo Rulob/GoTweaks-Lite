@@ -104,7 +104,7 @@ namespace XboxGamingBar
             if (ProfileQuickButtonsGrid == null) return;
             try
             {
-                var accent = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"]);
+                var accent = new SolidColorBrush(CurrentAccentColor);
                 var white = new SolidColorBrush(Windows.UI.Colors.White);
                 var muted = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x9A, 0xA3, 0xAF));
                 void Set(TextBlock text, string value, bool on)
@@ -148,7 +148,7 @@ namespace XboxGamingBar
         {
             if (selected)
             {
-                button.Background = new SolidColorBrush((Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"]);
+                button.Background = new SolidColorBrush(CurrentAccentColor);
                 button.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x0A, 0x1A, 0x24));
             }
             else
@@ -197,6 +197,18 @@ namespace XboxGamingBar
             if (isUpdatingQuickPowerBoxes) return;
             if (!(sender is FrameworkElement fe) || !int.TryParse(fe.Tag as string, out int index)) return;
             if (index < 0 || index >= QuickTdpModeValues.Length) return;
+
+            // 1.9.9c: picking a mode while AutoTDP runs turns AutoTDP off and switches to that
+            // mode. Clearing the remembered pre-AutoTDP mode first stops the off path from
+            // restoring it over the user's choice (Custom keeps the Custom card's limits, which
+            // ScheduleCustomTDPRestoreAfterAutoTDP re-applies).
+            if (AutoTDPToggle?.IsOn == true)
+            {
+                Logger.Info($"TDP mode button {index} pressed while AutoTDP is on: turning AutoTDP off");
+                tdpModeIndexBeforeAutoTDP = null;
+                AutoTDPToggle.IsOn = false; // AutoTDPToggle_Toggled -> ApplyAutoTDPToggle(false)
+                if (AutoTDPToggle.IsOn) return; // the switch refused (e.g. mid helper update)
+            }
             ApplyTdpModeFromQuickSettings(QuickTdpModeValues[index]);
         }
 
@@ -249,7 +261,7 @@ namespace XboxGamingBar
                 int target = (int)Math.Round(AutoTDPTargetFPSSlider?.Value ?? 60);
                 int mode = index >= 0 && index < QuickTdpModeValues.Length ? QuickTdpModeValues[index] : 2;
 
-                var accentColor = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+                var accentColor = CurrentAccentColor;
                 var accent = new SolidColorBrush(accentColor);
                 var onAccent = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x0A, 0x1A, 0x24));
                 var white = new SolidColorBrush(Windows.UI.Colors.White);
@@ -270,22 +282,13 @@ namespace XboxGamingBar
                 }
                 else
                 {
-                    // Preset: the firmware's SPL for that mode once the helper has reported it.
-                    string modeName = GetLegionModeShortName(mode);
-                    bool known = liveTdpIsPreset && liveSplWatts > 0
-                        && liveTdpModeName.Equals(modeName, StringComparison.OrdinalIgnoreCase);
-                    if (known)
+                    // Preset: the firmware doesn't report a preset's own limits (Lenovo WMI returns the
+                    // same value in every preset, checked on device), so show the preset's icon and name.
+                    switch (mode)
                     {
-                        SetQuickDial(liveSplWatts.ToString(), "WATTS", null, liveSplWatts / (double)CustomTdpMaxWatts);
-                    }
-                    else
-                    {
-                        switch (mode)
-                        {
-                            case 1: SetQuickDial(null, "QUIET", "\uEC48", 1 / 3.0); break;
-                            case 3: SetQuickDial(null, "PERF.", "\uEC4A", 1.0); break;
-                            default: SetQuickDial(null, "BALANCED", "\uEC49", 2 / 3.0); break;
-                        }
+                        case 1: SetQuickDial(null, "QUIET", "\uEC48", 1 / 3.0); break;
+                        case 3: SetQuickDial(null, "PERF.", "\uEC4A", 1.0); break;
+                        default: SetQuickDial(null, "BALANCED", "\uEC49", 2 / 3.0); break;
                     }
                 }
 
@@ -298,9 +301,8 @@ namespace XboxGamingBar
                 for (int i = 0; i < buttons.Length; i++)
                 {
                     if (buttons[i] == null) continue;
-                    // 1.9.9c: the selected mode stays lit while AutoTDP holds it (Custom); the other
-                    // modes are dimmed instead of disabled (a disabled button turns grey), and
-                    // ApplyTdpModeFromQuickSettings ignores them while AutoTDP is on.
+                    // 1.9.9c: the selected mode stays lit while AutoTDP holds it (Custom); the
+                    // buttons stay usable - pressing one turns AutoTDP off (QuickTdpModeOption_Click).
                     bool selected = (i % 4) == index;
                     if (selected)
                     {
@@ -313,10 +315,10 @@ namespace XboxGamingBar
                         buttons[i].Foreground = white;
                     }
                     buttons[i].IsEnabled = true;
-                    buttons[i].Opacity = autoOn && !selected ? 0.45 : 1.0;
+                    buttons[i].Opacity = 1.0;
                 }
 
-                if (PerfTdpModeHint != null) PerfTdpModeHint.Text = autoOn ? "Held by AutoTDP" : "";
+                if (PerfTdpModeHint != null) PerfTdpModeHint.Text = autoOn ? "A mode turns AutoTDP off" : "";
 
                 // Custom wattage: a smaller dial with the mini slider under it
                 bool showSlider = isCustom && !autoOn;

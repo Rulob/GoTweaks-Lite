@@ -988,7 +988,7 @@
                         <Border x:Name="PanelBrightnessRow"
                                 Background="{StaticResource CardBackgroundBrush}"
                                 CornerRadius="16"
-                                Padding="16,0"
+                                Padding="16,5"
                                 Margin="0,0,0,8"
                                 Visibility="Collapsed">
                             <Grid>
@@ -1004,6 +1004,7 @@
                                           VerticalAlignment="Center"/>
                                 <Slider x:Name="PanelBrightnessSlider"
                                         Grid.Column="1"
+                                        Margin="0"
                                         Style="{StaticResource ModernSliderStyle}"
                                         Minimum="0"
                                         Maximum="100"
