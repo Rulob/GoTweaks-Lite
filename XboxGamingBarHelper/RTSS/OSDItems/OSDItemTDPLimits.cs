@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using XboxGamingBarHelper.Devices.Libraries.Legion;
@@ -6,7 +7,7 @@ using XboxGamingBarHelper.Performance;
 namespace XboxGamingBarHelper.RTSS.OSDItems
 {
     /// <summary>
-    /// OSD item for displaying current TDP limits (SPL/SPPT/FPPT) or mode name
+    /// OSD item for the TDP limit (SPL, or the preset name) and the SoC's live power draw
     /// </summary>
     internal class OSDItemTDPLimits : OSDItem
     {
@@ -35,6 +36,13 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             legionManager = manager;
         }
 
+        /// <summary>Live SoC draw rounded to whole watts, or -1 when unknown.</summary>
+        private int SoCDrawW()
+        {
+            float w = performanceManager?.SoCPowerW ?? -1f;
+            return w > 0 ? (int)Math.Round(w, MidpointRounding.AwayFromZero) : -1;
+        }
+
         protected override string GetModernOSDString(int osdLevel)
         {
             if (performanceManager == null)
@@ -42,32 +50,33 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
                 return string.Empty;
             }
 
-            // "TDP Balanced" in a preset mode, "TDP 25/26/28W" in Custom (SPL/SPPT/FPPT).
+            // 1.9.9d: the TDP limit, then the SoC's live draw in brackets:
+            // "TDP 25 (17)W" in Custom, "TDP Balanced (17)W" in a preset (the firmware doesn't
+            // report a preset's own limit). SPPT / FPPT are no longer shown.
             string value = MValueColor();
             string text = MLabel("TDP", "FFD54E");
+            int draw = SoCDrawW();
+            string drawPart = draw > 0 ? $"<C={MDimColor()}> ({draw})" : "";
 
             if (legionManager != null && legionManager.LegionGoDetected?.Value == true)
             {
                 int mode = legionManager.CurrentPerformanceMode;
                 if (mode != 255)
                 {
-                    // "Balanced Mode" -> "Balanced", at the same size as the other values (it is a
-                    // value, not a tag). Full size sits exactly on the baseline; the reduced sizes
-                    // tried before (75% / 88%) looked too small or landed a pixel off.
+                    // "Balanced Mode" -> "Balanced", at the same size as the other values.
                     string modeName = LegionManager.GetPerformanceModeName(mode).Replace(" Mode", "");
-                    return text + $"<C={value}>{modeName}";
+                    return text + $"<C={value}>{modeName}" + drawPart + (draw > 0 ? MUnit("W") : "");
                 }
             }
 
             int spl = performanceManager.CurrentSPL;
-            int sppt = performanceManager.CurrentSPPT;
-            int fppt = performanceManager.CurrentFPPT;
-            if (spl == 0 && sppt == 0 && fppt == 0)
+            if (spl <= 0 && draw <= 0)
             {
                 return string.Empty;
             }
 
-            return text + $"<C={value}>{spl}/{sppt}/{fppt}" + MUnit("W");
+            string limit = spl > 0 ? spl.ToString() : "--";
+            return text + $"<C={value}>{limit}" + drawPart + MUnit("W");
         }
 
         public override string GetOSDString(int osdLevel)
@@ -80,6 +89,8 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             // Apply opacity to label and text colors for OLED protection
             var labelColor = ApplyOpacity(colorCode);
             var tc = GetTextColorWithOpacity();
+            int draw = SoCDrawW();
+            string drawPart = draw > 0 ? $" ({draw}W)" : "";
 
             // If Legion Go is detected and not in Custom mode, show mode name instead of limits
             if (legionManager != null && legionManager.LegionGoDetected?.Value == true)
@@ -88,22 +99,18 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
                 if (mode != 255) // Not Custom mode
                 {
                     string modeName = LegionManager.GetPerformanceModeName(mode);
-                    return $"<C={labelColor}>Mode<C={tc}> <C={tc}>{modeName}<C={tc}>";
+                    return $"<C={labelColor}>Mode<C={tc}> <C={tc}>{modeName}{drawPart}<C={tc}>";
                 }
             }
 
             int spl = performanceManager.CurrentSPL;
-            int sppt = performanceManager.CurrentSPPT;
-            int fppt = performanceManager.CurrentFPPT;
-
-            // Don't show if no TDP has been set yet
-            if (spl == 0 && sppt == 0 && fppt == 0)
+            if (spl <= 0 && draw <= 0)
             {
                 return string.Empty;
             }
 
-            // Format: "Limits: SPL/SPPT/FPPT" e.g. "Limits: 25/26/28"
-            return $"<C={labelColor}>Limits<C={tc}> <C={tc}>{spl}/{sppt}/{fppt}W<C={tc}>";
-        }
-    }
+            // Format: "TDP 25W (17W)" - the limit, then the SoC's live draw.
+            string limit = spl > 0 ? $"{spl}W" : "--";
+            return $"<C={labelColor}>TDP<C={tc}> <C={tc}>{limit}{drawPart}<C={tc}>";
+        }    }
 }

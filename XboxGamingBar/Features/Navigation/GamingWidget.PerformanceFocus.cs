@@ -8,7 +8,7 @@ using Windows.UI.Xaml.Media;
 namespace XboxGamingBar
 {
     /// <summary>
-    /// D-pad focus order for the Performance tab.
+    /// D-pad focus order for the Power (formerly Performance) tab.
     ///
     /// The tab is a stack of cards whose content changes at runtime (a game being detected, the
     /// FPS-limit slider appearing, the Custom power-limit sliders in Custom mode, AutoTDP's
@@ -21,46 +21,67 @@ namespace XboxGamingBar
     {
         private bool performanceFocusChainRebuildPending;
 
-        /// <summary>The Performance tab's controls, top to bottom.</summary>
-        private IEnumerable<Control> PerformanceTabFocusOrder()
+        /// <summary>
+        /// The Power tab's controls, top to bottom, as rows. 1.9.9d: rows of buttons (FPS presets,
+        /// TDP modes, Windows power mode) replaced the dropdowns, so each row is one stop: Up/Down
+        /// move between rows (to the button in the matching position), Left/Right stay in the row.
+        /// </summary>
+        private IEnumerable<Control[]> PerformanceTabFocusRows()
         {
-            // (Current Profile and its per-game toggle moved to the Profiles tab in 1.9.8.)
-            yield return PerformanceOverlayToggle;
-            yield return FPSLimitToggle;
-            yield return FPSLimitSlider;
-            yield return AutoTDPToggle;
-            yield return AutoTDPTargetFPSSlider;
-            yield return AutoTDPMinSlider;
-            yield return AutoTDPMaxSlider;
-            yield return AutoTDPPauseWhenUnfocusedToggle;
-            yield return AutoTDPFastResponseToggle;
-            yield return TDPModeComboBox;
-            yield return CustomTDPSlowSlider;
-            yield return CustomTDPFastSlider;
-            yield return CustomTDPPeakSlider;
-            yield return OSPowerModeComboBox;
-            yield return CPUExtrasExpandToggle;
+            yield return new Control[] { PerformanceOverlayToggle };
+            yield return new Control[] { FPSLimitToggle };
+            yield return ButtonsIn(FPSLimitPresetGrid);
+            yield return new Control[] { FPSLimitSlider };
+            yield return new Control[] { AutoTDPToggle };
+            yield return new Control[] { AutoTDPTargetFPSSlider };
+            yield return new Control[] { AutoTDPMinSlider };
+            yield return new Control[] { AutoTDPMaxSlider };
+            yield return new Control[] { AutoTDPPauseWhenUnfocusedToggle };
+            yield return new Control[] { AutoTDPFastResponseToggle };
+            yield return new Control[] { PerfTdpModeQuiet, PerfTdpModeBalanced, PerfTdpModePerformance, PerfTdpModeCustom };
+            yield return new Control[] { CustomTDPSlowSlider };
+            yield return new Control[] { CustomTDPFastSlider };
+            yield return new Control[] { CustomTDPPeakSlider };
+            yield return new Control[] { OSPowerModeEfficiencyButton, OSPowerModeBalancedButton, OSPowerModePerformanceButton };
+            yield return new Control[] { CPUExtrasExpandToggle };
+        }
+
+        private static Control[] ButtonsIn(Panel panel)
+        {
+            var buttons = new List<Control>();
+            if (panel != null)
+            {
+                foreach (var child in panel.Children)
+                {
+                    if (child is Button b) buttons.Add(b);
+                }
+            }
+            return buttons.ToArray();
         }
 
         /// <summary>
-        /// Hooks the Performance tab up so its focus order is rebuilt whenever a control gets
+        /// Hooks the Power tab up so its focus order is rebuilt whenever a control gets
         /// enabled/disabled or the FPS limit / AutoTDP toggles show or hide their settings.
         /// Call once after InitializeComponent.
         /// </summary>
         private void InitPerformanceTabFocusChain()
         {
-            foreach (var control in PerformanceTabFocusOrder())
+            foreach (var row in PerformanceTabFocusRows())
             {
-                if (control != null)
+                foreach (var control in row)
                 {
-                    control.IsEnabledChanged += (s, e) => SchedulePerformanceFocusChainRebuild();
+                    if (control != null)
+                    {
+                        control.IsEnabledChanged += (s, e) => SchedulePerformanceFocusChainRebuild();
+                    }
                 }
             }
 
-            // These two reveal/hide their own settings (the FPS limit slider, AutoTDP's panel)
-            // through bindings, which update just after Toggled fires.
+            // These reveal/hide their own settings (the FPS limit row, AutoTDP's panel, the Custom
+            // card) through bindings or code that run just after the change.
             if (FPSLimitToggle != null) FPSLimitToggle.Toggled += (s, e) => SchedulePerformanceFocusChainRebuild();
             if (AutoTDPToggle != null) AutoTDPToggle.Toggled += (s, e) => SchedulePerformanceFocusChainRebuild();
+            if (TDPModeComboBox != null) TDPModeComboBox.SelectionChanged += (s, e) => SchedulePerformanceFocusChainRebuild();
 
             RebuildPerformanceTabFocusChain();
         }
@@ -79,7 +100,7 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Links every currently focusable Performance-tab control to the one above and below it.
+        /// Links every row of currently focusable Power-tab controls to the rows above and below.
         /// </summary>
         private void RebuildPerformanceTabFocusChain()
         {
@@ -87,26 +108,32 @@ namespace XboxGamingBar
             {
                 if (PerformanceNavItem == null || PerformanceScrollViewer == null) return;
 
-                var stops = new List<Control>();
-                foreach (var control in PerformanceTabFocusOrder())
+                var rows = new List<List<Control>>();
+                foreach (var row in PerformanceTabFocusRows())
                 {
-                    if (IsPerformanceFocusStop(control))
+                    var stops = new List<Control>();
+                    foreach (var control in row)
                     {
-                        stops.Add(control);
+                        if (IsPerformanceFocusStop(control)) stops.Add(control);
                     }
+                    if (stops.Count > 0) rows.Add(stops);
                 }
 
-                if (stops.Count == 0) return;
+                if (rows.Count == 0) return;
 
-                PerformanceNavItem.XYFocusDown = stops[0];
-                for (int i = 0; i < stops.Count; i++)
+                PerformanceNavItem.XYFocusDown = rows[0][0];
+                for (int r = 0; r < rows.Count; r++)
                 {
-                    stops[i].XYFocusUp = i == 0 ? (DependencyObject)PerformanceNavItem : stops[i - 1];
-                    // Leave the last stop's "down" alone so the controls below the list (the CPU
-                    // Extras content when it's expanded) keep their normal navigation.
-                    if (i < stops.Count - 1)
+                    var row = rows[r];
+                    for (int i = 0; i < row.Count; i++)
                     {
-                        stops[i].XYFocusDown = stops[i + 1];
+                        row[i].XYFocusUp = r == 0 ? (DependencyObject)PerformanceNavItem : Matching(rows[r - 1], i, row.Count);
+                        // Leave the last row's "down" alone so the controls below the list (the CPU
+                        // Extras content when it's expanded) keep their normal navigation.
+                        if (r < rows.Count - 1)
+                        {
+                            row[i].XYFocusDown = Matching(rows[r + 1], i, row.Count);
+                        }
                     }
                 }
             }
@@ -116,6 +143,13 @@ namespace XboxGamingBar
             }
         }
 
+        /// <summary>The control in <paramref name="target"/> at the same relative position as
+        /// index <paramref name="index"/> of a row of <paramref name="count"/>.</summary>
+        private static Control Matching(List<Control> target, int index, int count)
+        {
+            int i = count <= 1 ? 0 : (int)Math.Round(index * (target.Count - 1) / (double)(count - 1));
+            return target[Math.Max(0, Math.Min(target.Count - 1, i))];
+        }
         /// <summary>
         /// True when the control can take focus right now: enabled, and neither it nor any card
         /// or panel above it (up to the tab itself) is collapsed. The tab's own visibility is

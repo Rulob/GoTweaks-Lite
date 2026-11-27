@@ -709,22 +709,35 @@ namespace XboxGamingBar
         /// <summary>
         /// Send Quick Metrics enabled state to helper
         /// </summary>
+        // 1.9.9d: the sensor feed also runs while the widget is visible, for the dial's live SoC
+        // draw. Starts true: the widget is normally open when it first connects.
+        private volatile bool widgetVisibleForMetrics = true;
+
+        /// <summary>Called on Game Bar VisibleChanged: start/stop the helper's sensor feed.</summary>
+        internal void SetWidgetVisibleForMetrics(bool visible)
+        {
+            if (widgetVisibleForMetrics == visible) return;
+            widgetVisibleForMetrics = visible;
+            SendQuickMetricsEnabledToHelper();
+        }
+
         private void SendQuickMetricsEnabledToHelper()
         {
             try
             {
                 if (!App.IsConnected) return;
 
+                bool feed = quickMetricsEnabled || widgetVisibleForMetrics;
                 var request = new Windows.Foundation.Collections.ValueSet
                 {
                     { "Command", (int)Shared.Enums.Command.Set },
                     { "Function", (int)Shared.Enums.Function.QuickMetricsEnabled },
-                    { "Content", quickMetricsEnabled }
+                    { "Content", feed }
                 };
                 // Fire-and-forget: helper processes this but doesn't send a response,
                 // so using SendRequestAsync would timeout after 10s for no reason
                 App.PipeClient?.SendValueSet(request);
-                Logger.Info($"Sent Quick Metrics enabled state to helper: {quickMetricsEnabled}");
+                Logger.Info($"Sent Quick Metrics enabled state to helper: {feed}");
             }
             catch (Exception ex)
             {

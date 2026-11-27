@@ -80,6 +80,7 @@ namespace XboxGamingBar
                 Logger.Info($"GamingWidget_VisibleChanged: Visible={isVisible}, DisplayMode={sender?.GameBarDisplayMode.ToString() ?? "Unknown"}");
                 firstInputLoggedSinceVisibleChange = false; // re-arm the input probe (see GamingWidget_InputProbe)
                 UpdateGameBarForegroundSignal("VisibleChanged");
+                SetWidgetVisibleForMetrics(isVisible); // live SoC draw for the Quick tab dial (1.9.9d)
 
                 // Re-read the built-in panel brightness on every open so the optional brightness
                 // slider always shows the true current value (it may have changed from another

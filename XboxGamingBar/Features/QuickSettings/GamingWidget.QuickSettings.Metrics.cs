@@ -174,6 +174,7 @@ namespace XboxGamingBar
                     try
                     {
                         UpdateMetricsDisplay();
+                        UpdateQuickPowerBoxes(); // the dial's live SoC draw (1.9.9d)
                     }
                     catch (Exception ex)
                     {

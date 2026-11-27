@@ -283,12 +283,20 @@ namespace XboxGamingBar
                 else
                 {
                     // Preset: the firmware doesn't report a preset's own limits (Lenovo WMI returns the
-                    // same value in every preset, checked on device), so show the preset's icon and name.
-                    switch (mode)
+                    // same value in every preset, checked on device), so show the SoC's live draw
+                    // (helper metrics feed, 1.9.9d); the preset's icon until the first reading.
+                    if (currentMetricsData.TryGetValue("socPower", out double soc) && soc > 0)
                     {
-                        case 1: SetQuickDial(null, "QUIET", "\uEC48", 1 / 3.0); break;
-                        case 3: SetQuickDial(null, "PERF.", "\uEC4A", 1.0); break;
-                        default: SetQuickDial(null, "BALANCED", "\uEC49", 2 / 3.0); break;
+                        SetQuickDial(Math.Round(soc).ToString("0"), "W DRAW", null, soc / CustomTdpMaxWatts);
+                    }
+                    else
+                    {
+                        switch (mode)
+                        {
+                            case 1: SetQuickDial(null, "QUIET", "\uEC48", 1 / 3.0); break;
+                            case 3: SetQuickDial(null, "PERF.", "\uEC4A", 1.0); break;
+                            default: SetQuickDial(null, "BALANCED", "\uEC49", 2 / 3.0); break;
+                        }
                     }
                 }
 

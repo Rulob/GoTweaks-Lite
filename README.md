@@ -118,18 +118,25 @@ upstream, and why.
   per row is still in Customize). The Performance tab is now called Power, and its TDP mode and
   Windows power mode use buttons instead of dropdowns, with FPS limit presets (30/40/45/60). The
   Profiles tab opens with a Now playing card whose buttons change TDP, AutoTDP, FPS limit, the
-  overlay, the Windows power mode and CPU boost directly.- **A fixed Quick tab that fits without scrolling (1.9.9b).** The power card is compact: the four
+  overlay, the Windows power mode and CPU boost directly.
+- **A fixed Quick tab that fits without scrolling (1.9.9b).** The power card is compact: the four
   TDP mode buttons 2 × 2 with the dial beside them (in Custom the dial shrinks and a mini slider sets
   the watts), and one AutoTDP row with the switch on the left and a − / + target FPS on the right.
   Below it: the brightness slider, eight toggles (Power Mode, EPP, CPU Boost, FPS Limit,
   Touchscreen, Touchpad, Vibration Mode, Overlay) and one row of actions (Keyboard, End Task, Task
   Manager, Explorer). Customize, the sensor row, custom shortcut tiles and tile controller combos
-  were removed from this tab.- **Quick tab polish (1.9.9c / 1.9.9d).** Everything fits without scrolling. Every toggle, slider,
+  were removed from this tab.
+- **Quick tab polish (1.9.9c / 1.9.9d).** Everything fits without scrolling. Every toggle, slider,
   checkbox and selected button on every tab follows the Windows accent colour, and picks up a new
   accent straight away (status colours such as battery levels keep their meaning). The dial shows
   the Custom wattage, or with AutoTDP on the wattage it is running at, placed between its Min and Max
-  TDP; in Quiet / Balanced / Performance it shows the preset's icon (the firmware doesn't report a
-  preset's own limits). Picking a TDP mode while AutoTDP runs turns AutoTDP off and switches to it.- **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
+  TDP; in Quiet / Balanced / Performance (the firmware doesn't report a preset's own limits) it
+  shows the SoC's live power draw. Picking a TDP mode while AutoTDP runs
+  turns AutoTDP off and switches to it. The overlay's TDP item shows the limit and then the SoC's
+  live draw in brackets, e.g. `TDP 25 (17)W` (`TDP Balanced (17)W` in a preset); SPPT / FPPT were
+  dropped from it. The SoC draw is AMD's APU power reading (the same figure as Adrenalin's overlay),
+  unlike BAT, which is the whole device's battery draw (screen included).
+- **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
   the whole install behind a small progress window (see [Installation](#-installation)).
 
 ### 🔧 Reliability fixes
@@ -372,11 +379,11 @@ A real-time on-screen display powered by RivaTuner Statistics Server.
 - **Detail levels** — Off, Minimal, Standard, Detailed
 - **Metrics** — FPS (rendered + displayed via PresentMon) with a `[FG]` badge, frametime graph and
   frame-budget readout, CPU/GPU usage & temperatures, power draw, memory & VRAM, battery, fan speed,
-  and TDP limits (SPL/SPPT/FPPT) or the current performance mode
+  and the TDP limit (or the performance mode) with the SoC's live power draw in brackets
 - **Modern style** (on by default, switch in the overlay's Layout options; off = the classic look) —
   small labels and units on the number's baseline, soft accent colors with values staying neutral
   until a real warning threshold, steady number widths, and a clean one-row bar:
-  `FPS 138 7ms · CPU 12% · GPU 34% · RAM 42% · VRAM 18% · TEMP 53°C · TDP Balanced · BAT 78% -12.8W 4h 29m · 23:18`.
+  `FPS 138 7ms · CPU 12% · GPU 34% · RAM 42% · VRAM 18% · TEMP 53°C · TDP Balanced (17)W · BAT 78% -12.8W 4h 29m · 23:18`.
   CPU/GPU show usage only, RAM/VRAM show percentages, and a single **SoC temperature** replaces the
   separate CPU and GPU temperatures.
 - **Brightness** — the overlay brightness slider (10–100%) now spans the whole range: at 100% the

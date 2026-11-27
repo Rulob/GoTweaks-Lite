@@ -176,6 +176,17 @@ namespace XboxGamingBarHelper.Performance
 
         // Current TDP limits (for OSD display)
         public int CurrentSPL { get; private set; }
+
+        /// <summary>
+        /// Live SoC (whole APU) power draw in watts, or -1 when unknown (1.9.9d). Read from AMD's
+        /// ADLX "GPU power", which on an APU covers the whole chip (it is what Adrenalin's overlay
+        /// shows), falling back to LibreHardwareMonitor's CPU package sensor (needs PawnIO).
+        /// Refreshed with the other sensors, i.e. only while a metrics consumer is active.
+        /// </summary>
+        public float SoCPowerW { get; private set; } = -1f;
+
+        // The LHM CPU "Package" sensor object, kept before the LeGo2 CPU/GPU swap.
+        private HardwareSensor cpuPackageWattageSensor;
         public int CurrentSPPT { get; private set; }
         public int CurrentFPPT { get; private set; }
 
@@ -418,6 +429,7 @@ namespace XboxGamingBarHelper.Performance
             // sensor is absent (a known LeGo2/Z2 gap), and must keep targeting that same
             // sensor object regardless of which public property currently exposes it.
             gpuHardwareWattageSensor = GPUWattage;
+            cpuPackageWattageSensor = CPUWattage;
 
             // LeGo2 (Ryzen Z2 Extreme): LibreHardwareMonitor's CPU "Package" sensor
             // reports what AMD Adrenalin's overlay labels GPU Power, and the GPU
@@ -838,6 +850,8 @@ namespace XboxGamingBarHelper.Performance
                 kvp.Key.Value = kvp.Value;
             }
 
+            UpdateSoCPower();
+
             // Override battery level with Windows API value
             // LibreHardwareMonitor calculates battery % from capacity values which can be stale after sleep
             // Windows API returns the battery controller's actual reported percentage
@@ -871,6 +885,27 @@ namespace XboxGamingBarHelper.Performance
             }
         }
 
+        /// <summary>Refreshes <see cref="SoCPowerW"/> (see there for the sources).</summary>
+        private void UpdateSoCPower()
+        {
+            float watts = -1f;
+            try
+            {
+                if (amdManager != null && amdManager.TryGetCurrentGpuMetrics(out var snap) && snap.HasPowerW && snap.GpuPowerW > 0)
+                {
+                    watts = (float)snap.GpuPowerW;
+                }
+                else if (cpuPackageWattageSensor != null && cpuPackageWattageSensor.Value > 0)
+                {
+                    watts = cpuPackageWattageSensor.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug($"UpdateSoCPower failed: {ex.Message}");
+            }
+            SoCPowerW = watts;
+        }
         // Map hardware type → refresh tier. Cheap hardware refreshes every tick; GPU
         // hardware (and anything we don't explicitly classify) defers to the slow tier
         // because ADL/NVML round-trips dominate the per-tick budget.
@@ -1498,10 +1533,10 @@ namespace XboxGamingBarHelper.Performance
                 string json = string.Format(inv,
                     "{{\"batteryDrain\":{0:F1},\"cpuUsage\":{1:F0},\"gpuUsage\":{2:F0},\"socTemp\":{3:F0}," +
                     "\"memoryUsage\":{4:F0},\"batteryLevel\":{5:F0},\"timeRemaining\":{6:F0},\"timeToFull\":{7:F0}," +
-                    "\"tdpMode\":{8},\"tdp\":{9},\"isCharging\":{10}}}",
+                    "\"tdpMode\":{8},\"tdp\":{9},\"isCharging\":{10},\"socPower\":{11:F1}}}",
                     batteryDrain, cpuUsage, gpuUsage, socTemp,
                     memoryUsage, batteryLevel, timeRemaining, timeToFull,
-                    tdpMode, tdp, isCharging ? "true" : "false");
+                    tdpMode, tdp, isCharging ? "true" : "false", SoCPowerW);
 
                 // Send via named pipe
                 var message = new Shared.IPC.PipeMessage
