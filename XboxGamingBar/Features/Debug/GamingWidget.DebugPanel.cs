@@ -1196,12 +1196,12 @@ namespace XboxGamingBar
             {
                 if (!string.IsNullOrEmpty(primaryText) && dialog.FindName("PrimaryButton") is Button primaryBtn)
                 {
-                    primaryBtn.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x78, 0xD4));
-                    primaryBtn.Foreground = new SolidColorBrush(Colors.White);
+                    primaryBtn.Background = new SolidColorBrush((Color)Application.Current.Resources["SystemAccentColorLight2"]); // 1.9.9c: Windows accent
+                    primaryBtn.Foreground = new SolidColorBrush(Color.FromArgb(0xFF, 0x0A, 0x1A, 0x24));
                 }
                 if (dialog.FindName("CloseButton") is Button closeBtn)
                 {
-                    closeBtn.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x3E, 0x43, 0x4B));
+                    closeBtn.Background = new SolidColorBrush(Color.FromArgb(0xFF, 0x26, 0x2A, 0x31));
                     closeBtn.Foreground = new SolidColorBrush(Colors.White);
                 }
             };

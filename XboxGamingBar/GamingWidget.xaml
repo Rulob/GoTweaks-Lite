@@ -36,6 +36,28 @@
         <StaticResource x:Key="ToggleSwitchStrokeOn" ResourceKey="SystemAccentBrush"/>
         <StaticResource x:Key="ToggleSwitchStrokeOnPointerOver" ResourceKey="SystemAccentBrush"/>
         <StaticResource x:Key="ToggleSwitchStrokeOnPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundFillChecked" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundFillCheckedPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundFillCheckedPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundStrokeChecked" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundStrokeCheckedPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundStrokeCheckedPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundFillIndeterminate" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundFillIndeterminatePointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="CheckBoxCheckBackgroundFillIndeterminatePressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="RadioButtonOuterEllipseCheckedFill" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="RadioButtonOuterEllipseCheckedFillPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="RadioButtonOuterEllipseCheckedFillPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="RadioButtonOuterEllipseCheckedStroke" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="RadioButtonOuterEllipseCheckedStrokePointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="RadioButtonOuterEllipseCheckedStrokePressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleButtonBackgroundChecked" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleButtonBackgroundCheckedPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleButtonBackgroundCheckedPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ComboBoxItemPillFillBrush" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="HyperlinkButtonForeground" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="SystemControlHighlightAccentBrush" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="SystemControlForegroundAccentBrush" ResourceKey="SystemAccentBrush"/>
 
         <!-- Win11 Theme Colors (promoted app-wide 2026-07-11 from the Performance-tab
              pilot checkpoint; matches the already-shipped Quick Settings tile palette) -->
@@ -2892,7 +2914,7 @@
                                         <TextBlock x:Name="AboutVersionText"
                                                    Text="0.3.98.0"
                                                    FontSize="14"
-                                                   Foreground="#6CCB5F"
+                                                   Foreground="{StaticResource SystemAccentBrush}"
                                                    FontWeight="SemiBold"
                                                    HorizontalAlignment="Right"/>
                                     </Grid>

@@ -298,7 +298,10 @@ namespace XboxGamingBar
                 for (int i = 0; i < buttons.Length; i++)
                 {
                     if (buttons[i] == null) continue;
-                    bool selected = (i % 4) == index && !autoOn;
+                    // 1.9.9c: the selected mode stays lit while AutoTDP holds it (Custom); the other
+                    // modes are dimmed instead of disabled (a disabled button turns grey), and
+                    // ApplyTdpModeFromQuickSettings ignores them while AutoTDP is on.
+                    bool selected = (i % 4) == index;
                     if (selected)
                     {
                         buttons[i].Background = accent;
@@ -309,7 +312,8 @@ namespace XboxGamingBar
                         buttons[i].ClearValue(Control.BackgroundProperty);
                         buttons[i].Foreground = white;
                     }
-                    buttons[i].IsEnabled = !autoOn; // AutoTDP holds the mode (Custom)
+                    buttons[i].IsEnabled = true;
+                    buttons[i].Opacity = autoOn && !selected ? 0.45 : 1.0;
                 }
 
                 if (PerfTdpModeHint != null) PerfTdpModeHint.Text = autoOn ? "Held by AutoTDP" : "";

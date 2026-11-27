@@ -124,7 +124,9 @@ upstream, and why.
   Below it: the brightness slider, eight toggles (Power Mode, EPP, CPU Boost, FPS Limit,
   Touchscreen, Touchpad, Vibration Mode, Overlay) and one row of actions (Keyboard, End Task, Task
   Manager, Explorer). Customize, the sensor row, custom shortcut tiles and tile controller combos
-  were removed from this tab.- **Quick tab polish (1.9.9c).** Everything fits without scrolling. The dial, sliders, switches and
+  were removed from this tab.- **Quick tab polish (1.9.9c).** Everything fits without scrolling. Every toggle, slider, checkbox and
+  selected button on every tab now follows the Windows accent colour (status colours such as battery
+  levels keep their meaning). The dial, sliders, switches and
   the Power Mode / EPP tiles follow the Windows accent colour. The dial shows the preset's real
   wattage (the helper now reports each preset's limits), and with AutoTDP on it shows the wattage it
   is running at, placed between its Min and Max TDP.
