@@ -287,7 +287,7 @@ namespace XboxGamingBar
                     // (helper metrics feed, 1.9.9d); the preset's icon until the first reading.
                     if (currentMetricsData.TryGetValue("socPower", out double soc) && soc > 0)
                     {
-                        SetQuickDial(Math.Round(soc).ToString("0"), "W DRAW", null, soc / CustomTdpMaxWatts);
+                        SetQuickDial(Math.Round(soc).ToString("0"), "W", null, soc / CustomTdpMaxWatts);
                     }
                     else
                     {

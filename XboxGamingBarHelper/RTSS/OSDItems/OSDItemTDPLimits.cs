@@ -50,13 +50,14 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
                 return string.Empty;
             }
 
-            // 1.9.9d: the TDP limit, then the SoC's live draw in brackets:
-            // "TDP 25 (17)W" in Custom, "TDP Balanced (17)W" in a preset (the firmware doesn't
+            // The TDP limit, then the SoC's live draw in brackets with its unit:
+            // "TDP 25 (17W)" in Custom, "TDP Balanced (17W)" in a preset (the firmware doesn't
             // report a preset's own limit). SPPT / FPPT are no longer shown.
             string value = MValueColor();
             string text = MLabel("TDP", "FFD54E");
             int draw = SoCDrawW();
-            string drawPart = draw > 0 ? $"<C={MDimColor()}> ({draw})" : "";
+            string dim = MDimColor();
+            string drawPart = draw > 0 ? $"<C={dim}> ({draw}{MSmall("W")}<C={dim}>)<C={value}>" : "";
 
             if (legionManager != null && legionManager.LegionGoDetected?.Value == true)
             {
@@ -65,7 +66,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
                 {
                     // "Balanced Mode" -> "Balanced", at the same size as the other values.
                     string modeName = LegionManager.GetPerformanceModeName(mode).Replace(" Mode", "");
-                    return text + $"<C={value}>{modeName}" + drawPart + (draw > 0 ? MUnit("W") : "");
+                    return text + $"<C={value}>{modeName}" + drawPart;
                 }
             }
 
@@ -76,7 +77,8 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             }
 
             string limit = spl > 0 ? spl.ToString() : "--";
-            return text + $"<C={value}>{limit}" + drawPart + MUnit("W");
+            // No reading yet: "TDP 25W".
+            return text + $"<C={value}>{limit}" + (draw > 0 ? drawPart : MUnit("W"));
         }
 
         public override string GetOSDString(int osdLevel)

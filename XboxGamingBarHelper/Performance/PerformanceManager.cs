@@ -178,12 +178,16 @@ namespace XboxGamingBarHelper.Performance
         public int CurrentSPL { get; private set; }
 
         /// <summary>
-        /// Live SoC (whole APU) power draw in watts, or -1 when unknown (1.9.9d). LibreHardwareMonitor's
-        /// CPU package sensor when it reports (needs PawnIO), otherwise its AMD "GPU Core" power,
-        /// which on the Legion Go 2 is the APU package (see the sensor swap note in the constructor).
+        /// Live SoC (whole APU) power draw in watts, or -1 when unknown. 1.9.9f: Windows' own
+        /// "Energy Meter" RAPL package counter (no driver needed; present on the Legion Go 2).
+        /// Fallbacks: LibreHardwareMonitor's CPU package sensor (needs PawnIO), then its AMD
+        /// "GPU Core" power, which on the Go 2 turned out to cover the graphics part only.
         /// Refreshed with the other sensors, i.e. only while a metrics consumer is active.
         /// </summary>
         public float SoCPowerW { get; private set; } = -1f;
+
+        // Created on the first UpdateSoCPower (the sensor thread); null until then.
+        private EnergyMeterReader energyMeter;
 
         // The LHM CPU "Package" sensor object, kept before the LeGo2 CPU/GPU swap.
         private HardwareSensor cpuPackageWattageSensor;
@@ -894,13 +898,19 @@ namespace XboxGamingBarHelper.Performance
             float watts = -1f;
             try
             {
-                if (cpuPackageWattageSensor != null && cpuPackageWattageSensor.Value > 0)
+                energyMeter ??= new EnergyMeterReader();
+                float pkg = energyMeter.ReadWatts();
+                if (pkg > 0)
                 {
-                    watts = cpuPackageWattageSensor.Value; // RAPL package (needs PawnIO)
+                    watts = pkg; // Windows Energy Meter, RAPL_Package0_PKG
+                }
+                else if (cpuPackageWattageSensor != null && cpuPackageWattageSensor.Value > 0)
+                {
+                    watts = cpuPackageWattageSensor.Value; // RAPL package via LHM (needs PawnIO)
                 }
                 else if (gpuHardwareWattageSensor != null && gpuHardwareWattageSensor.Value > 0)
                 {
-                    watts = gpuHardwareWattageSensor.Value; // LHM "GPU Core": the APU package on the Go 2
+                    watts = gpuHardwareWattageSensor.Value; // LHM "GPU Core" (graphics only on the Go 2)
                 }
             }
             catch (Exception ex)
@@ -1587,6 +1597,9 @@ namespace XboxGamingBarHelper.Performance
                     }
                     ryzenAdjHandle = IntPtr.Zero;
                 }
+
+                energyMeter?.Dispose();
+                energyMeter = null;
 
                 // Dispose LibreHardwareMonitor computer
                 if (computer != null)

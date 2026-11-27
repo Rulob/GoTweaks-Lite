@@ -133,10 +133,13 @@ upstream, and why.
   TDP; in Quiet / Balanced / Performance (the firmware doesn't report a preset's own limits) it
   shows the SoC's live power draw. Picking a TDP mode while AutoTDP runs
   turns AutoTDP off and switches to it. The overlay's TDP item shows the limit and then the SoC's
-  live draw in brackets, e.g. `TDP 25 (17)W` (`TDP Balanced (17)W` in a preset); SPPT / FPPT were
-  dropped from it. The SoC draw is the APU package power from LibreHardwareMonitor, unlike BAT,
+  live draw in brackets, e.g. `TDP 25 (17W)` (`TDP Balanced (17W)` in a preset); SPPT / FPPT were
+  dropped from it. Since 1.9.9f the SoC draw is the chip's whole package power from Windows' own
+  energy meter (AMD RAPL, no driver needed), unlike BAT,
   which is the whole device's battery draw (screen included). 1.9.9e fixes a 1.9.9d helper crash
   (a few seconds after the widget opened) caused by reading that value through ADLX every tick.
+  1.9.9f: earlier builds read a graphics-only sensor there, so it showed too little (8 W at 26 W
+  battery draw).
 - **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
   the whole install behind a small progress window (see [Installation](#-installation)).
 
@@ -384,7 +387,7 @@ A real-time on-screen display powered by RivaTuner Statistics Server.
 - **Modern style** (on by default, switch in the overlay's Layout options; off = the classic look) —
   small labels and units on the number's baseline, soft accent colors with values staying neutral
   until a real warning threshold, steady number widths, and a clean one-row bar:
-  `FPS 138 7ms · CPU 12% · GPU 34% · RAM 42% · VRAM 18% · TEMP 53°C · TDP Balanced (17)W · BAT 78% -12.8W 4h 29m · 23:18`.
+  `FPS 138 7ms · CPU 12% · GPU 34% · RAM 42% · VRAM 18% · TEMP 53°C · TDP Balanced (17W) · BAT 78% -12.8W 4h 29m · 23:18`.
   CPU/GPU show usage only, RAM/VRAM show percentages, and a single **SoC temperature** replaces the
   separate CPU and GPU temperatures.
 - **Brightness** — the overlay brightness slider (10–100%) now spans the whole range: at 100% the
