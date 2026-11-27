@@ -360,6 +360,42 @@ namespace XboxGamingBar
             var target = currentIndex > 0 ? visibleItems[currentIndex - 1] : visibleItems[visibleItems.Count - 1];
             ArmUserNavIntent(target.Tag as string);
             target.IsChecked = true;
+            MoveFocusWithTabSwitch(target);
+        }
+
+        /// <summary>
+        /// 1.9.9c: after LT/RT switches tabs, move gamepad focus along with it when it was on the
+        /// tab strip (it stayed on the old tab, leaving its focus ring behind) or inside the old
+        /// tab's content (now hidden).
+        /// </summary>
+        private void MoveFocusWithTabSwitch(RadioButton target)
+        {
+            try
+            {
+                var focused = FocusManager.GetFocusedElement() as FrameworkElement;
+                bool onStrip = focused != null && IsInNavigationArea(focused);
+                bool lost = focused == null || !IsElementVisibleInTree(focused);
+                if (onStrip || lost)
+                {
+                    target.Focus(FocusState.Programmatic);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"MoveFocusWithTabSwitch failed: {ex.Message}");
+            }
+        }
+
+        /// <summary>True when the element and all its ancestors are visible.</summary>
+        private static bool IsElementVisibleInTree(FrameworkElement element)
+        {
+            var current = element;
+            while (current != null)
+            {
+                if (current.Visibility != Visibility.Visible) return false;
+                current = VisualTreeHelper.GetParent(current) as FrameworkElement;
+            }
+            return true;
         }
 
         private void NavigateToNextTab()
@@ -374,6 +410,7 @@ namespace XboxGamingBar
             var target = currentIndex < visibleItems.Count - 1 ? visibleItems[currentIndex + 1] : visibleItems[0];
             ArmUserNavIntent(target.Tag as string);
             target.IsChecked = true;
+            MoveFocusWithTabSwitch(target);
         }
 
         private List<RadioButton> GetVisibleNavigationItems()
