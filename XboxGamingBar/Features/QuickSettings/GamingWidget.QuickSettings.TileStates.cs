@@ -68,7 +68,7 @@ namespace XboxGamingBar
             {
                 if (colIndex == 0)
                 {
-                    currentRow = new Grid { Margin = new Thickness(0, 0, 0, 8) };
+                    currentRow = new Grid { Margin = new Thickness(0, 0, 0, 6) };
                     // Add column definitions dynamically based on qsColumnCount
                     for (int c = 0; c < qsColumnCount; c++)
                     {
@@ -128,7 +128,7 @@ namespace XboxGamingBar
                 VerticalAlignment = VerticalAlignment.Stretch,
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
                 Padding = rowLayout ? new Thickness(12, 0, 10, 0) : new Thickness(6, 10, 6, 8),
-                MinHeight = rowLayout ? 54 : 54
+                MinHeight = rowLayout ? 48 : 54
             };
             Windows.UI.Xaml.Automation.AutomationProperties.SetName(button, tile.Name);
 
@@ -145,8 +145,8 @@ namespace XboxGamingBar
 
             var chip = new Border
             {
-                Width = 34,
-                Height = 34,
+                Width = 30,
+                Height = 30,
                 CornerRadius = new CornerRadius(9),
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = rowLayout ? HorizontalAlignment.Left : HorizontalAlignment.Center,
@@ -275,7 +275,7 @@ namespace XboxGamingBar
                     HorizontalAlignment = HorizontalAlignment.Stretch,
                     HorizontalContentAlignment = HorizontalAlignment.Center,
                     Padding = new Thickness(2, 6, 2, 6),
-                    MinHeight = 52,
+                    MinHeight = 48,
                     Content = content
                 };
                 Windows.UI.Xaml.Automation.AutomationProperties.SetName(button, QuickFixedActionLabels[i]);
@@ -573,9 +573,9 @@ namespace XboxGamingBar
                         default: modeText = "Balanced"; modeGlyph = ((char)0xEC49).ToString(); powerModeColor = tileSeverityBlueBrush; break;   // SpeedMedium
                     }
                     powerModeTile.StateText.Text = modeText;
-                    powerModeTile.StateText.Foreground = offForeground;
+                    powerModeTile.StateText.Foreground = accentForeground; // 1.9.9c: Windows accent, like the other tiles
                     if (powerModeTile.IconElement != null) powerModeTile.IconElement.Glyph = modeGlyph;
-                    if (powerModeTile.AccentBar != null) powerModeTile.AccentBar.Background = powerModeColor;
+                    if (powerModeTile.AccentBar != null) powerModeTile.AccentBar.Background = tileAccentBrush;
                     powerModeTile.TileButton.Background = tileOffBrush;
                 }
 
@@ -645,8 +645,8 @@ namespace XboxGamingBar
                     else if (eppValue <= 55) eppColor = tileSeverityGreenBrush;
                     else if (eppValue <= 90) eppColor = tileSeverityBlueBrush;
                     else eppColor = tileSeverityRedBrush;
-                    eppTile.StateText.Foreground = offForeground;
-                    if (eppTile.AccentBar != null) eppTile.AccentBar.Background = eppColor;
+                    eppTile.StateText.Foreground = eppValue > 0 ? accentForeground : offForeground; // 1.9.9c: Windows accent
+                    if (eppTile.AccentBar != null) eppTile.AccentBar.Background = eppValue > 0 ? tileAccentBrush : tileBarOffBrush;
                     eppTile.TileButton.Background = tileOffBrush;
                 }
 

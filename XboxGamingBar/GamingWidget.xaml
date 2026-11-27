@@ -21,6 +21,21 @@
 
         <!-- System Accent Color Brush (Light2 variant for dark theme text) -->
         <SolidColorBrush x:Key="SystemAccentBrush" Color="{ThemeResource SystemAccentColorLight2}"/>
+        <!-- 1.9.9c: inside Game Bar the ThemeResource above can resolve to the default blue, so
+             ApplyLiveAccentColor (code) sets this brush's colour from the app's live accent. Sliders
+             and switches point at the same brush, so they all follow the Windows accent colour. -->
+        <StaticResource x:Key="SliderTrackValueFill" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="SliderTrackValueFillPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="SliderTrackValueFillPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="SliderThumbBackground" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="SliderThumbBackgroundPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="SliderThumbBackgroundPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleSwitchFillOn" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleSwitchFillOnPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleSwitchFillOnPressed" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleSwitchStrokeOn" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleSwitchStrokeOnPointerOver" ResourceKey="SystemAccentBrush"/>
+        <StaticResource x:Key="ToggleSwitchStrokeOnPressed" ResourceKey="SystemAccentBrush"/>
 
         <!-- Win11 Theme Colors (promoted app-wide 2026-07-11 from the Performance-tab
              pilot checkpoint; matches the already-shipped Quick Settings tile palette) -->
@@ -648,7 +663,7 @@
             </Grid.RowDefinitions>
 
             <!-- Nav Bar Row -->
-            <Grid Grid.Row="0" Background="Transparent" Margin="12,10,12,6">
+            <Grid Grid.Row="0" Background="Transparent" Margin="12,6,12,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -737,7 +752,7 @@
             <Grid>
                 <ScrollViewer x:Name="QuickSettingsScrollViewer" VerticalScrollBarVisibility="Auto" Visibility="Visible"
                               BringIntoViewOnFocusChange="True">
-                    <StackPanel Padding="12,4,12,16">
+                    <StackPanel Padding="12,2,12,6">
 
                         <!-- Driver updates tile (Legion devices only, visible only when count > 0).
                              Helper pushes DriverUpdatesAvailable after its startup probe; the
@@ -828,8 +843,8 @@
                         <Border x:Name="QuickPowerCard"
                                 Background="{StaticResource CardBackgroundBrush}"
                                 CornerRadius="16"
-                                Padding="12"
-                                Margin="0,0,0,10">
+                                Padding="10"
+                                Margin="0,0,0,8">
                             <StackPanel Spacing="8">
                                 <Grid ColumnSpacing="12">
                                     <Grid.ColumnDefinitions>
@@ -849,7 +864,7 @@
                                                 Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
                                         <Button x:Name="QuickTdpModeBalanced" Grid.Row="0" Grid.Column="1" Tag="1" Content="Balanced" XYFocusUp="{x:Bind QuickNavItem}"
                                                 Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
-                                        <Button x:Name="QuickTdpModePerformance" Grid.Row="1" Grid.Column="0" Tag="2" Content="Performance"
+                                        <Button x:Name="QuickTdpModePerformance" Grid.Row="1" Grid.Column="0" Tag="2" Content="Performance" XYFocusDown="{x:Bind QuickAutoTdpToggle}"
                                                 Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
                                         <Button x:Name="QuickTdpModeCustom" Grid.Row="1" Grid.Column="1" Tag="3" Content="Custom"
                                                 Style="{StaticResource QuickSegmentButtonStyle}" Click="QuickTdpModeOption_Click"/>
@@ -946,8 +961,8 @@
                         <Border x:Name="PanelBrightnessRow"
                                 Background="{StaticResource CardBackgroundBrush}"
                                 CornerRadius="16"
-                                Padding="16,8"
-                                Margin="0,0,0,12"
+                                Padding="16,0"
+                                Margin="0,0,0,8"
                                 Visibility="Collapsed">
                             <Grid>
                                 <Grid.ColumnDefinitions>
@@ -972,9 +987,9 @@
                             </Grid>
                         </Border>
                         <!-- Toggles (1.9.9b: a fixed set, two per row) and actions (one row of four), built in code -->
-                        <TextBlock Text="TOGGLES" Style="{StaticResource SectionLabelStyle}" FontSize="11" Margin="4,0,0,6"/>
+                        <TextBlock Text="TOGGLES" Style="{StaticResource SectionLabelStyle}" FontSize="11" Margin="4,0,0,4"/>
                         <StackPanel x:Name="QuickSettingsTilesContainer"/>
-                        <TextBlock Text="ACTIONS" Style="{StaticResource SectionLabelStyle}" FontSize="11" Margin="4,2,0,6"/>
+                        <TextBlock Text="ACTIONS" Style="{StaticResource SectionLabelStyle}" FontSize="11" Margin="4,0,0,4"/>
                         <Grid x:Name="QuickActionsGrid" ColumnSpacing="8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>

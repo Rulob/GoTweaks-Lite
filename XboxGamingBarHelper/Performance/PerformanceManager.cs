@@ -1305,12 +1305,19 @@ namespace XboxGamingBarHelper.Performance
                     int performanceMode = legionManager.CurrentPerformanceMode;
                     if (performanceMode != 255) // Not Custom mode
                     {
+                        // The mode name, plus the preset's own limits as the firmware reports them
+                        // (1.9.9c: the Quick tab dial shows the preset's SPL). Mode name alone when
+                        // the limits can't be read.
                         string modeName = LegionManager.GetPerformanceModeName(performanceMode);
-                        if (modeName != lastTdpString)
+                        var (pSlow, pFast, pPeak) = legionManager.GetCurrentTDPValues();
+                        string presetString = pSlow.HasValue && pFast.HasValue && pPeak.HasValue
+                            ? $"{modeName} SPL:{pSlow}W SPPL:{pFast}W FPPT:{pPeak}W"
+                            : modeName;
+                        if (presetString != lastTdpString)
                         {
-                            Logger.Info($"UpdateCurrentTDP: Mode changed to '{modeName}', sending update");
-                            currentTdp.SetValue(modeName);
-                            lastTdpString = modeName;
+                            Logger.Info($"UpdateCurrentTDP: Mode changed to '{presetString}', sending update");
+                            currentTdp.SetValue(presetString);
+                            lastTdpString = presetString;
                         }
                         return;
                     }

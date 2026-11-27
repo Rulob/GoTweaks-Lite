@@ -198,6 +198,7 @@ namespace XboxGamingBar
                 // bottom accent bar (see SetTileAccentBar) - tile background/icon/name
                 // stay neutral/white always.
                 var liveAccent = (Windows.UI.Color)Application.Current.Resources["SystemAccentColorLight2"];
+                ApplyLiveAccentColor(liveAccent);
 
                 tileOffBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0x1C, 0x1F, 0x25)); // card colour (1.9.9a)
                 tileOnBrush = tileOffBrush;
@@ -237,6 +238,26 @@ namespace XboxGamingBar
             catch (Exception ex)
             {
                 Logger.Error($"Error initializing Quick Settings: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 1.9.9c: points the page's accent brush (gauge, tab icons, sliders, switches, accent
+        /// text) at the live Windows accent, the same colour the tiles use. Inside Game Bar the
+        /// brush's XAML ThemeResource can resolve to the default blue instead.
+        /// </summary>
+        private void ApplyLiveAccentColor(Windows.UI.Color accent)
+        {
+            try
+            {
+                if (Resources.TryGetValue("SystemAccentBrush", out object value) && value is SolidColorBrush brush && brush.Color != accent)
+                {
+                    brush.Color = accent;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"ApplyLiveAccentColor failed: {ex.Message}");
             }
         }
 

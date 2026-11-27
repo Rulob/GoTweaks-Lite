@@ -165,17 +165,15 @@ namespace XboxGamingBar
             if (CustomTDPSlowSlider != null) CustomTDPSlowSlider.ValueChanged += (s, e) => UpdateQuickPowerBoxes();
             if (AutoTDPToggle != null) AutoTDPToggle.Toggled += (s, e) => UpdateQuickPowerBoxes();
             if (AutoTDPTargetFPSSlider != null) AutoTDPTargetFPSSlider.ValueChanged += (s, e) => UpdateQuickPowerBoxes();
-            // The dial shows AutoTDP's live FPS while it runs.
-            if (autoTDPCurrentFPS != null)
+            // The dial shows the live wattage (presets and AutoTDP) from the helper's CurrentTDP push,
+            // and AutoTDP's arc moves when its Min / Max TDP change.
+            if (currentTdp != null)
             {
-                autoTDPCurrentFPS.PropertyChanged += (s, e) =>
-                {
-                    _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, () =>
-                    {
-                        if (AutoTDPToggle?.IsOn == true) UpdateQuickPowerBoxes();
-                    });
-                };
+                currentTdp.PropertyChanged += (s, e) => OnCurrentTdpPushed(currentTdp.Value);
+                OnCurrentTdpPushed(currentTdp.Value);
             }
+            if (AutoTDPMinSlider != null) AutoTDPMinSlider.ValueChanged += (s, e) => UpdateQuickPowerBoxes();
+            if (AutoTDPMaxSlider != null) AutoTDPMaxSlider.ValueChanged += (s, e) => UpdateQuickPowerBoxes();
             // Power tab buttons (1.9.9a) that stand in for the hidden ComboBox / slider presets.
             if (OSPowerModeComboBox != null)
             {
@@ -259,8 +257,12 @@ namespace XboxGamingBar
                 // Dial and title
                 if (autoOn)
                 {
-                    int fps = autoTDPCurrentFPS?.Value ?? 0;
-                    SetQuickDial(fps > 0 ? fps.ToString() : "--", "FPS", null, target > 0 ? (double)fps / target : 0);
+                    // AutoTDP: the wattage it is running at, the arc placed between its Min and Max TDP.
+                    double min = AutoTDPMinSlider?.Value ?? 4;
+                    double max = AutoTDPMaxSlider?.Value ?? CustomTdpMaxWatts;
+                    int watts = liveTdpIsPreset ? 0 : liveSplWatts;
+                    SetQuickDial(watts > 0 ? watts.ToString() : "--", "WATTS", null,
+                        watts > 0 && max > min ? (watts - min) / (max - min) : 0);
                 }
                 else if (isCustom)
                 {
@@ -268,11 +270,22 @@ namespace XboxGamingBar
                 }
                 else
                 {
-                    switch (mode)
+                    // Preset: the firmware's SPL for that mode once the helper has reported it.
+                    string modeName = GetLegionModeShortName(mode);
+                    bool known = liveTdpIsPreset && liveSplWatts > 0
+                        && liveTdpModeName.Equals(modeName, StringComparison.OrdinalIgnoreCase);
+                    if (known)
                     {
-                        case 1: SetQuickDial(null, "PRESET", "\uEC48", 1 / 3.0); break;
-                        case 3: SetQuickDial(null, "PRESET", "\uEC4A", 1.0); break;
-                        default: SetQuickDial(null, "PRESET", "\uEC49", 2 / 3.0); break;
+                        SetQuickDial(liveSplWatts.ToString(), "WATTS", null, liveSplWatts / (double)CustomTdpMaxWatts);
+                    }
+                    else
+                    {
+                        switch (mode)
+                        {
+                            case 1: SetQuickDial(null, "QUIET", "\uEC48", 1 / 3.0); break;
+                            case 3: SetQuickDial(null, "PERF.", "\uEC4A", 1.0); break;
+                            default: SetQuickDial(null, "BALANCED", "\uEC49", 2 / 3.0); break;
+                        }
                     }
                 }
 
@@ -330,6 +343,37 @@ namespace XboxGamingBar
         }
 
         private const int CustomTdpMaxWatts = 35;
+
+        // Live limits from the helper's CurrentTDP push (every few seconds): "SPL:15W SPPL:.. FPPT:.."
+        // in Custom (AutoTDP included), "Balanced SPL:15W ..." in a preset (1.9.9c), or a bare mode name.
+        private int liveSplWatts;
+        private bool liveTdpIsPreset;
+        private string liveTdpModeName = "";
+
+        private void OnCurrentTdpPushed(string value)
+        {
+            int watts = 0;
+            bool preset = false;
+            string modeName = "";
+            if (!string.IsNullOrEmpty(value))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(value, @"\bSPL:(\d+)W");
+                if (match.Success) int.TryParse(match.Groups[1].Value, out watts);
+                preset = !value.StartsWith("SPL:", StringComparison.Ordinal);
+                if (preset)
+                {
+                    int space = value.IndexOf(' ');
+                    modeName = space > 0 ? value.Substring(0, space) : value;
+                }
+            }
+            _ = Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Low, () =>
+            {
+                liveSplWatts = watts;
+                liveTdpIsPreset = preset;
+                liveTdpModeName = modeName;
+                UpdateQuickPowerBoxes();
+            });
+        }
 
         /// <summary>Sets the dial's centre (a number, or a glyph when <paramref name="text"/> is null),
         /// its unit line and the value arc (0 to 1 of the 270 degree track).</summary>
