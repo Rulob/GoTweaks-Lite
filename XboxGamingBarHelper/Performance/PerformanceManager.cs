@@ -178,9 +178,9 @@ namespace XboxGamingBarHelper.Performance
         public int CurrentSPL { get; private set; }
 
         /// <summary>
-        /// Live SoC (whole APU) power draw in watts, or -1 when unknown (1.9.9d). Read from AMD's
-        /// ADLX "GPU power", which on an APU covers the whole chip (it is what Adrenalin's overlay
-        /// shows), falling back to LibreHardwareMonitor's CPU package sensor (needs PawnIO).
+        /// Live SoC (whole APU) power draw in watts, or -1 when unknown (1.9.9d). LibreHardwareMonitor's
+        /// CPU package sensor when it reports (needs PawnIO), otherwise its AMD "GPU Core" power,
+        /// which on the Legion Go 2 is the APU package (see the sensor swap note in the constructor).
         /// Refreshed with the other sensors, i.e. only while a metrics consumer is active.
         /// </summary>
         public float SoCPowerW { get; private set; } = -1f;
@@ -888,16 +888,19 @@ namespace XboxGamingBarHelper.Performance
         /// <summary>Refreshes <see cref="SoCPowerW"/> (see there for the sources).</summary>
         private void UpdateSoCPower()
         {
+            // 1.9.9e: sensor values only - no direct ADLX call. Calling ADLX's GPU metrics every
+            // tick (1.9.9d) crashed the helper natively a few seconds after the feed started on the
+            // Legion Go 2 (no managed exception, the process just ended).
             float watts = -1f;
             try
             {
-                if (amdManager != null && amdManager.TryGetCurrentGpuMetrics(out var snap) && snap.HasPowerW && snap.GpuPowerW > 0)
+                if (cpuPackageWattageSensor != null && cpuPackageWattageSensor.Value > 0)
                 {
-                    watts = (float)snap.GpuPowerW;
+                    watts = cpuPackageWattageSensor.Value; // RAPL package (needs PawnIO)
                 }
-                else if (cpuPackageWattageSensor != null && cpuPackageWattageSensor.Value > 0)
+                else if (gpuHardwareWattageSensor != null && gpuHardwareWattageSensor.Value > 0)
                 {
-                    watts = cpuPackageWattageSensor.Value;
+                    watts = gpuHardwareWattageSensor.Value; // LHM "GPU Core": the APU package on the Go 2
                 }
             }
             catch (Exception ex)

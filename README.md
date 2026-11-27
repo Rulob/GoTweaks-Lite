@@ -134,8 +134,9 @@ upstream, and why.
   shows the SoC's live power draw. Picking a TDP mode while AutoTDP runs
   turns AutoTDP off and switches to it. The overlay's TDP item shows the limit and then the SoC's
   live draw in brackets, e.g. `TDP 25 (17)W` (`TDP Balanced (17)W` in a preset); SPPT / FPPT were
-  dropped from it. The SoC draw is AMD's APU power reading (the same figure as Adrenalin's overlay),
-  unlike BAT, which is the whole device's battery draw (screen included).
+  dropped from it. The SoC draw is the APU package power from LibreHardwareMonitor, unlike BAT,
+  which is the whole device's battery draw (screen included). 1.9.9e fixes a 1.9.9d helper crash
+  (a few seconds after the widget opened) caused by reading that value through ADLX every tick.
 - **Single-file GUI installer** — `GoTweaks-Setup.exe` bundles the package + certificate and runs
   the whole install behind a small progress window (see [Installation](#-installation)).
 
